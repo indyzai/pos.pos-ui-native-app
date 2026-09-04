@@ -1,0 +1,90 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "enables the default permissions",
+  "windows": [
+    "main",
+    "quick-add"
+  ],
+  "permissions": [
+    "core:default",
+    "core:app:allow-set-app-theme",
+    "core:window:allow-close",
+    "core:window:allow-set-decorations",
+    "core:window:allow-set-theme",
+    "core:window:allow-set-skip-taskbar",
+    "core:window:allow-hide",
+    "core:window:allow-is-focused",
+    "core:window:allow-request-user-attention",
+    "core:webview:allow-set-webview-zoom",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-mkdir",
+    "fs:allow-write-file",
+    "fs:allow-read-file",
+    "fs:allow-write-text-file",
+    "fs:allow-remove",
+    "fs:allow-exists",
+    "fs:allow-size",
+    "fs:allow-stat",
+    "fs:allow-read-dir",
+    "fs:allow-rename",
+    "fs:allow-watch",
+    "global-shortcut:default",
+    "notification:default",
+    "shell:default",
+    "shell:allow-open",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$DATA/openpos"
+        },
+        {
+          "path": "$DATA/openpos/**"
+        },
+        {
+          "path": "$DATA/attachments"
+        },
+        {
+          "path": "$DATA/attachments/**"
+        },
+        {
+          "path": "$APPDATA"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$DATA/openpos/audio-captures/**"
+        },
+        {
+          "path": "$DATA/openpos/whisper-models/**"
+        },
+        {
+          "path": "$RUNTIME/doc"
+        },
+        {
+          "path": "$RUNTIME/doc/**"
+        }
+      ]
+    },
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://*/*"
+        },
+        {
+          "url": "https://*:*/*"
+        },
+        {
+          "url": "http://*/*"
+        },
+        {
+          "url": "http://*:*/*"
+        }
+      ]
+    }
+  ]
+}

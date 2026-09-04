@@ -1,0 +1,15 @@
+# Hidden desktop entry installed as openpos.desktop by the deb/rpm bundles.
+# Wayland compositors match a window's app id against a .desktop file with the
+# same basename, case-sensitively. The app id is the process name (openpos),
+# but tauri-bundler hardcodes the visible entry's filename to the product name
+# (OpenPOS.desktop), so KWin's alt-tab switcher found no icon (#997). This
+# NoDisplay entry exists only to give compositors an exact-name match; the
+# visible menu entry stays OpenPOS.desktop.
+[Desktop Entry]
+Type=Application
+Name=OpenPOS
+Exec=openpos
+Icon=openpos
+Terminal=false
+NoDisplay=true
+StartupWMClass=openpos

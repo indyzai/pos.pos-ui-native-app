@@ -1,0 +1,56 @@
+services:
+  openpos-cloud:
+    image: ghcr.io/dongdongbh/openpos-cloud:latest
+    build:
+      context: ..
+      dockerfile: docker/cloud/Dockerfile
+    container_name: openpos-cloud
+    hostname: openpos-cloud
+    restart: always
+    cpus: "1.0"
+    mem_limit: 512m
+    healthcheck:
+      # Released images predate /ready (404 -> fall back to liveness); on newer
+      # images a real /ready failure (503) still reads unhealthy. (#1127)
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8787/ready); [ \"$$code\" = 200 ] || { [ \"$$code\" = 404 ] && curl -fsS http://localhost:8787/health >/dev/null; }"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    expose:
+      - "8787"
+    environment:
+      # One or more access tokens, comma-separated; each distinct token gets its
+      # own private dataset (see docker/compose.yaml for examples).
+      # Leave this empty only when using docker/compose.secrets.yaml.
+      - OPEN_POS_CLOUD_AUTH_TOKENS=${OPEN_POS_CLOUD_AUTH_TOKENS:-}
+      - OPEN_POS_CLOUD_CORS_ORIGIN=${OPEN_POS_CLOUD_CORS_ORIGIN:?OPEN_POS_CLOUD_CORS_ORIGIN must be set}
+      - OPEN_POS_CLOUD_MAX_BODY_BYTES=${OPEN_POS_CLOUD_MAX_BODY_BYTES:-2000000}
+      - OPEN_POS_CLOUD_MAX_ATTACHMENT_BYTES=${OPEN_POS_CLOUD_MAX_ATTACHMENT_BYTES:-50000000}
+    volumes:
+      - ./data:/app/cloud_data
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: openpos-caddy
+    hostname: openpos-caddy
+    restart: always
+    cpus: "0.5"
+    mem_limit: 256m
+    depends_on:
+      openpos-cloud:
+        condition: service_healthy
+    ports:
+      - "${OPEN_POS_HTTP_PORT:-80}:80"
+      - "${OPEN_POS_HTTPS_PORT:-443}:443"
+      - "${OPEN_POS_HTTPS_PORT:-443}:443/udp"
+    environment:
+      - OPEN_POS_CLOUD_DOMAIN=${OPEN_POS_CLOUD_DOMAIN:?OPEN_POS_CLOUD_DOMAIN must be set}
+    volumes:
+      - ./${OPEN_POS_CADDYFILE:-Caddyfile.https}:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

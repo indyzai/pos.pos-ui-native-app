@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "upstreamRepository": "https://github.com/dongdongbh/OpenPOS",
+  "releaseSigningKeyFingerprint": "0358999BBE704F588B9094979E553245CB17047D",
+  "packages": {
+    "openpos-bin": {
+      "maintainer": "dongdongbh",
+      "coMaintainers": [],
+      "trackedFiles": [
+        ".SRCINFO",
+        ".gitignore",
+        "PKGBUILD"
+      ]
+    },
+    "openpos-beta-bin": {
+      "maintainer": "dongdongbh",
+      "coMaintainers": [],
+      "trackedFiles": [
+        ".SRCINFO",
+        "PKGBUILD"
+      ]
+    },
+    "openpos-bin-beta": {
+      "maintainer": "dongdongbh",
+      "coMaintainers": [],
+      "trackedFiles": [
+        ".SRCINFO",
+        "PKGBUILD"
+      ]
+    }
+  }
+}

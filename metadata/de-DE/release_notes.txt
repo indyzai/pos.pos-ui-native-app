@@ -1,0 +1,4 @@
+- Projekte erhalten Startdaten und erscheinen als Zeitraum in der Zeitleiste.
+- Sync-Einstellungen werden nach einer Prüfung aktiviert; Anhänge werden bei WebDAV, Dropbox, Dateisynchronisierung, iCloud und eigenen Servern sicherer wiederhergestellt.
+- Leerlauf-Sync benötigt weniger Arbeit, während Status und Diagnose klarere Ergebnisse liefern.
+- Kalenderdaten, Dropbox-Anmeldung, archivierte Projekte und Übersetzungen arbeiten zuverlässiger.

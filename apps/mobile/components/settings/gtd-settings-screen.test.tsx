@@ -1,0 +1,516 @@
+import React from 'react';
+import renderer from 'react-test-renderer';
+import { Modal, Switch, Text, TextInput, TouchableOpacity } from 'react-native';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { AppData } from '@openpos/core';
+
+import { GtdSettingsScreen } from './gtd-settings-screen';
+
+const updateSettings = vi.fn().mockResolvedValue(undefined);
+const showToast = vi.fn();
+
+const flattenStyle = (style: unknown): Record<string, unknown> => {
+  if (Array.isArray(style)) {
+    return Object.assign({}, ...style.map(flattenStyle));
+  }
+  return style && typeof style === 'object' ? style as Record<string, unknown> : {};
+};
+
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => undefined),
+  },
+}));
+
+type MockStoreState = {
+  settings: AppData['settings'];
+  areas: AppData['areas'];
+  updateSettings: typeof updateSettings;
+};
+
+const storeState: MockStoreState = {
+  settings: {
+    gtd: {
+      taskEditor: {},
+    },
+    features: {
+      priorities: true,
+      timeEstimates: true,
+    },
+  },
+  areas: [],
+  updateSettings,
+};
+
+vi.mock('@openpos/core', () => ({
+  FOCUS_TASK_LIMIT_OPTIONS: [1, 3, 5, 10],
+  getDefaultTaskAreaMode: (settings: AppData['settings']) => {
+    const mode = settings?.gtd?.defaultAreaMode;
+    if (mode === 'none' || mode === 'fixed' || mode === 'active') return mode;
+    return settings?.gtd?.defaultAreaId ? 'fixed' : 'none';
+  },
+  normalizeClockTimeInput: (value?: string | null) => {
+    const trimmed = String(value ?? '').trim();
+    if (!trimmed) return '';
+    const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+    if (!match) return null;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  },
+  normalizeFocusTaskLimit: (value?: number) => value ?? 3,
+  resolveFeatureFlags: (settings: AppData['settings']) => ({
+    priorities: settings?.features?.priorities !== false,
+    timeEstimates: settings?.features?.timeEstimates !== false,
+    pomodoro: settings?.features?.pomodoro === true,
+  }),
+  resolveDefaultNewTaskAreaId: (settings: AppData['settings'], areas: AppData['areas']) => {
+    const mode = settings?.gtd?.defaultAreaMode ?? (settings?.gtd?.defaultAreaId ? 'fixed' : 'none');
+    if (mode !== 'fixed') return undefined;
+    const areaId = settings?.gtd?.defaultAreaId;
+    return typeof areaId === 'string' && areas.some((area) => area.id === areaId && !area.deletedAt)
+      ? areaId
+      : undefined;
+  },
+  sanitizePomodoroDurations: (value?: { focusMinutes?: number; breakMinutes?: number }) => ({
+    focusMinutes: Number.isFinite(value?.focusMinutes) ? Math.round(value!.focusMinutes!) : 25,
+    breakMinutes: Number.isFinite(value?.breakMinutes) ? Math.round(value!.breakMinutes!) : 5,
+  }),
+  shallow: Object.is,
+  tFallback: (t: (key: string) => string, key: string, fallback: string) => {
+    const translated = t(key);
+    return translated && translated !== key ? translated : fallback;
+  },
+  useTaskStore: () => storeState,
+}));
+
+vi.mock('@/hooks/use-theme-tokens', () => ({
+  useThemeTokens: () => ({ isMaterial: false, roles: null, shape: { large: 16 } }),
+}));
+
+vi.mock('@/hooks/use-theme-colors', () => ({
+  useThemeColors: () => ({
+    bg: '#0f172a',
+    cardBg: '#111827',
+    inputBg: '#111827',
+    filterBg: '#1f2937',
+    border: '#334155',
+    text: '#f8fafc',
+    secondaryText: '#94a3b8',
+    tint: '#3b82f6',
+  }),
+}));
+
+vi.mock('@/contexts/toast-context', () => ({
+  ToastViewport: () => null,
+  useToast: () => ({
+    dismissToast: vi.fn(),
+    showToast,
+  }),
+}));
+
+vi.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: (props: any) => React.createElement('SafeAreaView', props, props.children),
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+
+vi.mock('./settings.hooks', () => ({
+  useSettingsLocalization: () => ({
+    isChineseLanguage: false,
+    language: 'en',
+    tr: (key: string) =>
+      ({
+        'settings.gtdMobile.pomodoroWillNowAdvancePhasesAutomatically': 'Pomodoro will now advance phases automatically.',
+      }[key] ?? key),
+    t: (key: string) =>
+      ({
+        'settings.taskEditorLayout': 'Task editor layout',
+        'settings.taskEditorLayoutDesc': 'Customize task editor layout.',
+        'settings.taskEditorDefaultOpen': 'Open sections by default',
+        'settings.visible': 'Shown',
+        'settings.hidden': 'Hidden',
+        'settings.resetToDefault': 'Reset to default',
+        'common.done': 'Done',
+        'taskEdit.basic': 'Basic',
+        'taskEdit.scheduling': 'Scheduling',
+        'taskEdit.organization': 'Organization',
+        'taskEdit.details': 'Details',
+        'taskEdit.statusLabel': 'Status',
+        'taskEdit.projectLabel': 'Project',
+      }[key] ?? key),
+  }),
+  useSettingsScrollContent: () => ({}),
+}));
+
+vi.mock('./settings.shell', () => ({
+  SettingsTopBar: () => React.createElement('SettingsTopBar'),
+  SubHeader: ({ title }: { title: string }) => React.createElement('SubHeader', { title }),
+  MenuItem: (props: any) => React.createElement('MenuItem', props, props.children),
+}));
+
+vi.mock('@/components/task-edit/task-edit-modal.utils', () => ({
+  buildTaskEditorPresetConfig: () => ({ order: ['status', 'project'], hidden: [], sections: {}, sectionOpen: {} }),
+  DEFAULT_TASK_EDITOR_ORDER: ['status', 'project'],
+  DEFAULT_TASK_EDITOR_SECTION_BY_FIELD: { status: 'basic', project: 'basic' },
+  DEFAULT_TASK_EDITOR_SECTION_OPEN: { basic: true, scheduling: false, organization: false, details: false },
+  DEFAULT_TASK_EDITOR_VISIBLE: ['status', 'project'],
+  TASK_EDITOR_FIXED_FIELDS: ['status', 'project'],
+  TASK_EDITOR_SECTION_ORDER: ['basic', 'scheduling', 'organization', 'details'],
+  getTaskEditorSectionAssignments: () => ({ status: 'basic', project: 'basic' }),
+  getTaskEditorSectionOpenDefaults: () => ({ basic: true, scheduling: false, organization: false, details: false }),
+  isTaskEditorSectionableField: () => false,
+  resolveTaskEditorPresetId: () => 'custom',
+}));
+
+describe('GtdSettingsScreen task editor layout', () => {
+  beforeEach(() => {
+    updateSettings.mockClear();
+    showToast.mockClear();
+    storeState.settings = {
+      gtd: {
+        taskEditor: {},
+      },
+      features: {
+        priorities: true,
+        timeEstimates: true,
+      },
+    };
+    storeState.areas = [];
+  });
+
+  it('quick-toggles the eye icon without opening the field sheet', () => {
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd-task-editor" />);
+    });
+
+    const visibilityButton = tree.root.find((node) => node.props.testID === 'task-editor-visibility-status');
+
+    renderer.act(() => {
+      visibilityButton.props.onPress();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        taskEditor: expect.objectContaining({
+          order: ['status', 'project'],
+          hidden: ['status'],
+        }),
+      }),
+    }));
+    expect(tree.root.findByType(Modal).props.visible).toBe(false);
+  });
+
+  it('still opens the field sheet when the row body is tapped', () => {
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd-task-editor" />);
+    });
+
+    const rowButton = tree.root.find((node) => node.props.testID === 'task-editor-row-status');
+
+    renderer.act(() => {
+      rowButton.props.onPress();
+    });
+
+    expect(tree.root.findByType(Modal).props.visible).toBe(true);
+  });
+
+  it('shows one notice when enabling Pomodoro auto-start', async () => {
+    storeState.settings = {
+      features: {
+        priorities: true,
+        timeEstimates: true,
+        pomodoro: true,
+      },
+      gtd: {
+        pomodoro: {
+          autoStartBreaks: false,
+          autoStartFocus: false,
+        },
+        taskEditor: {},
+      },
+    };
+
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd-pomodoro" />);
+    });
+
+    const disabledPomodoroSwitches = tree.root.findAllByType(Switch).filter((node) => node.props.value === false);
+    expect(disabledPomodoroSwitches).toHaveLength(3);
+    const autoStartSwitches = disabledPomodoroSwitches.slice(1);
+
+    await renderer.act(async () => {
+      autoStartSwitches[0].props.onValueChange(true);
+      await Promise.resolve();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        pomodoro: expect.objectContaining({ autoStartBreaks: true }),
+      }),
+    }));
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Pomodoro will now advance phases automatically.',
+      tone: 'info',
+    }));
+
+    await renderer.act(async () => {
+      autoStartSwitches[1].props.onValueChange(true);
+      await Promise.resolve();
+    });
+
+    expect(showToast).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves the default schedule time from GTD settings', async () => {
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd" />);
+    });
+
+    await renderer.act(async () => {
+      const scheduleTimeInput = tree.root.findAllByType(TextInput)[0];
+      scheduleTimeInput.props.onChangeText('9:30');
+      await Promise.resolve();
+    });
+
+    await renderer.act(async () => {
+      const scheduleTimeInput = tree.root.findAllByType(TextInput)[0];
+      scheduleTimeInput.props.onBlur();
+      await Promise.resolve();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        defaultScheduleTime: '09:30',
+      }),
+    }));
+  });
+
+  it('keeps focus limit options on a single equal-width row', () => {
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd" />);
+    });
+
+    const focusLimitButtons = [1, 3, 5, 10].map((option) => {
+      const button = tree.root.findAllByType(TouchableOpacity).find((candidate) => (
+        candidate.findAllByType(Text).some((textNode) => textNode.props.children === option)
+      ));
+      expect(button).toBeTruthy();
+      return button!;
+    });
+
+    focusLimitButtons.forEach((button) => {
+      const flattenedStyle = flattenStyle(button.props.style);
+      expect(flattenedStyle.flexBasis).toBe(0);
+      expect(flattenedStyle.minWidth).toBe(0);
+      expect(flattenedStyle.flexGrow).toBe(1);
+    });
+  });
+
+  it('persists a focus limit of 1 when selected', () => {
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd" />);
+    });
+
+    const oneButton = tree.root.findAllByType(TouchableOpacity).find((candidate) => (
+      candidate.findAllByType(Text).some((textNode) => textNode.props.children === 1)
+    ));
+    expect(oneButton).toBeTruthy();
+
+    renderer.act(() => {
+      oneButton?.props.onPress();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        focusTaskLimit: 1,
+      }),
+    }));
+  });
+
+  it('saves the default project flow mode from GTD settings', () => {
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd" />);
+    });
+
+    const sequentialButton = tree.root.findAllByType(TouchableOpacity).find((button) => (
+      button.findAllByType(Text).some((text) => text.props.children === 'Sequential')
+    ));
+    expect(sequentialButton).toBeTruthy();
+
+    renderer.act(() => {
+      sequentialButton?.props.onPress();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        defaultProjectFlowMode: 'sequential',
+      }),
+    }));
+  });
+
+  it('opens a picker before saving the default area from capture settings', () => {
+    storeState.settings = {
+      gtd: {
+        defaultAreaId: null,
+        taskEditor: {},
+      },
+      features: {
+        priorities: true,
+        timeEstimates: true,
+      },
+    };
+    storeState.areas = [{
+      id: 'area-work',
+      name: 'Work',
+      color: '#64748b',
+      order: 0,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd-capture" />);
+    });
+
+    expect(tree.root.findByType(Modal).props.visible).toBe(false);
+
+    renderer.act(() => {
+      tree.root.findByProps({ testID: 'default-area-picker-button' }).props.onPress();
+    });
+
+    expect(tree.root.findByType(Modal).props.visible).toBe(true);
+
+    renderer.act(() => {
+      tree.root.findByProps({ testID: 'default-area-picker-option-area-work' }).props.onPress();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        defaultAreaMode: 'fixed',
+        defaultAreaId: 'area-work',
+      }),
+    }));
+    expect(tree.root.findByType(Modal).props.visible).toBe(false);
+  });
+
+  it('saves the active area mode from capture settings', () => {
+    storeState.settings = {
+      gtd: {
+        defaultAreaId: null,
+        taskEditor: {},
+      },
+      features: {
+        priorities: true,
+        timeEstimates: true,
+      },
+    };
+    storeState.areas = [];
+
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd-capture" />);
+    });
+
+    renderer.act(() => {
+      tree.root.findByProps({ testID: 'default-area-picker-button' }).props.onPress();
+    });
+
+    renderer.act(() => {
+      tree.root.findByProps({ testID: 'default-area-picker-option-__active-area__' }).props.onPress();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        defaultAreaMode: 'active',
+        defaultAreaId: null,
+      }),
+    }));
+    expect(tree.root.findByType(Modal).props.visible).toBe(false);
+  });
+
+  it('saves the natural-language dates toggle from capture settings (#742)', () => {
+    storeState.settings = {
+      gtd: {
+        taskEditor: {},
+      },
+      features: {
+        priorities: true,
+        timeEstimates: true,
+      },
+    };
+    storeState.areas = [];
+
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd-capture" />);
+    });
+
+    const naturalLanguageDatesRow = tree.root.findAllByType(Text).find((text) => (
+      text.props.children === 'settings.naturalLanguageDates'
+    ));
+    expect(naturalLanguageDatesRow).toBeTruthy();
+
+    const naturalLanguageDatesSwitch = tree.root.findAllByType(Switch).find((node) => node.props.value === true);
+    expect(naturalLanguageDatesSwitch).toBeTruthy();
+
+    renderer.act(() => {
+      naturalLanguageDatesSwitch?.props.onValueChange(false);
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gtd: expect.objectContaining({
+        naturalLanguageDates: false,
+      }),
+    }));
+  });
+
+  it('routes GTD feature areas to sub-screens from the hub', () => {
+    storeState.settings = {
+      features: {
+        priorities: true,
+        timeEstimates: true,
+        pomodoro: true,
+      },
+      gtd: {
+        taskEditor: {},
+      },
+    };
+    const onNavigate = vi.fn();
+    let tree!: renderer.ReactTestRenderer;
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={onNavigate} screen="gtd" />);
+    });
+
+    renderer.act(() => {
+      const pomodoroRow = tree.root.findByProps({ testID: 'gtd-nav-pomodoro' });
+      expect(pomodoroRow.props.accessibilityRole).toBe('button');
+      pomodoroRow.props.onPress();
+      tree.root.findByProps({ testID: 'gtd-nav-capture' }).props.onPress();
+      tree.root.findByProps({ testID: 'gtd-nav-inbox' }).props.onPress();
+    });
+
+    expect(onNavigate).toHaveBeenCalledWith('gtd-pomodoro');
+    expect(onNavigate).toHaveBeenCalledWith('gtd-capture');
+    expect(onNavigate).toHaveBeenCalledWith('gtd-inbox');
+  });
+
+  it('keeps the temporary manual onboarding trigger hidden by default', () => {
+    let tree!: renderer.ReactTestRenderer;
+
+    renderer.act(() => {
+      tree = renderer.create(<GtdSettingsScreen onNavigate={vi.fn()} screen="gtd" />);
+    });
+
+    expect(tree.root.findAllByProps({ testID: 'mobile-onboarding-test-trigger' })).toHaveLength(0);
+  });
+});

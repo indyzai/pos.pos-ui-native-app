@@ -1,0 +1,11 @@
+{
+  "platforms": ["android", "ios"],
+  "android": {
+    "modules": ["com.indyzai.pos.openpos.attachmentfileinstaller.AttachmentFileInstallerModule"]
+  },
+  "ios": {
+    "podspecPath": "ios/AttachmentFileInstaller.podspec",
+    "swiftModuleName": "AttachmentFileInstaller",
+    "modules": ["AttachmentFileInstallerModule"]
+  }
+}

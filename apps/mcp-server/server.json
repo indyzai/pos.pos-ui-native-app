@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dongdongbh/openpos",
+  "title": "OpenPOS",
+  "description": "Task and project automation for local OpenPOS data, with read-only self-hosted Cloud access.",
+  "version": "1.1.7",
+  "websiteUrl": "https://docs.openpos.app/power-users/mcp",
+  "repository": {
+    "url": "https://github.com/dongdongbh/OpenPOS",
+    "source": "github",
+    "id": "1111978380",
+    "subfolder": "apps/mcp-server"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "openpos-mcp",
+      "version": "1.1.7",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "OPEN_POS_DB_PATH",
+          "description": "Optional path to the local OpenPOS SQLite database.",
+          "format": "filepath",
+          "isRequired": false
+        },
+        {
+          "name": "OPEN_POS_MCP_CLOUD_URL",
+          "description": "Optional self-hosted OpenPOS Cloud base URL for read-only Cloud mode.",
+          "isRequired": false
+        },
+        {
+          "name": "OPEN_POS_MCP_CLOUD_TOKEN",
+          "description": "Bearer token for read-only self-hosted OpenPOS Cloud mode.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

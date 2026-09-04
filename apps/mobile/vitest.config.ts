@@ -1,0 +1,26 @@
+/// <reference types="vitest" />
+import { defineConfig } from 'vitest/config';
+import path from 'node:path';
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+      'react-native': path.resolve(__dirname, 'shims/react-native.ts'),
+    },
+  },
+  test: {
+    environment: 'node',
+    setupFiles: ['vitest.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html', 'json-summary'],
+      thresholds: {
+        lines: 38,
+        statements: 38,
+        functions: 50,
+        branches: 50,
+      },
+    },
+  },
+});

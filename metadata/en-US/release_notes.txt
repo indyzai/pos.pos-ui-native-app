@@ -1,0 +1,4 @@
+- Add start dates to projects and see project spans in Timeline.
+- Sync settings activate after a verification pass, with safer attachment recovery across WebDAV, Dropbox, File Sync, iCloud, and self-hosted servers.
+- Idle syncs do less work, while sync status and diagnostics give clearer results.
+- Calendar dates, Dropbox sign-in, archived project actions, and localization work more reliably.

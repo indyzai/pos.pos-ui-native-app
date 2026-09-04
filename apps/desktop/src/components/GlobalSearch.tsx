@@ -1,0 +1,856 @@
+import { useState, useEffect, useId, useMemo, useRef } from 'react';
+import { Search, FileText, CheckCircle, Save, SlidersHorizontal, X } from 'lucide-react';
+import {
+    shallow,
+    useTaskStore,
+    Task,
+    Project,
+    generateUUID,
+    SavedSearch,
+    SearchProjectResult,
+    SearchResults,
+    SearchTaskResult,
+    getStorageAdapter,
+    normalizeWeekStartSetting,
+    formatI18nTemplate,
+    hasTimeComponent,
+    isTaskFinished,
+    safeFormatDate,
+    TaskStatus,
+    areaFilterSelectionToFilters,
+    isAreaFilterSelectionActive,
+    resolveAreaFilterSelection,
+    taskMatchesAreaFilterSelection,
+    projectMatchesAreaFilterSelection, tFallback,
+} from '@openpos/core';
+import { useLanguage } from '../contexts/language-context';
+import { cn } from '../lib/utils';
+import { getUrgencyColor } from './Task/TaskItemDisplay';
+import { PromptModal } from './PromptModal';
+import { Dialog } from './ui/Dialog';
+import { useUiStore } from '../store/ui-store';
+import {
+    computeGlobalSearchResults,
+    getGlobalSearchFilterPresentation,
+    type DuePreset,
+    type GlobalSearchScope,
+} from '@openpos/core/global-search-filter';
+import { resolveTaskNavigationView } from '../lib/task-navigation';
+import { useFutureStartRevealTick, useLocalDayKey } from '../hooks/useLocalDayKey';
+
+interface GlobalSearchProps {
+    onNavigate: (view: string, itemId?: string) => void;
+    /**
+     * Start with "Include Done and Archived tasks" already on. Passed when the
+     * search opens over the Done or Archived view — searching there and not
+     * finding the finished task you are looking at reads as broken.
+     */
+    defaultIncludeCompleted?: boolean;
+}
+
+export const resolveGlobalSearchTaskView = resolveTaskNavigationView;
+
+export function GlobalSearch({ onNavigate, defaultIncludeCompleted = false }: GlobalSearchProps) {
+    const dialogTitleId = useId();
+    const [isOpen, setIsOpen] = useState(false);
+    const [query, setQuery] = useState('');
+    // The query that drives searching. While an IME composition is in
+    // progress (Chinese/Japanese/Korean input), `query` holds the raw
+    // composition text (e.g. the pinyin "niu nai") — searching it flashed
+    // "no results" between every committed character. Search sticks with the
+    // last committed text until the composition ends.
+    const [searchQuery, setSearchQuery] = useState('');
+    const isComposingRef = useRef(false);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [showSavePrompt, setShowSavePrompt] = useState(false);
+    const [savePromptDefault, setSavePromptDefault] = useState('');
+    const [includeCompleted, setIncludeCompleted] = useState(false);
+    const [includeReference, setIncludeReference] = useState(true);
+    const [hideFutureTasks, setHideFutureTasks] = useState(false);
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [selectedStatuses, setSelectedStatuses] = useState<TaskStatus[]>([]);
+    const [selectedArea, setSelectedArea] = useState<string>('all');
+    const [selectedTokens, setSelectedTokens] = useState<string[]>([]);
+    const [locationQuery, setLocationQuery] = useState('');
+    const [duePreset, setDuePreset] = useState<DuePreset>('any');
+    const [scope, setScope] = useState<GlobalSearchScope>('all');
+    const [ftsResults, setFtsResults] = useState<SearchResults | null>(null);
+    // Which query the current ftsResults answer. FTS answers arrive debounced
+    // and async; merging an answer for an older query in front of the fresh
+    // in-memory results reshuffled the list on every keystroke.
+    const [ftsQuery, setFtsQuery] = useState('');
+    const [ftsLoading, setFtsLoading] = useState(false);
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+    const resultsRef = useRef<HTMLDivElement>(null);
+    const isOpenRef = useRef(false);
+    const { _allTasks, projects, areas, settings, updateSettings, setHighlightTask, getDerivedState } = useTaskStore(
+        (state) => ({
+            _allTasks: state._allTasks,
+            projects: state.projects,
+            areas: state.areas,
+            settings: state.settings,
+            updateSettings: state.updateSettings,
+            setHighlightTask: state.setHighlightTask,
+            getDerivedState: state.getDerivedState,
+        }),
+        shallow
+    );
+    const { allContexts, allTags } = getDerivedState();
+    const areaById = useMemo(() => new Map(areas.map((area) => [area.id, area])), [areas]);
+    const projectMap = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
+    // Search results are SearchTaskResult rows, which deliberately carry no
+    // completedAt — the full task behind the row does (#991).
+    const taskById = useMemo(() => new Map(_allTasks.map((task) => [task.id, task])), [_allTasks]);
+    const activeAreaFilter = useMemo(
+        () => resolveAreaFilterSelection(settings?.filters, areas),
+        [settings?.filters, areas]
+    );
+    const setProjectView = useUiStore((state) => state.setProjectView);
+    const showToast = useUiStore((state) => state.showToast);
+    const { t } = useLanguage();
+    const filterPresentation = getGlobalSearchFilterPresentation(t);
+    const futureStartDayKey = useLocalDayKey(isOpen && hideFutureTasks);
+    const futureStartRevealTick = useFutureStartRevealTick(_allTasks, isOpen && hideFutureTasks);
+
+    // Toggle search with Cmd+K / Ctrl+K
+    useEffect(() => {
+        isOpenRef.current = isOpen;
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsOpen(prev => !prev);
+            }
+            if (e.key === 'Escape' && isOpenRef.current) {
+                setIsOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    useEffect(() => {
+        const handleOpen: EventListener = () => setIsOpen(true);
+        window.addEventListener('openpos:open-search', handleOpen);
+        return () => window.removeEventListener('openpos:open-search', handleOpen);
+    }, []);
+
+    // Auto-focus input when opened. Focus immediately so keys typed right
+    // after "/" land in the query instead of nowhere; the delayed retry covers
+    // the portal/animation frame where the first attempt can be swallowed.
+    useEffect(() => {
+        if (isOpen) {
+            inputRef.current?.focus();
+            setTimeout(() => inputRef.current?.focus(), 50);
+            setQuery('');
+            setSearchQuery('');
+            setSelectedIndex(0);
+            setShowSavePrompt(false);
+            setIncludeCompleted(defaultIncludeCompleted);
+            setIncludeReference(true);
+            setHideFutureTasks(false);
+            setFiltersOpen(false);
+            setSelectedStatuses([]);
+            setSelectedArea('all');
+            setSelectedTokens([]);
+            setLocationQuery('');
+            setDuePreset('any');
+            setScope('all');
+        }
+    }, [isOpen]);
+
+    const trimmedQuery = searchQuery.trim();
+    const highlightQuery = trimmedQuery && !/\b\w+:/i.test(trimmedQuery) ? trimmedQuery : '';
+    const highlightRegex = useMemo(() => {
+        if (!highlightQuery) return null;
+        const escaped = highlightQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`(${escaped})`, 'ig');
+    }, [highlightQuery]);
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setDebouncedQuery(trimmedQuery);
+        }, 200);
+        return () => window.clearTimeout(timer);
+    }, [trimmedQuery]);
+
+    const shouldUseFts = debouncedQuery.length > 0 && !/\b\w+:/i.test(debouncedQuery);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!shouldUseFts) {
+            setFtsResults(null);
+            setFtsLoading(false);
+            return;
+        }
+        const adapter = getStorageAdapter();
+        if (!adapter.searchAll) {
+            setFtsResults(null);
+            setFtsLoading(false);
+            return;
+        }
+        setFtsLoading(true);
+        adapter.searchAll(debouncedQuery)
+            .then((results) => {
+                if (!cancelled) {
+                    setFtsResults(results);
+                    setFtsQuery(debouncedQuery);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setFtsResults(null);
+            })
+            .finally(() => {
+                if (!cancelled) setFtsLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [debouncedQuery, shouldUseFts]);
+
+    const allTokens = useMemo(() => {
+        return Array.from(new Set([...allContexts, ...allTags])).sort();
+    }, [allContexts, allTags]);
+    const includeCompletedLabel = t('search.includeCompleted');
+    const includeCompletedText = includeCompletedLabel === 'search.includeCompleted'
+        ? 'Include Done and Archived tasks'
+        : includeCompletedLabel;
+    const includeReferenceLabel = t('search.includeReference');
+    const includeReferenceText = includeReferenceLabel === 'search.includeReference'
+        ? 'Include Reference tasks'
+        : includeReferenceLabel;
+    const hideFutureTasksLabel = t('filters.hideFutureTasks');
+    const hideFutureTasksText = hideFutureTasksLabel === 'filters.hideFutureTasks'
+        ? 'Hide future tasks'
+        : hideFutureTasksLabel;
+    const { totalResultsLabel, results, isTruncated, hasActiveSearch } = useMemo(() => computeGlobalSearchResults({
+        query: searchQuery,
+        tasks: _allTasks,
+        projects,
+        areas,
+        includeCompleted,
+        includeReference,
+        hideFutureTasks,
+        selectedStatuses,
+        selectedArea,
+        selectedTokens,
+        locationQuery,
+        duePreset,
+        scope,
+        weekStart: normalizeWeekStartSetting(settings?.weekStart),
+        ftsResults,
+        ftsQuery,
+    }), [
+        searchQuery,
+        _allTasks,
+        projects,
+        areas,
+        includeCompleted,
+        includeReference,
+        hideFutureTasks,
+        selectedStatuses,
+        selectedArea,
+        selectedTokens,
+        locationQuery,
+        duePreset,
+        scope,
+        settings?.weekStart,
+        ftsResults,
+        ftsQuery,
+        futureStartDayKey,
+        futureStartRevealTick,
+    ]);
+
+    useEffect(() => {
+        if (results.length === 0) {
+            if (selectedIndex !== 0) setSelectedIndex(0);
+            return;
+        }
+        if (selectedIndex >= results.length) {
+            setSelectedIndex(results.length - 1);
+        }
+    }, [results.length, selectedIndex]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (selectedIndex < 0 || selectedIndex >= results.length) return;
+        const container = resultsRef.current;
+        if (!container) return;
+        const target = container.querySelector<HTMLElement>(`[data-search-index="${selectedIndex}"]`);
+        target?.scrollIntoView({ block: 'nearest' });
+    }, [isOpen, selectedIndex, results.length]);
+
+    const renderHighlighted = (text: string) => {
+        if (!highlightRegex) return text;
+        const parts = text.split(highlightRegex);
+        return parts.map((part, index) => (
+            index % 2 === 1
+                ? <span key={`${part}-${index}`} className="text-primary font-semibold">{part}</span>
+                : <span key={`${part}-${index}`}>{part}</span>
+        ));
+    };
+
+    // A search row never shows a bare date: the label word is what says whether
+    // it is a completion or a deadline, for sighted readers and screen readers
+    // alike (#991). Completion wins for a finished task, and a finished task
+    // with no completedAt shows nothing rather than falling back to its due
+    // date. Red stays reserved for a date that has passed (#640).
+    const renderResultDate = (result: SearchTaskResult) => {
+        const task = taskById.get(result.id);
+        if (!task) return null;
+        if (isTaskFinished(task)) {
+            if (!task.completedAt) return null;
+            return (
+                <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                    {formatI18nTemplate(t('search.completedDate'), {
+                        date: safeFormatDate(task.completedAt, hasTimeComponent(task.completedAt) ? 'Pp' : 'P'),
+                    })}
+                </span>
+            );
+        }
+        if (!task.dueDate) return null;
+        return (
+            <span className={cn("shrink-0 whitespace-nowrap text-xs", getUrgencyColor(task))}>
+                {formatI18nTemplate(t('search.dueDate'), {
+                    date: safeFormatDate(task.dueDate, hasTimeComponent(task.dueDate) ? 'Pp' : 'P'),
+                })}
+            </span>
+        );
+    };
+
+    // Keyboard navigation
+    const handleListKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedIndex(prev => Math.max(prev - 1, 0));
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (results[selectedIndex]) {
+                handleSelect(results[selectedIndex]);
+            }
+        }
+    };
+
+    // Keys pressed inside the dialog but outside the query input (after
+    // clicking a result or a filter chip) still drive the search instead of
+    // going dead: arrows/Enter navigate the results, and plain typing
+    // refocuses the query input. A stray Enter here used to fall through to
+    // the task list behind the dialog and act on it.
+    const handleDialogKeyDown = (e: React.KeyboardEvent) => {
+        if (e.target === inputRef.current) return;
+        if (
+            e.target instanceof HTMLElement
+            && e.target.closest('button, a[href], input, select, textarea, [contenteditable="true"]')
+        ) {
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+            handleListKeyDown(e);
+            return;
+        }
+        if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            inputRef.current?.focus();
+        }
+    };
+
+    const handleSelect = (result: { type: 'project'; item: SearchProjectResult } | { type: 'task'; item: SearchTaskResult }) => {
+        setIsOpen(false);
+        const shouldSwitchToAllAreas = isAreaFilterSelectionActive(activeAreaFilter) && (
+            result.type === 'project'
+                ? !projectMatchesAreaFilterSelection(result.item as Project, activeAreaFilter, areaById)
+                : !taskMatchesAreaFilterSelection(result.item as Task, activeAreaFilter, projectMap, areaById)
+        );
+        if (shouldSwitchToAllAreas) {
+            void updateSettings({ filters: { ...(settings?.filters ?? {}), ...areaFilterSelectionToFilters({ included: [], excluded: [] }) } })
+                .catch(() => showToast(t('search.areaFilterFailed'), 'error'));
+            showToast(t('search.switchedToAllAreas'), 'info');
+        }
+        if (result.type === 'project') {
+            setProjectView({ selectedProjectId: result.item.id });
+            onNavigate('projects', result.item.id);
+        } else {
+            // Map task status to appropriate view
+            const task = result.item;
+            setHighlightTask(task.id);
+            // A finished task is invisible in its project — the workspace never
+            // lists archived tasks and hides done ones unless the project has
+            // them switched on — so it goes to Done/Archived, which do reveal it.
+            if (task.projectId && !isTaskFinished(task as Task)) {
+                setProjectView({ selectedProjectId: task.projectId });
+                onNavigate('projects', task.id);
+                return;
+            }
+            const targetView = resolveGlobalSearchTaskView(task as Task);
+            onNavigate(targetView, task.id);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    const savedSearches = settings?.savedSearches || [];
+    const canSave = trimmedQuery.length > 0;
+
+    const handleSaveSearch = async () => {
+        if (!canSave) return;
+        const existing = savedSearches.find(s => s.query === trimmedQuery);
+        if (existing) {
+            setIsOpen(false);
+            onNavigate(`savedSearch:${existing.id}`);
+            return;
+        }
+        setSavePromptDefault(trimmedQuery);
+        setShowSavePrompt(true);
+    };
+
+    const toggleStatus = (status: TaskStatus) => {
+        setSelectedStatuses((prev) => (
+            prev.includes(status) ? prev.filter((item) => item !== status) : [...prev, status]
+        ));
+    };
+    const toggleToken = (token: string) => {
+        setSelectedTokens((prev) => (
+            prev.includes(token) ? prev.filter((item) => item !== token) : [...prev, token]
+        ));
+    };
+    const activeChips: Array<{ key: string; label: string; onRemove: () => void }> = [];
+    selectedStatuses.forEach((status) => {
+        activeChips.push({
+            key: `status:${status}`,
+            label: `${t(`status.${status}`) ?? status}`,
+            onRemove: () => toggleStatus(status),
+        });
+    });
+    if (selectedArea !== 'all') {
+        const label = selectedArea === 'none'
+            ? (tFallback(t, 'taskEdit.noAreaOption', 'No area'))
+            : (areas.find((area) => area.id === selectedArea)?.name ?? selectedArea);
+        activeChips.push({
+            key: `area:${selectedArea}`,
+            label: `${filterPresentation.sections.area}: ${label}`,
+            onRemove: () => setSelectedArea('all'),
+        });
+    }
+    selectedTokens.forEach((token) => {
+        activeChips.push({
+            key: `token:${token}`,
+            label: token,
+            onRemove: () => toggleToken(token),
+        });
+    });
+    if (locationQuery.trim()) {
+        activeChips.push({
+            key: 'location',
+            label: `${tFallback(t, 'taskEdit.locationLabel', 'Location')}: ${locationQuery.trim()}`,
+            onRemove: () => setLocationQuery(''),
+        });
+    }
+    if (duePreset !== 'any') {
+        activeChips.push({
+            key: `due:${duePreset}`,
+            label: `${filterPresentation.sections.due}: ${filterPresentation.due[duePreset]}`,
+            onRemove: () => setDuePreset('any'),
+        });
+    }
+    if (scope !== 'all') {
+        activeChips.push({
+            key: `scope:${scope}`,
+            label: filterPresentation.scope[scope],
+            onRemove: () => setScope('all'),
+        });
+    }
+    if (includeCompleted) {
+        activeChips.push({
+            key: 'includeCompleted',
+            label: includeCompletedText,
+            onRemove: () => setIncludeCompleted(false),
+        });
+    }
+    if (includeReference) {
+        activeChips.push({
+            key: 'includeReference',
+            label: includeReferenceText,
+            onRemove: () => setIncludeReference(false),
+        });
+    }
+    if (hideFutureTasks) {
+        activeChips.push({
+            key: 'hideFutureTasks',
+            label: hideFutureTasksText,
+            onRemove: () => setHideFutureTasks(false),
+        });
+    }
+
+    return (
+        <Dialog
+            onClose={() => setIsOpen(false)}
+            labelledBy={dialogTitleId}
+            placement="top"
+            overlayClassName="pt-[20vh] bg-background/80 backdrop-blur-sm animate-in fade-in-0"
+            // Escape stays with the window listener that also owns Cmd+K.
+            closeOnEscape={false}
+            onKeyDown={handleDialogKeyDown}
+            // Capped so the panel always fits under the 20vh offset above it;
+            // without it an expanded filter panel ran off the bottom of a short
+            // window with nothing to scroll (#957). Every region below the search
+            // input shrinks and scrolls instead of pushing the panel past the cap.
+            panelClassName="max-w-lg max-h-[76vh] animate-in zoom-in-95 duration-100"
+        >
+            <h2 id={dialogTitleId} className="sr-only">{t('search.title')}</h2>
+            <div className="shrink-0 flex items-center border-b px-4 py-3 gap-3">
+                <Search className="w-5 h-5 text-muted-foreground" />
+                <input
+                    ref={inputRef}
+                    aria-label={t('search.title')}
+                    // Queries are operators and partial words, not prose — the
+                    // OS must not capitalize or "fix" them (macOS WebKit applied
+                    // system auto-capitalization here, #1019).
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={query}
+                    onChange={e => {
+                        setQuery(e.target.value);
+                        // During an IME composition the value is provisional
+                        // (raw pinyin/kana); search keeps the last committed
+                        // text so the result list doesn't flash empty.
+                        if (!isComposingRef.current) {
+                            setSearchQuery(e.target.value);
+                            setSelectedIndex(0);
+                        }
+                    }}
+                    onCompositionStart={() => {
+                        isComposingRef.current = true;
+                    }}
+                    onCompositionEnd={(e) => {
+                        isComposingRef.current = false;
+                        setSearchQuery(e.currentTarget.value);
+                        setSelectedIndex(0);
+                    }}
+                    onKeyDown={handleListKeyDown}
+                    placeholder={tFallback(t, 'search.placeholder', "Search tasks and projects...")}
+                    className="min-w-0 flex-1 bg-transparent border-none outline-none text-lg placeholder:text-muted-foreground"
+                />
+                {canSave && (
+                    <button
+                        onClick={handleSaveSearch}
+                        className="flex items-center gap-1 whitespace-nowrap rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted"
+                        title={t('search.saveSearch')}
+                    >
+                        <Save className="w-3 h-3" />
+                        {t('search.saveSearch')}
+                    </button>
+                )}
+                <div className="text-xs text-muted-foreground border rounded px-1.5 py-0.5 hidden sm:inline-block">
+                    ESC
+                </div>
+                <button
+                    type="button"
+                    aria-label={t('filters.label')}
+                    aria-expanded={filtersOpen}
+                    onClick={() => setFiltersOpen((prev) => !prev)}
+                    className={cn(
+                        "p-1.5 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors",
+                        filtersOpen && "bg-muted/60 text-foreground"
+                    )}
+                >
+                    <SlidersHorizontal className="w-4 h-4" />
+                </button>
+            </div>
+            {activeChips.length > 0 && (
+                <div className="shrink-0 px-4 py-2 border-b flex flex-wrap gap-2">
+                    {activeChips.map((chip) => (
+                        <button
+                            key={chip.key}
+                            type="button"
+                            onClick={chip.onRemove}
+                            className="flex items-center gap-1 whitespace-nowrap rounded-full border border-border bg-muted/40 px-2 py-1 text-xs text-muted-foreground hover:bg-muted/60"
+                        >
+                            <span>{chip.label}</span>
+                            <X className="w-3 h-3" />
+                        </button>
+                    ))}
+                </div>
+            )}
+            {filtersOpen && (
+                <div className="min-h-0 overflow-y-auto px-4 py-3 border-b space-y-3 text-xs">
+                    <div className="space-y-2">
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80">{filterPresentation.sections.status}</div>
+                        <div className="flex flex-wrap gap-2">
+                            {(['inbox', 'next', 'waiting', 'someday', 'reference', 'done', 'archived'] as TaskStatus[]).map((status) => (
+                                <button
+                                    key={status}
+                                    type="button"
+                                    onClick={() => toggleStatus(status)}
+                                    className={cn(
+                                        "whitespace-nowrap rounded-full border px-2 py-1 text-xs transition-colors",
+                                        selectedStatuses.includes(status)
+                                            ? "bg-primary/15 text-primary border-primary/40"
+                                            : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                                    )}
+                                >
+                                    {t(`status.${status}`) ?? status}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80">{filterPresentation.sections.scope}</div>
+                        <div className="flex flex-wrap gap-2">
+                            {(Object.keys(filterPresentation.scope) as GlobalSearchScope[]).map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => setScope(option)}
+                                    className={cn(
+                                        "whitespace-nowrap rounded-full border px-2 py-1 text-xs transition-colors",
+                                        scope === option
+                                            ? "bg-primary/15 text-primary border-primary/40"
+                                            : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                                    )}
+                                >
+                                    {filterPresentation.scope[option]}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80">{filterPresentation.sections.area}</div>
+                            <select
+                                aria-label={tFallback(t, 'taskEdit.areaLabel', 'Area')}
+                                value={selectedArea}
+                                onChange={(event) => setSelectedArea(event.target.value)}
+                                className="w-full rounded border border-border bg-muted/40 px-2 py-1 text-xs"
+                            >
+                                <option value="all">{tFallback(t, 'projects.allAreas', 'All areas')}</option>
+                                <option value="none">{tFallback(t, 'taskEdit.noAreaOption', 'No area')}</option>
+                                {areas.map((area) => (
+                                    <option key={area.id} value={area.id}>{area.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80">{filterPresentation.sections.due}</div>
+                            <select
+                                aria-label={filterPresentation.sections.due}
+                                value={duePreset}
+                                onChange={(event) => setDuePreset(event.target.value as DuePreset)}
+                                className="w-full rounded border border-border bg-muted/40 px-2 py-1 text-xs"
+                            >
+                                {(Object.keys(filterPresentation.due) as DuePreset[]).map((value) => (
+                                    <option key={value} value={value}>{filterPresentation.due[value]}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80">
+                            {tFallback(t, 'taskEdit.locationLabel', 'Location')}
+                        </div>
+                        <input
+                            type="text"
+                            aria-label={tFallback(t, 'taskEdit.locationLabel', 'Location')}
+                            value={locationQuery}
+                            onChange={(event) => setLocationQuery(event.target.value)}
+                            placeholder={tFallback(t, 'taskEdit.locationPlaceholder', 'e.g. Office')}
+                            className="w-full rounded border border-border bg-muted/40 px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80">{filterPresentation.sections.tokens}</div>
+                        <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
+                            {allTokens.map((token) => (
+                                <button
+                                    key={token}
+                                    type="button"
+                                    onClick={() => toggleToken(token)}
+                                    className={cn(
+                                        "whitespace-nowrap rounded-full border px-2 py-1 text-xs transition-colors",
+                                        selectedTokens.includes(token)
+                                            ? "bg-primary/15 text-primary border-primary/40"
+                                            : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                                    )}
+                                >
+                                    {token}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            aria-pressed={includeCompleted}
+                            onClick={() => setIncludeCompleted((prev) => !prev)}
+                            className={cn(
+                                "whitespace-nowrap rounded-full border px-2 py-1 text-xs transition-colors",
+                                includeCompleted
+                                    ? "bg-primary/15 text-primary border-primary/40"
+                                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                            )}
+                        >
+                            {includeCompletedText}
+                        </button>
+                        <button
+                            type="button"
+                            aria-pressed={includeReference}
+                            onClick={() => setIncludeReference((prev) => !prev)}
+                            className={cn(
+                                "whitespace-nowrap rounded-full border px-2 py-1 text-xs transition-colors",
+                                includeReference
+                                    ? "bg-primary/15 text-primary border-primary/40"
+                                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                            )}
+                        >
+                            {includeReferenceText}
+                        </button>
+                        <button
+                            type="button"
+                            aria-pressed={hideFutureTasks}
+                            onClick={() => setHideFutureTasks((prev) => !prev)}
+                            className={cn(
+                                "whitespace-nowrap rounded-full border px-2 py-1 text-xs transition-colors",
+                                hideFutureTasks
+                                    ? "bg-primary/15 text-primary border-primary/40"
+                                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                            )}
+                        >
+                            {hideFutureTasksText}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSelectedStatuses([]);
+                                setSelectedArea('all');
+                                setSelectedTokens([]);
+                                setLocationQuery('');
+                                setDuePreset('any');
+                                setScope('all');
+                                setIncludeCompleted(false);
+                                setIncludeReference(true);
+                                setHideFutureTasks(false);
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            {filterPresentation.clear}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div ref={resultsRef} className="min-h-0 max-h-[60vh] overflow-y-auto p-2">
+                {isTruncated && (
+                    <div className="px-3 pb-2 text-xs text-muted-foreground">
+                        {t('search.showingFirst')
+                            .replace('{shown}', String(results.length))
+                            .replace('{total}', totalResultsLabel)}
+                    </div>
+                )}
+                {ftsLoading && trimmedQuery !== '' && (
+                    <div className="py-3" role="status" aria-live="polite">
+                        <div className="mb-2 text-center text-muted-foreground text-xs">
+                            {t('search.searching')}
+                        </div>
+                        <div className="space-y-2 animate-pulse">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <div key={index} className="px-3 py-2.5 rounded-lg border border-border/60 bg-muted/30">
+                                    <div className="h-3.5 w-2/3 rounded bg-muted-foreground/20" />
+                                    <div className="mt-2 h-2.5 w-1/3 rounded bg-muted-foreground/15" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {!ftsLoading && results.length === 0 && hasActiveSearch && (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                        {trimmedQuery
+                            ? `${t('search.noResults')} "${trimmedQuery}"`
+                            : t('search.noResults')}
+                    </div>
+                )}
+
+                {/*
+                  * The hint costs ~100px, which the capped panel would otherwise take
+                  * off the filter panel and make it scroll while this region sits
+                  * empty (#957). The search field's own placeholder says the same
+                  * thing, so it only earns its space when the filters are closed.
+                  */}
+                {!ftsLoading && results.length === 0 && !hasActiveSearch && !filtersOpen && (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                        {t('search.typeToSearch')}
+                    </div>
+                )}
+
+                {results.map((result, index) => (
+                    <button
+                        key={`${result.type}-${result.item.id}`}
+                        onClick={() => handleSelect(result)}
+                        className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-colors",
+                            index === selectedIndex ? "bg-accent text-accent-foreground" : "hover:bg-muted/50"
+                        )}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        data-search-index={index}
+                    >
+                        {result.type === 'project' ? (
+                            <FileText className="w-4 h-4 text-info" />
+                        ) : (
+                            <CheckCircle className={cn("w-4 h-4", (result.item as SearchTaskResult).status === 'done' ? "text-success" : "text-muted-foreground")} />
+                        )}
+
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            <span className="truncate font-medium">
+                                {renderHighlighted(result.item.title)}
+                            </span>
+                            <span className="truncate text-xs text-muted-foreground">
+                                {result.type === 'project' ? t('search.resultProject') : t('search.resultTask')}
+                                {result.type === 'task' && (result.item as SearchTaskResult).projectId ? ` • ${t('search.inProjectSuffix')}` : ''}
+                            </span>
+                        </div>
+
+                        {result.type === 'task' && renderResultDate(result.item)}
+
+                        {index === selectedIndex && (
+                            <span className="text-xs text-muted-foreground">↵</span>
+                        )}
+                    </button>
+                ))}
+
+                {trimmedQuery !== '' && (
+                    <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border mt-2">
+                        {t('search.helpOperators')}
+                    </div>
+                )}
+            </div>
+
+            <PromptModal
+                isOpen={showSavePrompt}
+                title={t('search.saveSearch')}
+                description={t('search.saveSearchPrompt')}
+                placeholder={t('search.saveSearch')}
+                defaultValue={savePromptDefault}
+                confirmLabel={t('common.save')}
+                cancelLabel={t('common.cancel')}
+                onCancel={() => setShowSavePrompt(false)}
+                onConfirm={async (value) => {
+                    const name = value.trim();
+                    if (!name) return;
+                    const newSearch: SavedSearch = {
+                        id: generateUUID(),
+                        name,
+                        query: trimmedQuery,
+                    };
+                    await updateSettings({ savedSearches: [...savedSearches, newSearch] });
+                    setShowSavePrompt(false);
+                    setIsOpen(false);
+                    onNavigate(`savedSearch:${newSearch.id}`);
+                }}
+            />
+        </Dialog>
+    );
+}

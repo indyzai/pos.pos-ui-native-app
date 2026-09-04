@@ -1,0 +1,6 @@
+# LAN-only HTTPS setup. Devices must trust Caddy's local root CA before
+# OpenPOS clients will accept this certificate.
+{$OPEN_POS_CLOUD_DOMAIN} {
+	tls internal
+	reverse_proxy openpos-cloud:8787
+}

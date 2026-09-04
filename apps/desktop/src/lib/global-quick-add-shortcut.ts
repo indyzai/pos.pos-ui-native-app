@@ -1,0 +1,157 @@
+import { invokeNative } from './tauri-invoke';
+
+export const GLOBAL_QUICK_ADD_SHORTCUT_DISABLED = 'disabled';
+export const GLOBAL_QUICK_ADD_SHORTCUT_DEFAULT = 'Control+Alt+M';
+export const GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_N = 'Control+Alt+N';
+export const GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_Q = 'Control+Alt+Q';
+export const GLOBAL_QUICK_ADD_SHORTCUT_LEGACY = 'CommandOrControl+Shift+A';
+
+export type GlobalQuickAddShortcutSetting =
+    | typeof GLOBAL_QUICK_ADD_SHORTCUT_DISABLED
+    | typeof GLOBAL_QUICK_ADD_SHORTCUT_DEFAULT
+    | typeof GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_N
+    | typeof GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_Q
+    | typeof GLOBAL_QUICK_ADD_SHORTCUT_LEGACY;
+
+type ShortcutOption = {
+    value: GlobalQuickAddShortcutSetting;
+    label: string;
+};
+
+type GlobalQuickAddShortcutPlatform = {
+    isFlatpak?: boolean;
+    isMac?: boolean;
+    isWindows?: boolean;
+};
+
+const ALLOWED_SHORTCUTS = new Set<GlobalQuickAddShortcutSetting>([
+    GLOBAL_QUICK_ADD_SHORTCUT_DISABLED,
+    GLOBAL_QUICK_ADD_SHORTCUT_DEFAULT,
+    GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_N,
+    GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_Q,
+    GLOBAL_QUICK_ADD_SHORTCUT_LEGACY,
+]);
+
+export function getDefaultGlobalQuickAddShortcut(
+    platform: GlobalQuickAddShortcutPlatform = {}
+): GlobalQuickAddShortcutSetting {
+    if (platform.isWindows || platform.isFlatpak) {
+        return GLOBAL_QUICK_ADD_SHORTCUT_DISABLED;
+    }
+    return GLOBAL_QUICK_ADD_SHORTCUT_DEFAULT;
+}
+
+export function normalizeGlobalQuickAddShortcut(
+    value?: string | null,
+    platform: GlobalQuickAddShortcutPlatform = {}
+): GlobalQuickAddShortcutSetting {
+    const defaultShortcut = getDefaultGlobalQuickAddShortcut(platform);
+    if (!value) return defaultShortcut;
+    if (ALLOWED_SHORTCUTS.has(value as GlobalQuickAddShortcutSetting)) {
+        return value as GlobalQuickAddShortcutSetting;
+    }
+    return defaultShortcut;
+}
+
+export function getGlobalQuickAddShortcutOptions(platform: GlobalQuickAddShortcutPlatform = {}): ShortcutOption[] {
+    const isFlatpak = platform.isFlatpak === true;
+    const isMac = platform.isMac === true;
+    const isWindows = platform.isWindows === true;
+    const defaultShortcut = getDefaultGlobalQuickAddShortcut(platform);
+    const legacyLabel = isMac ? 'Cmd+Shift+A' : 'Ctrl+Shift+A';
+    // Never recommend the legacy combo: Chrome (tab search), Word, and Excel
+    // all use Ctrl/Cmd+Shift+A, and a global hotkey steals it from them.
+    const legacySuffix = defaultShortcut === GLOBAL_QUICK_ADD_SHORTCUT_LEGACY
+        ? ' (recommended)'
+        : ' (legacy)';
+    const disabledLabel = isWindows
+        ? 'Disabled (default)'
+        : isFlatpak
+            ? 'Disabled (Flatpak default)'
+        : defaultShortcut === GLOBAL_QUICK_ADD_SHORTCUT_DISABLED
+            ? 'Disabled (recommended)'
+            : 'Disabled';
+
+    return [
+        {
+            value: GLOBAL_QUICK_ADD_SHORTCUT_DEFAULT,
+            // On Windows the default is disabled, but Ctrl+Alt+M is still the
+            // pick to recommend when enabling one (least layout/app conflicts).
+            label:
+                (isMac ? 'Ctrl+Option+M' : 'Ctrl+Alt+M')
+                + (defaultShortcut === GLOBAL_QUICK_ADD_SHORTCUT_DEFAULT || isWindows
+                    ? ' (recommended)'
+                    : ''),
+        },
+        {
+            value: GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_N,
+            label: isMac ? 'Ctrl+Option+N' : 'Ctrl+Alt+N',
+        },
+        {
+            value: GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_Q,
+            label: isMac ? 'Ctrl+Option+Q' : 'Ctrl+Alt+Q',
+        },
+        {
+            value: GLOBAL_QUICK_ADD_SHORTCUT_LEGACY,
+            label: legacyLabel + legacySuffix,
+        },
+        {
+            value: GLOBAL_QUICK_ADD_SHORTCUT_DISABLED,
+            label: disabledLabel,
+        },
+    ];
+}
+
+export function formatGlobalQuickAddShortcutForDisplay(
+    shortcut: GlobalQuickAddShortcutSetting,
+    isMac: boolean
+): string {
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_DISABLED) {
+        return 'Disabled';
+    }
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_LEGACY) {
+        return isMac ? 'Cmd+Shift+A' : 'Ctrl+Shift+A';
+    }
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_N) {
+        return isMac ? 'Ctrl+Option+N' : 'Ctrl+Alt+N';
+    }
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_Q) {
+        return isMac ? 'Ctrl+Option+Q' : 'Ctrl+Alt+Q';
+    }
+    return isMac ? 'Ctrl+Option+M' : 'Ctrl+Alt+M';
+}
+
+/** Mirrors the Rust reply to `set_global_quick_add_shortcut`. */
+export type GlobalQuickAddShortcutApplyResult = {
+    shortcut?: string | null;
+    warning?: string | null;
+};
+
+/**
+ * Registers the OS-level hotkey. The reply carries what actually got
+ * registered, which can differ from the request when the combo is taken.
+ */
+export const applyGlobalQuickAddShortcut = (
+    shortcut: GlobalQuickAddShortcutSetting,
+): Promise<GlobalQuickAddShortcutApplyResult> => (
+    invokeNative<GlobalQuickAddShortcutApplyResult>('set_global_quick_add_shortcut', { shortcut })
+);
+
+export function matchesGlobalQuickAddShortcut(
+    event: KeyboardEvent,
+    shortcut: GlobalQuickAddShortcutSetting
+): boolean {
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_DISABLED) {
+        return false;
+    }
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_LEGACY) {
+        return (event.ctrlKey || event.metaKey) && event.shiftKey && !event.altKey && event.code === 'KeyA';
+    }
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_N) {
+        return event.ctrlKey && event.altKey && !event.metaKey && !event.shiftKey && event.code === 'KeyN';
+    }
+    if (shortcut === GLOBAL_QUICK_ADD_SHORTCUT_ALTERNATE_Q) {
+        return event.ctrlKey && event.altKey && !event.metaKey && !event.shiftKey && event.code === 'KeyQ';
+    }
+    return event.ctrlKey && event.altKey && !event.metaKey && !event.shiftKey && event.code === 'KeyM';
+}

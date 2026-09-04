@@ -1,0 +1,60 @@
+services:
+  # The sync server + REST API. This is the only service the native desktop and
+  # mobile apps need; point Settings -> Sync -> Self-Hosted at this service.
+  openpos-cloud:
+    image: ghcr.io/dongdongbh/openpos-cloud:latest
+    build:
+      context: ..
+      dockerfile: docker/cloud/Dockerfile
+    container_name: openpos-cloud
+    hostname: openpos-cloud
+    restart: always
+    cpus: "1.0"
+    mem_limit: 512m
+    healthcheck:
+      # Released images predate /ready (404 -> fall back to liveness); on newer
+      # images a real /ready failure (503) still reads unhealthy. (#1127)
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8787/ready); [ \"$$code\" = 200 ] || { [ \"$$code\" = 404 ] && curl -fsS http://localhost:8787/health >/dev/null; }"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    ports:
+      - 8787:8787
+    environment:
+      # One or more access tokens, comma-separated (each 20-512 characters).
+      # Each distinct token gets its own private dataset on this server, so
+      # several people can share one instance without seeing each other's data.
+      # Devices that should sync together must use the same token.
+      #   one person, all devices:    OPEN_POS_CLOUD_AUTH_TOKENS=alices-long-random-token
+      #   several people, one server: OPEN_POS_CLOUD_AUTH_TOKENS=alices-long-random-token,bobs-long-random-token
+      # Leave this empty only when using docker/compose.secrets.yaml.
+      - OPEN_POS_CLOUD_AUTH_TOKENS=${OPEN_POS_CLOUD_AUTH_TOKENS:-}
+      - OPEN_POS_CLOUD_CORS_ORIGIN=${OPEN_POS_CLOUD_CORS_ORIGIN:?OPEN_POS_CLOUD_CORS_ORIGIN must be set}
+    volumes:
+      - ./data:/app/cloud_data
+
+  # OPTIONAL: the browser/PWA build of the app, served by Nginx. Only needed if
+  # you want to open OpenPOS in a web browser. If you only use the native
+  # desktop/mobile apps, you can delete this service (and skip its reverse-proxy
+  # domain) - openpos-cloud alone is a complete sync setup.
+  openpos-app:
+    image: ghcr.io/dongdongbh/openpos-app:latest
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    container_name: openpos-app
+    hostname: openpos-app
+    restart: always
+    cpus: "1.0"
+    mem_limit: 512m
+    # Preseed the sync setup for fresh browsers so users only enter their token.
+    # Optional: when the app and cloud share one domain (compose.https.yaml),
+    # the app detects the cloud on its own origin without this.
+    # environment:
+    #   OPEN_POS_DEFAULT_CLOUD_URL: "https://openpos.example.com"
+    depends_on:
+      openpos-cloud:
+        condition: service_healthy
+    ports:
+      - 5173:5173
