@@ -37,7 +37,7 @@
 
     if (typeof root.setImmediate !== 'function') {
         root.setImmediate = (handler, ...args) => {
-            if (typeof handler !== 'function') return schedule(() => {}, []);
+            if (typeof handler !== 'function') return schedule(() => { }, []);
             return schedule(handler, args);
         };
     }
