@@ -1,0 +1,455 @@
+name: Native Platform CI
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/native-platform-ci.yml"
+      - "apps/desktop/src-tauri/**"
+      - "apps/desktop/widgets-macos/**"
+      - "scripts/build-macos-widget.sh"
+      - "scripts/ci/test-build-macos-widget.sh"
+      - "apps/mobile/modules/**/android/**"
+      - "apps/mobile/modules/**/expo-module.config.json"
+      - "apps/mobile/ios-app-intents/**"
+      - "apps/mobile/widgets-ios/**"
+      - "apps/mobile/modules/**/ios/**"
+      - "apps/mobile/modules/cloudkit-sync/Package.swift"
+      - "apps/mobile/modules/cloudkit-sync/tests/**"
+      - "apps/mobile/plugins/**"
+      - "apps/mobile/app.config.ts"
+      - "apps/mobile/app.json"
+      - "apps/mobile/package.json"
+      - "packages/core/src/**"
+      - "scripts/check-synced-field-parity.ts"
+      - "scripts/ci/setup-android-sdk.sh"
+      - "scripts/ci/setup-ruby.sh"
+      - "package.json"
+      - "bun.lock"
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/native-platform-ci.yml"
+      - "apps/desktop/src-tauri/**"
+      - "apps/desktop/widgets-macos/**"
+      - "scripts/build-macos-widget.sh"
+      - "scripts/ci/test-build-macos-widget.sh"
+      - "apps/mobile/modules/**/android/**"
+      - "apps/mobile/modules/**/expo-module.config.json"
+      - "apps/mobile/ios-app-intents/**"
+      - "apps/mobile/widgets-ios/**"
+      - "apps/mobile/modules/**/ios/**"
+      - "apps/mobile/modules/cloudkit-sync/Package.swift"
+      - "apps/mobile/modules/cloudkit-sync/tests/**"
+      - "apps/mobile/plugins/**"
+      - "apps/mobile/app.config.ts"
+      - "apps/mobile/app.json"
+      - "apps/mobile/package.json"
+      - "packages/core/src/**"
+      - "scripts/check-synced-field-parity.ts"
+      - "scripts/ci/setup-android-sdk.sh"
+      - "scripts/ci/setup-ruby.sh"
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    name: Detect native changes
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+      ios: ${{ steps.filter.outputs.ios }}
+      macos: ${{ steps.filter.outputs.macos }}
+      windows: ${{ steps.filter.outputs.windows }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Filter changed paths
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+            echo "ios=true" >> "$GITHUB_OUTPUT"
+            echo "macos=true" >> "$GITHUB_OUTPUT"
+            echo "windows=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "${BASE_SHA:-}" ] || [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA="$(git rev-parse "${HEAD_SHA}^")"
+          fi
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/native-changed-paths.txt"
+
+          android=false
+          ios=false
+          macos=false
+          windows=false
+          while IFS= read -r path; do
+            case "$path" in
+              apps/desktop/src-tauri/*|apps/desktop/widgets-macos/*|scripts/build-macos-widget.sh|scripts/ci/test-build-macos-widget.sh|packages/core/src/*|scripts/check-synced-field-parity.ts|package.json|bun.lock|.github/workflows/native-platform-ci.yml)
+                macos=true
+                ;;
+            esac
+            case "$path" in
+              apps/desktop/src-tauri/*|.github/workflows/native-platform-ci.yml)
+                windows=true
+                ;;
+            esac
+            case "$path" in
+              apps/mobile/modules/*/android/*|apps/mobile/modules/*/expo-module.config.json|apps/mobile/plugins/*|apps/mobile/app.config.ts|apps/mobile/app.json|apps/mobile/package.json|scripts/ci/setup-android-sdk.sh|package.json|bun.lock|.github/workflows/native-platform-ci.yml)
+                android=true
+                ;;
+            esac
+            case "$path" in
+              apps/mobile/ios-app-intents/*|apps/mobile/widgets-ios/*|apps/mobile/modules/*/ios/*|apps/mobile/modules/*/expo-module.config.json|apps/mobile/modules/cloudkit-sync/Package.swift|apps/mobile/modules/cloudkit-sync/tests/*|apps/mobile/plugins/*|apps/mobile/app.config.ts|apps/mobile/app.json|apps/mobile/package.json|scripts/ci/setup-ruby.sh|package.json|bun.lock|.github/workflows/native-platform-ci.yml)
+                ios=true
+                ;;
+            esac
+          done < "$RUNNER_TEMP/native-changed-paths.txt"
+
+          echo "android=$android" >> "$GITHUB_OUTPUT"
+          echo "ios=$ios" >> "$GITHUB_OUTPUT"
+          echo "macos=$macos" >> "$GITHUB_OUTPUT"
+          echo "windows=$windows" >> "$GITHUB_OUTPUT"
+
+  macos-rust:
+    if: needs.changes.outputs.macos == 'true'
+    needs: changes
+    runs-on: macos-15
+    name: macOS Rust check and tests
+    timeout-minutes: 35
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7 # stable
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Check macOS Rust and Objective-C bridge
+        run: cargo check --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+      - name: Link release macOS Rust and Swift bridges
+        run: cargo build --release --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "10.15"
+          CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
+          APPLE_TEAM_ID: DEVTEAM
+
+      - name: Run macOS native library tests
+        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
+
+      - name: Swift compile check for macOS widget sources
+        run: |
+          set -euo pipefail
+          xcrun swiftc \
+            -typecheck \
+            -sdk "$(xcrun --sdk macosx --show-sdk-path)" \
+            -target "$(uname -m)-apple-macos14.0" \
+            -parse-as-library \
+            -application-extension \
+            apps/desktop/widgets-macos/*.swift
+
+      - name: Exercise macOS widget packaging and signing order
+        run: bash scripts/ci/test-build-macos-widget.sh
+
+  windows-rust:
+    if: needs.changes.outputs.windows == 'true'
+    needs: changes
+    runs-on: windows-latest
+    name: Windows Rust check and tests
+    timeout-minutes: 35
+    env:
+      # Packaged Windows builds keep the repo-wide static CRT setting, but
+      # cargo test links whisper-rs-sys objects that use the dynamic CRT.
+      # Match the proven Windows native-test job in ci.yml so the linker does
+      # not leave unresolved __imp_* CRT symbols.
+      RUSTFLAGS: -C target-feature=-crt-static
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7 # stable
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Check Windows Rust
+        run: cargo check --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+      - name: Run Windows native library tests
+        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
+
+  android-native:
+    if: needs.changes.outputs.android == 'true'
+    needs: changes
+    runs-on: ubuntu-latest
+    name: Android native compile
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        run: bash scripts/ci/setup-android-sdk.sh
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: ".bun-version"
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Android compatibility-lock process regression
+        run: |
+          set -euo pipefail
+          c++ \
+            -std=c++17 \
+            -Wall \
+            -Wextra \
+            -Werror \
+            -I apps/mobile/modules/sync-file-lock/android/src/main/cpp \
+            apps/mobile/modules/sync-file-lock/android/src/main/cpp/file_compat_lock.cpp \
+            apps/mobile/modules/sync-file-lock/android/src/test/cpp/file_compat_lock_test.cpp \
+            -o "$RUNNER_TEMP/file-compat-lock-test"
+          "$RUNNER_TEMP/file-compat-lock-test"
+
+      - name: Run Android exact-directory retirement regression
+        run: |
+          set -euo pipefail
+          c++ \
+            -std=c++17 \
+            -Wall \
+            -Wextra \
+            -Werror \
+            -I apps/mobile/modules/attachment-file-installer/android/src/main/cpp \
+            apps/mobile/modules/attachment-file-installer/android/src/main/cpp/exact_directory_retirement.cpp \
+            apps/mobile/modules/attachment-file-installer/android/src/test/cpp/exact_directory_retirement_test.cpp \
+            -o "$RUNNER_TEMP/exact-directory-retirement-test"
+          "$RUNNER_TEMP/exact-directory-retirement-test"
+
+      - name: Generate Android native project
+        working-directory: apps/mobile
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+          NODE_ENV: development
+        run: |
+          "$GITHUB_WORKSPACE/node_modules/.bin/expo" prebuild \
+            --clean \
+            --platform android \
+            --no-install
+
+      - name: Compile Android Java, Kotlin, and JNI sources
+        working-directory: apps/mobile/android
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+          NODE_ENV: development
+        run: |
+          ./gradlew \
+            :app:compileDebugKotlin \
+            :app:compileDebugJavaWithJavac \
+            :attachment-file-installer:assembleDebug \
+            :sync-file-lock:assembleDebug \
+            --no-daemon \
+            -PreactNativeArchitectures=arm64-v8a
+
+      - name: Verify packaged Android lock JNI symbols
+        working-directory: apps/mobile/android
+        run: |
+          set -euo pipefail
+          LOCK_AAR="$(find ../modules/sync-file-lock/android/build/outputs/aar -name '*debug.aar' -print -quit)"
+          if [ -z "${LOCK_AAR:-}" ]; then
+            echo "::error::sync-file-lock debug AAR was not produced"
+            exit 1
+          fi
+          unzip -l "$LOCK_AAR" | grep -F 'jni/arm64-v8a/libsync-file-lock.so'
+          unzip -p "$LOCK_AAR" jni/arm64-v8a/libsync-file-lock.so > "$RUNNER_TEMP/libsync-file-lock.so"
+          readelf --dyn-syms --wide "$RUNNER_TEMP/libsync-file-lock.so" \
+            | grep -F 'Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryLock'
+          readelf --dyn-syms --wide "$RUNNER_TEMP/libsync-file-lock.so" \
+            | grep -F 'Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryOfdLock'
+
+      - name: Verify packaged Android attachment JNI symbols
+        working-directory: apps/mobile/android
+        run: |
+          set -euo pipefail
+          ATTACHMENT_AAR="$(find ../modules/attachment-file-installer/android/build/outputs/aar -name '*debug.aar' -print -quit)"
+          if [ -z "${ATTACHMENT_AAR:-}" ]; then
+            echo "::error::attachment-file-installer debug AAR was not produced"
+            exit 1
+          fi
+          unzip -l "$ATTACHMENT_AAR" | grep -F 'jni/arm64-v8a/libattachment-file-installer.so'
+          unzip -p "$ATTACHMENT_AAR" jni/arm64-v8a/libattachment-file-installer.so \
+            > "$RUNNER_TEMP/libattachment-file-installer.so"
+          readelf --dyn-syms --wide "$RUNNER_TEMP/libattachment-file-installer.so" \
+            | grep -F 'Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_publishRelativeNoReplace'
+          readelf --dyn-syms --wide "$RUNNER_TEMP/libattachment-file-installer.so" \
+            | grep -F 'Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireEmptyDirectoryIfIdentity'
+          readelf --dyn-syms --wide "$RUNNER_TEMP/libattachment-file-installer.so" \
+            | grep -F 'Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireReservedPrivateStage'
+
+      - name: Run Android native recovery tests
+        working-directory: apps/mobile/android
+        run: ./gradlew :attachment-file-installer:testDebugUnitTest :sync-file-lock:testDebugUnitTest --no-daemon
+
+  ios-native:
+    if: needs.changes.outputs.ios == 'true'
+    needs: changes
+    runs-on: macos-15
+    name: iOS Swift compile
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: ".bun-version"
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup Ruby
+        run: bash scripts/ci/setup-ruby.sh 3.3
+
+      - name: Install pinned CocoaPods
+        run: gem install cocoapods --version 1.16.2 --no-document
+
+      - name: Select Xcode (iOS 26 SDK required)
+        run: |
+          set -euo pipefail
+          XCODE_26_PATH="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1 || true)"
+          if [ -n "${XCODE_26_PATH:-}" ]; then
+            sudo xcode-select -s "$XCODE_26_PATH"
+          else
+            XCODE_FALLBACK_PATH="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -n 1 || true)"
+            if [ -n "${XCODE_FALLBACK_PATH:-}" ]; then
+              echo "::warning::No Xcode_26*.app found; falling back to latest available: ${XCODE_FALLBACK_PATH}"
+              sudo xcode-select -s "$XCODE_FALLBACK_PATH"
+            else
+              echo "::warning::No explicit Xcode*.app found; using runner default Xcode."
+            fi
+          fi
+
+          echo "Selected DEVELOPER_DIR: $(xcode-select -p)"
+          xcodebuild -version
+
+          IOS_SDK_VERSION="$(xcodebuild -showsdks | awk '/-sdk iphoneos/{gsub(/iphoneos/, "", $NF); ver=$NF} END{print ver}')"
+          if [ -z "${IOS_SDK_VERSION:-}" ]; then
+            echo "::error::No iPhoneOS SDK found on runner. Current SDKs:"
+            xcodebuild -showsdks
+            exit 1
+          fi
+
+          IOS_SDK_MAJOR="${IOS_SDK_VERSION%%.*}"
+          if ! [[ "${IOS_SDK_MAJOR}" =~ ^[0-9]+$ ]]; then
+            echo "::error::Unable to parse iPhoneOS SDK version: ${IOS_SDK_VERSION}"
+            xcodebuild -showsdks
+            exit 1
+          fi
+
+          if [ "${IOS_SDK_MAJOR}" -lt 26 ]; then
+            echo "::error::Detected iPhoneOS SDK ${IOS_SDK_VERSION}. The App Intents source (IntentModes/supportedModes) needs the iOS 26 SDK, matching the release build."
+            echo "::error::Install/select Xcode 26+ on the runner."
+            exit 1
+          fi
+
+          echo "Using iPhoneOS SDK ${IOS_SDK_VERSION}"
+
+      - name: Run attachment installer Swift recovery tests
+        run: swift test --package-path apps/mobile/modules/attachment-file-installer/ios
+
+      - name: Run File Sync stable-lock Swift tests
+        run: swift test --package-path apps/mobile/modules/sync-file-lock/ios
+
+      - name: Run CloudKit attachment error classifier tests
+        run: swift test --package-path apps/mobile/modules/cloudkit-sync
+
+      - name: Generate iOS native project
+        working-directory: apps/mobile
+        env:
+          EXPO_NO_TELEMETRY: "1"
+          NODE_ENV: development
+        run: |
+          "$GITHUB_WORKSPACE/node_modules/.bin/expo" prebuild \
+            --clean \
+            --platform ios \
+            --no-install
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/mobile/ios
+        run: pod install
+
+      - name: Compile iOS app and native Swift modules
+        run: |
+          xcodebuild \
+            -workspace apps/mobile/ios/OpenPOS.xcworkspace \
+            -scheme OpenPOS \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
