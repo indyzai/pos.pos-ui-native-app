@@ -6,9 +6,9 @@ OpenPOS is actively used by **20,000+ users**, with **1,500+ daily active users*
 
 Sponsorship keeps OpenPOS free, independent, and actively maintained — funding development, cross-platform testing and release infrastructure, documentation, and community support.
 
-- **Individual support:** [GitHub Sponsors](https://github.com/sponsors/dongdongbh) · [Ko-fi](https://ko-fi.com/D1D01T20WK)
+- **Individual support:** [GitHub Sponsors](https://github.com/sponsors/indyzai) · [Ko-fi](https://ko-fi.com/K1U426EP8F)
 - **Corporate sponsorship:** see below, then contact **[support@openpos.app](mailto:support@openpos.app)**
-- **Project:** <https://github.com/dongdongbh/OpenPOS> · **Website:** <https://openpos.app>
+- **Project:** <https://github.com/indyzai/OpenPOS> · **Website:** <https://openpos.app>
 
 ---
 
@@ -29,7 +29,7 @@ Sponsorship does **not** purchase control over the roadmap, issue priority, proj
 
 Corporate sponsorships run for a minimum of **3 months**. Placements go live after the sponsor and creative are approved and payment for the first term is received.
 
-Individual supporter tiers ($5+/month) live on [GitHub Sponsors](https://github.com/sponsors/dongdongbh) and are recognized in the README supporters list.
+Individual supporter tiers ($5+/month) live on [GitHub Sponsors](https://github.com/sponsors/indyzai) and are recognized in the README supporters list.
 
 ## How to become a corporate sponsor
 

@@ -22,8 +22,9 @@ const contextAutomationModuleDir = path.join(
   'src',
   'main',
   'java',
-  'tech',
-  'dongdongbh',
+  'com',
+  'indyzai',
+  'pos',
   'openpos',
   'contextautomation'
 );
