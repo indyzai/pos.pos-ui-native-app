@@ -16,9 +16,6 @@ OpenPOS is an open-source, local-first point-of-sale application for managing da
 ```text
 apps/mobile/        React Native / Expo mobile app
 packages/core/      Shared OpenPOS business logic and data models
-apps/desktop/       Desktop client
-apps/cloud/         Optional cloud service
-apps/mcp-server/    Optional MCP integration
 ```
 
 ## Requirements
