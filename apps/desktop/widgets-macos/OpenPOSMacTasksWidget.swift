@@ -15,7 +15,7 @@ private let openposMacWidgetRefreshMinutes = 15
 // Placeholder for local/unsigned builds -- must match build.rs's own
 // DEVTEAM fallback so an unsigned dev build's widget (if ever force-installed)
 // fails the same way the Rust write command does: no container, no crash.
-private let openposMacWidgetDevAppGroup = "DEVTEAM.tech.dongdongbh.openpos"
+private let openposMacWidgetDevAppGroup = "DEVTEAM.tech.indyzai.openpos"
 
 struct OpenPOSMacWidgetTaskItem: Decodable {
     let id: String

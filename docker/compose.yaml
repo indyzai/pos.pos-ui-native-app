@@ -2,7 +2,7 @@ services:
   # The sync server + REST API. This is the only service the native desktop and
   # mobile apps need; point Settings -> Sync -> Self-Hosted at this service.
   openpos-cloud:
-    image: ghcr.io/dongdongbh/openpos-cloud:latest
+    image: ghcr.io/indyzai/openpos-cloud:latest
     build:
       context: ..
       dockerfile: docker/cloud/Dockerfile
@@ -39,7 +39,7 @@ services:
   # desktop/mobile apps, you can delete this service (and skip its reverse-proxy
   # domain) - openpos-cloud alone is a complete sync setup.
   openpos-app:
-    image: ghcr.io/dongdongbh/openpos-app:latest
+    image: ghcr.io/indyzai/openpos-app:latest
     build:
       context: ..
       dockerfile: docker/app/Dockerfile

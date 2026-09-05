@@ -20,13 +20,13 @@ OpenPOS is a Bun monorepo with:
 
 ### 1) Follow our community standards
 
-- Read and follow the [Code of Conduct](https://github.com/dongdongbh/OpenPOS/blob/main/.github/CODE_OF_CONDUCT.md).
+- Read and follow the [Code of Conduct](https://github.com/indyzai/OpenPOS/blob/main/.github/CODE_OF_CONDUCT.md).
 - Be respectful in issues, discussions, reviews, and commits.
 
 ### 2) Report security issues privately
 
 - Do not open public issues for security vulnerabilities.
-- Use [SECURITY.md](https://github.com/dongdongbh/OpenPOS/blob/main/SECURITY.md) for responsible disclosure instructions.
+- Use [SECURITY.md](https://github.com/indyzai/OpenPOS/blob/main/SECURITY.md) for responsible disclosure instructions.
 
 ### 3) Start with an issue for non-trivial changes
 
@@ -56,7 +56,7 @@ OpenPOS focuses on GTD and practical execution, and is built to be **simple by d
 2. Fork the repository and create a branch in your fork.
 3. Implement the change with focused scope.
 4. Run relevant checks locally.
-5. Open a pull request to `dongdongbh/OpenPOS:main`.
+5. Open a pull request to `indyzai/OpenPOS:main`.
 6. Link the issue in the PR (example: `Fixes #123`).
 
 Branch naming examples:
@@ -256,7 +256,7 @@ Commit style:
 ## Contributor License Agreement
 
 Before we can merge your pull request, you'll need to sign our
-[Contributor License Agreement (CLA)](https://gist.github.com/dongdongbh/0446c35e1d5c1a73c344b16cba4aeeaa).
+[Contributor License Agreement (CLA)](https://gist.github.com/indyzai/0446c35e1d5c1a73c344b16cba4aeeaa).
 
 This is a one-time process — CLA Assistant will automatically check
 when you open a PR and prompt you if needed. Signing takes about
@@ -286,12 +286,12 @@ When changing docs:
 - Validate links
 - Update both English and Chinese docs when the content is mirrored
 - Keep `README.md` and `README_zh.md` heading structure aligned; CI runs `bun run docs:check-readme`
-- Prefer updating the [OpenPOS web docs source](https://github.com/dongdongbh/openpos-web/tree/main/docs) when the content is public user/developer documentation
+- Prefer updating the [OpenPOS web docs source](https://github.com/indyzai/openpos-web/tree/main/docs) when the content is public user/developer documentation
 
 Useful references:
 
 - [Official docs](https://docs.openpos.app/)
-- [Docs source](https://github.com/dongdongbh/openpos-web/tree/main/docs)
+- [Docs source](https://github.com/indyzai/openpos-web/tree/main/docs)
 - [Developer Guide](https://docs.openpos.app/developers/developer-guide)
 - [Architecture](https://docs.openpos.app/developers/architecture)
 
@@ -299,7 +299,7 @@ Useful references:
 
 Most translation strings live in:
 
-- [`packages/core/src/i18n/locales/`](https://github.com/dongdongbh/OpenPOS/tree/main/packages/core/src/i18n/locales/)
+- [`packages/core/src/i18n/locales/`](https://github.com/indyzai/OpenPOS/tree/main/packages/core/src/i18n/locales/)
 
 When updating translations:
 

@@ -5,13 +5,13 @@
   "version": "1.2.7",
   "description": "A complete Getting Things Done (GTD) productivity system for desktop - Mind Like Water",
   "author": {
-    "name": "dongdongbh",
-    "email": "dongdongbhbh@gmail.com",
-    "url": "https://dongdongbh.tech"
+    "name": "indyzai",
+    "email": "indyzaibh@gmail.com",
+    "url": "https://indyzai.tech"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dongdongbh/OpenPOS"
+    "url": "https://github.com/indyzai/OpenPOS"
   },
   "type": "module",
   "scripts": {

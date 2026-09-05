@@ -225,7 +225,7 @@ const getDesktopReviewTarget = (installSource: InstallSource | null): { label: s
     }
     return {
         label: 'Open GitHub',
-        url: 'https://github.com/dongdongbh/OpenPOS',
+        url: 'https://github.com/indyzai/OpenPOS',
     };
 };
 

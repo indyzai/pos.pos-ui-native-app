@@ -79,7 +79,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 90
     env:
-      EXPECTED_BUNDLE_ID: tech.dongdongbh.openpos
+      EXPECTED_BUNDLE_ID: tech.indyzai.openpos
       VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY || secrets.VITE_DROPBOX_APP_KEY }}
       VITE_FEEDBACK_ENDPOINT_URL: ${{ vars.VITE_FEEDBACK_ENDPOINT_URL || 'https://feedback.openpos.app' }}
       VITE_DONATION_PROMPT_ENABLED: "true"
@@ -541,8 +541,8 @@ jobs:
         if: ${{ inputs.upload }}
         env:
           RELEASE_BODY: ${{ github.event.release.body || '' }}
-          APP_SUPPORT_URL: "https://github.com/dongdongbh/OpenPOS/issues"
-          APP_MARKETING_URL: "https://github.com/dongdongbh/OpenPOS"
+          APP_SUPPORT_URL: "https://github.com/indyzai/OpenPOS/issues"
+          APP_MARKETING_URL: "https://github.com/indyzai/OpenPOS"
         run: |
           set -euo pipefail
 

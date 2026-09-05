@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join, resolve } from 'path';
 
-const APP_ID = 'tech.dongdongbh.openpos';
+const APP_ID = 'tech.indyzai.openpos';
 const APP_DIR = 'openpos';
 const DATA_FILE_NAME = 'data.json';
 const DB_FILE_NAME = 'openpos.db';

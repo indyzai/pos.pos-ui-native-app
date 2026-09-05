@@ -19,7 +19,7 @@ Unacceptable behavior:
 
 ## Enforcement
 Instances of unacceptable behavior may be reported by:
-- Contacting the project maintainer directly (GitHub: @dongdongbh)
+- Contacting the project maintainer directly (GitHub: @indyzai)
 - Opening an issue if the report is not sensitive
 
 Project maintainers have the right to remove, edit, or reject comments, commits, code, issues, and other contributions that violate this Code of Conduct.

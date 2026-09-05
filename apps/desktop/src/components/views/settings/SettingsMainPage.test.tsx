@@ -113,7 +113,7 @@ describe('SettingsMainPage', () => {
         );
 
         expect(getByText('Flatpak custom shortcut command')).toBeInTheDocument();
-        expect(getByText('flatpak run tech.dongdongbh.openpos --quick-add')).toBeInTheDocument();
+        expect(getByText('flatpak run tech.indyzai.openpos --quick-add')).toBeInTheDocument();
         expect(getByRole('combobox', { name: 'Global quick add shortcut' })).toBeDisabled();
     });
 

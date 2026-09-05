@@ -29,7 +29,7 @@ Default database locations:
 - Windows: `%APPDATA%\openpos\openpos.db`
 
 Additional macOS path for sandboxed builds:
-- `~/Library/Containers/tech.dongdongbh.openpos/Data/Library/Application Support/openpos/openpos.db`
+- `~/Library/Containers/tech.indyzai.openpos/Data/Library/Application Support/openpos/openpos.db`
 
 If `openpos.db` is missing but `data.json` exists in the same desktop data folder, the MCP server will bootstrap a fresh SQLite database from that local data snapshot on first start.
 Desktop Settings → Sync → Local Data shows the exact storage location used by the app.

@@ -109,7 +109,7 @@ Tasks are saved to:
 - **Linux data**: `~/.local/share/openpos/data.json`
 - **Linux config**: `~/.config/openpos/config.toml`
 
-Desktop Settings → Sync → Local Data shows the exact paths for your OS. If you used very early builds, data may exist under legacy Tauri directories like `~/.config/tech.dongdongbh.openpos/` and `~/.local/share/tech.dongdongbh.openpos/` and will be migrated automatically.
+Desktop Settings → Sync → Local Data shows the exact paths for your OS. If you used very early builds, data may exist under legacy Tauri directories like `~/.config/tech.indyzai.openpos/` and `~/.local/share/tech.indyzai.openpos/` and will be migrated automatically.
 
 Portable Windows builds store local state beside the executable:
 

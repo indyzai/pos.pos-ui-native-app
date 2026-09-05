@@ -41,9 +41,9 @@ fn main() {
         // panicking on a missing `env!()` value.
         let team_id = std::env::var("APPLE_TEAM_ID").unwrap_or_default();
         let app_group = if team_id.trim().is_empty() {
-            "DEVTEAM.tech.dongdongbh.openpos".to_string()
+            "DEVTEAM.tech.indyzai.openpos".to_string()
         } else {
-            format!("{}.tech.dongdongbh.openpos", team_id.trim())
+            format!("{}.tech.indyzai.openpos", team_id.trim())
         };
         println!("cargo:rustc-env=OPEN_POS_MACOS_APP_GROUP={app_group}");
         println!("cargo:rerun-if-env-changed=APPLE_TEAM_ID");

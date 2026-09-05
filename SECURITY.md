@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report vulnerabilities privately via [GitHub security advisories](https://github.com/dongdongbh/OpenPOS/security/advisories/new). Do not open a public issue for anything exploitable.
+Please report vulnerabilities privately via [GitHub security advisories](https://github.com/indyzai/OpenPOS/security/advisories/new). Do not open a public issue for anything exploitable.
 
 You can expect an initial response within a few days. There is no bug bounty; fixes are credited in the release notes unless you prefer otherwise.
 

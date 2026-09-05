@@ -23,7 +23,7 @@
 // MARK: - Constants
 // ---------------------------------------------------------------------------
 
-static NSString *const kContainerID = @"iCloud.tech.dongdongbh.openpos";
+static NSString *const kContainerID = @"iCloud.tech.indyzai.openpos";
 static NSString *const kZoneName = @"OpenPOSZone";
 static NSString *const kSubscriptionID = @"OpenPOSZoneSubscription";
 static NSString *const kAttachmentNotFoundErrorCode =
@@ -743,7 +743,7 @@ char *openpos_cloudkit_fetch_changes(const char *change_token_base64_cstr) {
     op.qualityOfService = NSQualityOfServiceUserInitiated;
 
     dispatch_queue_t cbQueue = dispatch_queue_create(
-        "tech.dongdongbh.openpos.ckchanges", DISPATCH_QUEUE_SERIAL);
+        "tech.indyzai.openpos.ckchanges", DISPATCH_QUEUE_SERIAL);
 
     __block NSMutableDictionary<NSString *, NSMutableArray *> *recordsByType =
         [NSMutableDictionary dictionary];

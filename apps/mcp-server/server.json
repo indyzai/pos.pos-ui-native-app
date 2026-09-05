@@ -1,12 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.dongdongbh/openpos",
+  "name": "io.github.indyzai/openpos",
   "title": "OpenPOS",
   "description": "Task and project automation for local OpenPOS data, with read-only self-hosted Cloud access.",
   "version": "1.1.7",
   "websiteUrl": "https://docs.openpos.app/power-users/mcp",
   "repository": {
-    "url": "https://github.com/dongdongbh/OpenPOS",
+    "url": "https://github.com/indyzai/OpenPOS",
     "source": "github",
     "id": "1111978380",
     "subfolder": "apps/mcp-server"

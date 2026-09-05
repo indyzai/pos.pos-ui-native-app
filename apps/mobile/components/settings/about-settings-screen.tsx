@@ -80,9 +80,9 @@ export function AboutSettingsScreen({
     }, [isFossBuild]);
 
     const openLink = (url: string) => Linking.openURL(url);
-    const GITHUB_ISSUES_URL = 'https://github.com/dongdongbh/OpenPOS/issues/new/choose';
-    const GITHUB_RELEASES_API = 'https://api.github.com/repos/dongdongbh/OpenPOS/releases/latest';
-    const GITHUB_RELEASES_URL = 'https://github.com/dongdongbh/OpenPOS/releases/latest';
+    const GITHUB_ISSUES_URL = 'https://github.com/indyzai/OpenPOS/issues/new/choose';
+    const GITHUB_RELEASES_API = 'https://api.github.com/repos/indyzai/OpenPOS/releases/latest';
+    const GITHUB_RELEASES_URL = 'https://github.com/indyzai/OpenPOS/releases/latest';
     const ANDROID_PACKAGE_NAME = Constants.expoConfig?.android?.package || Application.applicationId || 'com.indyzai.pos.openpos';
     const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE_NAME}`;
     const PLAY_STORE_MARKET_URL = `market://details?id=${ANDROID_PACKAGE_NAME}`;
@@ -461,7 +461,7 @@ export function AboutSettingsScreen({
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: tc.border }]}
-                        onPress={() => openLink('https://github.com/dongdongbh/OpenPOS')}
+                        onPress={() => openLink('https://github.com/indyzai/OpenPOS')}
                     >
                         <Text style={[styles.settingLabel, { color: tc.text }]}>GitHub</Text>
                         <Text style={styles.linkText}>OpenPOS</Text>

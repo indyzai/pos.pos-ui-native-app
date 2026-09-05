@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/dongdongbh/OpenPOS/main/apps/mobile/assets/images/icon.png" width="120" alt="OpenPOS Logo">
+<img src="https://raw.githubusercontent.com/indyzai/OpenPOS/main/apps/mobile/assets/images/icon.png" width="120" alt="OpenPOS Logo">
 
 # OpenPOS Documentation
 
@@ -8,8 +8,8 @@
 
 *Mind Like Water*
 
-[![GitHub](https://img.shields.io/badge/GitHub-OpenPOS-blue?logo=github)](https://github.com/dongdongbh/OpenPOS)
-[![License](https://img.shields.io/badge/License-AGPL%20v3-blue)](https://github.com/dongdongbh/OpenPOS/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-OpenPOS-blue?logo=github)](https://github.com/indyzai/OpenPOS)
+[![License](https://img.shields.io/badge/License-AGPL%20v3-blue)](https://github.com/indyzai/OpenPOS/blob/main/LICENSE)
 
 </div>
 

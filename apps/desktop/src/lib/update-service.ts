@@ -7,21 +7,21 @@ import { isFlatpakRuntime, isTauriRuntime } from "./runtime";
 import { invokeNative } from "./tauri-invoke";
 
 const GITHUB_RELEASES_API =
-  "https://api.github.com/repos/dongdongbh/OpenPOS/releases/latest";
+  "https://api.github.com/repos/indyzai/OpenPOS/releases/latest";
 const GITHUB_RELEASES_URL =
-  "https://github.com/dongdongbh/OpenPOS/releases/latest";
+  "https://github.com/indyzai/OpenPOS/releases/latest";
 // No-API-rate-limit fallback: a public web feed, used only when the REST API
 // returns 403/429 (unauthenticated api.github.com is capped at 60 req/hr per
 // source IP, which shared NAT/VPN exits can blow through).
 const GITHUB_RELEASES_ATOM_URL =
-  "https://github.com/dongdongbh/OpenPOS/releases.atom";
+  "https://github.com/indyzai/OpenPOS/releases.atom";
 const MS_STORE_PRODUCT_ID = "9N0V5B0B6FRX";
 const MS_STORE_URL = `ms-windows-store://pdp/?ProductId=${MS_STORE_PRODUCT_ID}`;
 const MS_STORE_UPDATES_URL = "ms-windows-store://downloadsandupdates";
 const WINGET_MANIFESTS_API =
-  "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/d/dongdongbh/OpenPOS";
+  "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/d/indyzai/OpenPOS";
 const WINGET_PACKAGE_URL =
-  "https://github.com/microsoft/winget-pkgs/tree/master/manifests/d/dongdongbh/OpenPOS";
+  "https://github.com/microsoft/winget-pkgs/tree/master/manifests/d/indyzai/OpenPOS";
 const HOMEBREW_CASK_API = "https://formulae.brew.sh/api/cask/openpos.json";
 const HOMEBREW_CASK_URL = "https://formulae.brew.sh/cask/openpos";
 const CHOCOLATEY_PACKAGE_API =
@@ -34,9 +34,9 @@ const AUR_SOURCE_PACKAGE_URL = "https://aur.archlinux.org/packages/openpos";
 const AUR_BIN_RPC_API =
   "https://aur.archlinux.org/rpc/?v=5&type=info&arg%5B%5D=openpos-bin";
 const AUR_BIN_PACKAGE_URL = "https://aur.archlinux.org/packages/openpos-bin";
-const FLATHUB_PACKAGE_URL = "https://flathub.org/apps/tech.dongdongbh.openpos";
+const FLATHUB_PACKAGE_URL = "https://flathub.org/apps/tech.indyzai.openpos";
 const SNAPCRAFT_PACKAGE_URL = "https://snapcraft.io/openpos";
-const APP_STORE_BUNDLE_ID = "tech.dongdongbh.openpos";
+const APP_STORE_BUNDLE_ID = "tech.indyzai.openpos";
 const APP_STORE_LOOKUP_URL = `https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(APP_STORE_BUNDLE_ID)}&country=US`;
 const APP_STORE_LOOKUP_FALLBACK_URL = `https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(APP_STORE_BUNDLE_ID)}`;
 const APP_STORE_LISTING_URL = "https://apps.apple.com/app/openpos/id6758597144";
@@ -397,7 +397,7 @@ const parseLatestReleaseTagFromAtom = (xml: string): string | null => {
 };
 
 const buildGithubTagReleaseUrl = (tag: string): string =>
-  `https://github.com/dongdongbh/OpenPOS/releases/tag/${tag}`;
+  `https://github.com/indyzai/OpenPOS/releases/tag/${tag}`;
 
 /** Diagnostic only. User-facing copy is the `settings.updateRateLimited`
  * i18n key, resolved by whichever caller has a translator in scope. */

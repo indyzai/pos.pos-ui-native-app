@@ -1,6 +1,6 @@
 services:
   openpos-cloud:
-    image: ghcr.io/dongdongbh/openpos-cloud:latest
+    image: ghcr.io/indyzai/openpos-cloud:latest
     build:
       context: ..
       dockerfile: docker/cloud/Dockerfile

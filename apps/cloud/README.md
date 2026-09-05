@@ -15,7 +15,7 @@ bun run --filter openpos-cloud dev -- --port 8787
 Detailed API, deployment, and operations docs are maintained in the public docs site. Source edits belong in the OpenPOS web docs source:
 
 - https://docs.openpos.app/
-- https://github.com/dongdongbh/openpos-web/tree/main/docs
+- https://github.com/indyzai/openpos-web/tree/main/docs
 
 Recommended pages:
 

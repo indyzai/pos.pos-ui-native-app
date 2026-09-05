@@ -167,8 +167,8 @@ jobs:
 
           PROFILE_PATH="$RUNNER_TEMP/openpos-dev-id.provisionprofile"
           PROFILE_PLIST="$RUNNER_TEMP/openpos-dev-id-profile.plist"
-          EXPECTED_BUNDLE_ID="tech.dongdongbh.openpos"
-          EXPECTED_ICLOUD_CONTAINER="iCloud.tech.dongdongbh.openpos"
+          EXPECTED_BUNDLE_ID="tech.indyzai.openpos"
+          EXPECTED_ICLOUD_CONTAINER="iCloud.tech.indyzai.openpos"
 
           rm -f apps/desktop/src-tauri/embedded.provisionprofile
 
@@ -275,7 +275,7 @@ jobs:
           path = Path("apps/desktop/src-tauri/Entitlements.mac.plist")
           entitlements = plistlib.loads(path.read_bytes())
           expected_values = {
-              "com.apple.application-identifier": "5X9JC5PL7T.tech.dongdongbh.openpos",
+              "com.apple.application-identifier": "5X9JC5PL7T.tech.indyzai.openpos",
               "com.apple.developer.team-identifier": "5X9JC5PL7T",
               "com.apple.developer.icloud-container-environment": "Production",
           }
@@ -471,7 +471,7 @@ jobs:
               echo "::error::Signed macOS app is missing embedded.provisionprofile."
               exit 1
             fi
-            expect_entitlement_value "com.apple.application-identifier" "5X9JC5PL7T.tech.dongdongbh.openpos"
+            expect_entitlement_value "com.apple.application-identifier" "5X9JC5PL7T.tech.indyzai.openpos"
             expect_entitlement_value "com.apple.developer.team-identifier" "5X9JC5PL7T"
             expect_entitlement_value "com.apple.developer.icloud-container-environment" "Production"
             for key in \

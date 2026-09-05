@@ -11,7 +11,7 @@ If you only sync native desktop/mobile clients, run just `openpos-cloud` (the HT
 You do not need to clone the repository. Download the Compose file into an empty directory:
 
 ```bash
-curl -LO https://raw.githubusercontent.com/dongdongbh/OpenPOS/main/docker/compose.yaml
+curl -LO https://raw.githubusercontent.com/indyzai/OpenPOS/main/docker/compose.yaml
 ```
 
 Create a `.env` file next to it (Compose reads this automatically):

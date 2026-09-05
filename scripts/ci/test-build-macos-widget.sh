@@ -47,7 +47,7 @@ if [ "${1:-}" = "-d" ]; then
     case "$target" in
         *.appex) sandbox='<key>com.apple.security.app-sandbox</key><true/>' ;;
     esac
-    printf '<plist><array><string>%s.tech.dongdongbh.openpos</string></array>%s</plist>\n' "$WIDGET_TEST_TEAM" "$sandbox"
+    printf '<plist><array><string>%s.tech.indyzai.openpos</string></array>%s</plist>\n' "$WIDGET_TEST_TEAM" "$sandbox"
     exit 0
 fi
 entitlements=""
@@ -66,7 +66,7 @@ STUB
 
 cat > "$STUB_BIN/strings" <<'STUB'
 #!/usr/bin/env bash
-printf '%s.tech.dongdongbh.openpos\n' "$WIDGET_TEST_TEAM"
+printf '%s.tech.indyzai.openpos\n' "$WIDGET_TEST_TEAM"
 STUB
 
 chmod +x "$STUB_BIN"/*
@@ -97,12 +97,12 @@ run_case() {
     grep -q -- "-target ${expected_arch}-apple-macos14.0" "$log_path"
     grep -q 'Set :CFBundleShortVersionString 1.2.5' "$log_path"
     grep -q 'Set :CFBundleVersion 125' "$log_path"
-    grep -q 'Set :CFBundleIdentifier tech.dongdongbh.openpos.OpenPOSWidgets' "$log_path"
-    grep -qF 'TEAM123.tech.dongdongbh.openpos' "$appex/Contents/Info.plist"
+    grep -q 'Set :CFBundleIdentifier tech.indyzai.openpos.OpenPOSWidgets' "$log_path"
+    grep -qF 'TEAM123.tech.indyzai.openpos' "$appex/Contents/Info.plist"
     ! grep -q '__OPEN_POS_MACOS_APP_GROUP__' "$appex/Contents/Info.plist"
-    grep -qF 'TEAM123.tech.dongdongbh.openpos' "$case_dir/widget-entitlements.plist"
+    grep -qF 'TEAM123.tech.indyzai.openpos' "$case_dir/widget-entitlements.plist"
     grep -q 'com.apple.security.app-sandbox' "$case_dir/widget-entitlements.plist"
-    grep -qF 'TEAM123.tech.dongdongbh.openpos' "$case_dir/host-entitlements.plist"
+    grep -qF 'TEAM123.tech.indyzai.openpos' "$case_dir/host-entitlements.plist"
 
     local appex_sign_line
     local app_sign_line

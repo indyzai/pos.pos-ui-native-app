@@ -1290,10 +1290,10 @@ pub fn run() {
         })
         .on_menu_event(|_app, event| match event.id().as_ref() {
             MENU_HELP_DOCS_ID => {
-                let _ = open::that_detached("https://github.com/dongdongbh/OpenPOS#readme");
+                let _ = open::that_detached("https://github.com/indyzai/OpenPOS#readme");
             }
             MENU_HELP_ISSUES_ID => {
-                let _ = open::that_detached("https://github.com/dongdongbh/OpenPOS/issues");
+                let _ = open::that_detached("https://github.com/indyzai/OpenPOS/issues");
             }
             _ => {}
         });
@@ -1973,7 +1973,7 @@ mod tests {
     fn flatpak_install_channel_reads_branch_from_instance_section() {
         let contents = r#"
 [Application]
-name=tech.dongdongbh.openpos
+name=tech.indyzai.openpos
 
 [Instance]
 instance-id=123456
@@ -2094,11 +2094,11 @@ arch=x86_64
     #[cfg(target_os = "linux")]
     #[test]
     fn tray_icon_path_uses_app_cache_dir() {
-        let app_cache_dir = Path::new("/home/user/.var/app/tech.dongdongbh.openpos/cache");
+        let app_cache_dir = Path::new("/home/user/.var/app/tech.indyzai.openpos/cache");
 
         assert_eq!(
             tray_icon_temp_dir(app_cache_dir),
-            PathBuf::from("/home/user/.var/app/tech.dongdongbh.openpos/cache/tray-icon")
+            PathBuf::from("/home/user/.var/app/tech.indyzai.openpos/cache/tray-icon")
         );
     }
 

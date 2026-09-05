@@ -21,7 +21,7 @@ const atomResponse = (tags: string[], status = 200): Response =>
     `<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom">${tags
       .map(
         (tag) =>
-          `<entry><id>tag:github.com,2008:Repository/1/${tag}</id><link type="text/html" rel="alternate" href="https://github.com/dongdongbh/OpenPOS/releases/tag/${tag}"/><title>${tag}</title></entry>`,
+          `<entry><id>tag:github.com,2008:Repository/1/${tag}</id><link type="text/html" rel="alternate" href="https://github.com/indyzai/OpenPOS/releases/tag/${tag}"/><title>${tag}</title></entry>`,
       )
       .join("")}</feed>`,
     { status, headers: { "Content-Type": "application/atom+xml" } },
@@ -54,11 +54,11 @@ describe("update-service channel selection", () => {
         });
       }
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -84,11 +84,11 @@ describe("update-service channel selection", () => {
         return jsonResponse({}, 500);
       }
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.2.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.2.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.2.0",
           body: "latest notes",
           assets: [],
         });
@@ -113,11 +113,11 @@ describe("update-service channel selection", () => {
         return jsonResponse({ version: "1.1.0" });
       }
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -147,11 +147,11 @@ describe("update-service channel selection", () => {
         return jsonResponse({ results: [{ Version: "1.2.0-2" }] });
       }
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -183,11 +183,11 @@ describe("update-service channel selection", () => {
         return jsonResponse({ results: [{ Version: "1.3.0-1" }] });
       }
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -217,11 +217,11 @@ describe("update-service channel selection", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -249,11 +249,11 @@ describe("update-service channel selection", () => {
         );
       }
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -289,11 +289,11 @@ describe("update-service channel selection", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v1.2.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.2.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.2.0",
           body: "latest notes",
           assets: [
             {
@@ -327,11 +327,11 @@ describe("update-service channel selection", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (
-        url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")
+        url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")
       ) {
         return jsonResponse({
           tag_name: "v9.9.9",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v9.9.9",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v9.9.9",
           body: "github notes",
           assets: [],
         });
@@ -376,10 +376,10 @@ describe("update-service channel selection", () => {
   it("falls back to the releases.atom feed when the GitHub API is rate-limited (newer version)", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")) {
+      if (url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")) {
         return jsonResponse({}, 403);
       }
-      if (url.includes("github.com/dongdongbh/OpenPOS/releases.atom")) {
+      if (url.includes("github.com/indyzai/OpenPOS/releases.atom")) {
         return atomResponse(["v1.9.0", "v1.8.0"]);
       }
       return jsonResponse({}, 404);
@@ -397,17 +397,17 @@ describe("update-service channel selection", () => {
     expect(result.assets).toEqual([]);
     expect(result.downloadUrl).toBeNull();
     expect(result.releaseUrl).toBe(
-      "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+      "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
     );
   });
 
   it("falls back to the releases.atom feed when rate-limited (already up to date)", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")) {
+      if (url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")) {
         return jsonResponse({}, 429);
       }
-      if (url.includes("github.com/dongdongbh/OpenPOS/releases.atom")) {
+      if (url.includes("github.com/indyzai/OpenPOS/releases.atom")) {
         return atomResponse(["v1.0.0"]);
       }
       return jsonResponse({}, 404);
@@ -427,10 +427,10 @@ describe("update-service channel selection", () => {
   it("does not consult the atom feed when the GitHub API succeeds", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")) {
+      if (url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")) {
         return jsonResponse({
           tag_name: "v1.9.0",
-          html_url: "https://github.com/dongdongbh/OpenPOS/releases/tag/v1.9.0",
+          html_url: "https://github.com/indyzai/OpenPOS/releases/tag/v1.9.0",
           body: "latest notes",
           assets: [],
         });
@@ -455,10 +455,10 @@ describe("update-service channel selection", () => {
   it("surfaces a calm rate-limit message when both the API and the atom feed are rate-limited", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")) {
+      if (url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")) {
         return jsonResponse({}, 403);
       }
-      if (url.includes("github.com/dongdongbh/OpenPOS/releases.atom")) {
+      if (url.includes("github.com/indyzai/OpenPOS/releases.atom")) {
         return atomResponse([], 429);
       }
       return jsonResponse({}, 404);
@@ -480,7 +480,7 @@ describe("update-service channel selection", () => {
   it("leaves non-403 GitHub API errors unchanged (no atom fallback attempted)", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.github.com/repos/dongdongbh/OpenPOS/releases/latest")) {
+      if (url.includes("api.github.com/repos/indyzai/OpenPOS/releases/latest")) {
         return jsonResponse({}, 500);
       }
       return jsonResponse({}, 404);

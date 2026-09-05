@@ -9,7 +9,7 @@
     <key>com.apple.security.application-groups</key>
     <array>
         <!-- scripts/build-macos-widget.sh substitutes this with
-             "$APPLE_TEAM_ID.tech.dongdongbh.openpos" at package time. -->
+             "$APPLE_TEAM_ID.tech.indyzai.openpos" at package time. -->
         <string>__OPEN_POS_MACOS_APP_GROUP__</string>
     </array>
 </dict>

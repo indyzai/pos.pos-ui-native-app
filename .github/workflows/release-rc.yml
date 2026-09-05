@@ -236,7 +236,7 @@ jobs:
           USE_PLAY_TRACKS: ${{ github.event_name != 'workflow_dispatch' || inputs.run_play_testing }}
         run: |
           set -euo pipefail
-          PACKAGE="tech.dongdongbh.openpos"
+          PACKAGE="tech.indyzai.openpos"
           MAX_CODE=0
           if [ "$USE_PLAY_TRACKS" = "true" ]; then
             if [ -z "${ACCESS_TOKEN:-}" ]; then

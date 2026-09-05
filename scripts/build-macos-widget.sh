@@ -22,7 +22,7 @@ RUST_TARGET="${4:-}"
 WIDGET_SRC_DIR="apps/desktop/widgets-macos"
 HOST_ENTITLEMENTS="apps/desktop/src-tauri/Entitlements.mac.plist"
 HOST_EXECUTABLE_NAME="openpos"
-WIDGET_BUNDLE_ID="tech.dongdongbh.openpos.OpenPOSWidgets"
+WIDGET_BUNDLE_ID="tech.indyzai.openpos.OpenPOSWidgets"
 WIDGET_EXECUTABLE_NAME="OpenPOSWidgets"
 APP_GROUP_PLACEHOLDER="__OPEN_POS_MACOS_APP_GROUP__"
 PLIST_BUDDY="${PLIST_BUDDY:-/usr/libexec/PlistBuddy}"
@@ -60,7 +60,7 @@ case "$RUST_TARGET" in
         ;;
 esac
 
-APP_GROUP="${TEAM_ID}.tech.dongdongbh.openpos"
+APP_GROUP="${TEAM_ID}.tech.indyzai.openpos"
 
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT

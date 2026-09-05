@@ -409,7 +409,7 @@ pub(crate) fn set_global_quick_add_shortcut(
             None
         } else {
             Some(
-                "Flatpak/Wayland requires a desktop custom shortcut. Use: flatpak run tech.dongdongbh.openpos --quick-add"
+                "Flatpak/Wayland requires a desktop custom shortcut. Use: flatpak run tech.indyzai.openpos --quick-add"
                     .to_string(),
             )
         };

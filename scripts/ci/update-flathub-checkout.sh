@@ -18,9 +18,9 @@ dropbox_app_key="${VITE_DROPBOX_APP_KEY:-}"
 feedback_endpoint_url="${VITE_FEEDBACK_ENDPOINT_URL:-}"
 manifest_only="${OPEN_POS_FLATHUB_MANIFEST_ONLY:-0}"
 
-manifest_path="${flathub_dir}/tech.dongdongbh.openpos.yml"
-node_sources_path="${flathub_dir}/tech.dongdongbh.openpos.node-sources.json"
-cargo_sources_path="${flathub_dir}/tech.dongdongbh.openpos.cargo-sources.json"
+manifest_path="${flathub_dir}/tech.indyzai.openpos.yml"
+node_sources_path="${flathub_dir}/tech.indyzai.openpos.node-sources.json"
+cargo_sources_path="${flathub_dir}/tech.indyzai.openpos.cargo-sources.json"
 node_generator="${FLATPAK_NODE_GENERATOR:-flatpak-node-generator}"
 shared_modules_dir="${flathub_dir}/shared-modules"
 appindicator_module_path="${shared_modules_dir}/libayatana-appindicator/libayatana-appindicator-gtk3.json"
@@ -32,7 +32,7 @@ required_paths=(
   "packages/core/package-lock.json"
   "apps/desktop/src-tauri/Cargo.lock"
   "apps/desktop/src-tauri/linux/OpenPOS.metainfo.xml"
-  "apps/desktop/src-tauri/linux/tech.dongdongbh.openpos.desktop"
+  "apps/desktop/src-tauri/linux/tech.indyzai.openpos.desktop"
 )
 
 if [ "${manifest_only}" != "1" ]; then
@@ -170,8 +170,8 @@ lines = updated.splitlines()
 # Flathub rejects this custom single-instance D-Bus name in finish-args, so the
 # updater must scrub any previously injected entries instead of re-adding them.
 blocked_finish_args = {
-    '--talk-name=org.tech_dongdongbh_openpos.SingleInstance',
-    '--own-name=org.tech_dongdongbh_openpos.SingleInstance',
+    '--talk-name=org.tech_indyzai_openpos.SingleInstance',
+    '--own-name=org.tech_indyzai_openpos.SingleInstance',
 }
 lines = [line for line in lines if line.strip() not in {f'- {value}' for value in blocked_finish_args}]
 

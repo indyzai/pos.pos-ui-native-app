@@ -4,7 +4,7 @@
   "version": "1.1.7",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "mcpName": "io.github.dongdongbh/openpos",
+  "mcpName": "io.github.indyzai/openpos",
   "main": "dist/index.js",
   "bin": {
     "openpos-mcp": "dist/cli.js"
@@ -19,11 +19,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dongdongbh/OpenPOS.git",
+    "url": "git+https://github.com/indyzai/OpenPOS.git",
     "directory": "apps/mcp-server"
   },
   "bugs": {
-    "url": "https://github.com/dongdongbh/OpenPOS/issues"
+    "url": "https://github.com/indyzai/OpenPOS/issues"
   },
   "homepage": "https://docs.openpos.app/power-users/mcp",
   "keywords": [

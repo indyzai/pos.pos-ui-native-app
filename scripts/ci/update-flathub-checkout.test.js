@@ -30,7 +30,7 @@ afterEach(() => {
 const runFixture = (fixtureName) => {
   const root = mkdtempSync(join(tmpdir(), "openpos-flathub-manifest-"));
   tempRoots.push(root);
-  const manifest = join(root, "tech.dongdongbh.openpos.yml");
+  const manifest = join(root, "tech.indyzai.openpos.yml");
   cpSync(join(fixtures, fixtureName), manifest);
   const result = spawnSync("bash", [script, commit, root, root], {
     cwd: resolve("."),
@@ -57,7 +57,7 @@ test("updates an unpatched Flathub manifest fixture", () => {
   expect(updated).toContain('local_spec = f"file:{locked_resolved}"');
   expect(updated).toContain("- shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json");
   expect(updated).not.toContain("appstream-homepage.patch");
-  expect(updated).not.toContain("org.tech_dongdongbh_openpos.SingleInstance");
+  expect(updated).not.toContain("org.tech_indyzai_openpos.SingleInstance");
   expect(updated).toContain("- --socket=pulseaudio");
   expect(updated).toContain("- --talk-name=org.freedesktop.Notifications");
   expect(updated).toContain("- VITE_ANALYTICS_HEARTBEAT_URL=https://analytics.fixture/");

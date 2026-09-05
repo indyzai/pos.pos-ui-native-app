@@ -4,9 +4,9 @@ OpenPOS recognizes these AUR package identities:
 
 | Package                                                                   | Channel | Source                        | Expected owner(s)                                       |
 | ------------------------------------------------------------------------- | ------- | ----------------------------- | ------------------------------------------------------- |
-| [`openpos-bin`](https://aur.archlinux.org/packages/openpos-bin)           | Stable  | GitHub release `.deb`         | Maintainer `dongdongbh`                                 |
-| [`openpos-beta-bin`](https://aur.archlinux.org/packages/openpos-beta-bin) | RC/beta | GitHub prerelease `.deb`      | Maintainer `dongdongbh`                                 |
-| [`openpos-bin-beta`](https://aur.archlinux.org/packages/openpos-bin-beta) | RC/beta | Legacy compatibility identity | Maintainer `dongdongbh`                                 |
+| [`openpos-bin`](https://aur.archlinux.org/packages/openpos-bin)           | Stable  | GitHub release `.deb`         | Maintainer `indyzai`                                 |
+| [`openpos-beta-bin`](https://aur.archlinux.org/packages/openpos-beta-bin) | RC/beta | GitHub prerelease `.deb`      | Maintainer `indyzai`                                 |
+| [`openpos-bin-beta`](https://aur.archlinux.org/packages/openpos-bin-beta) | RC/beta | Legacy compatibility identity | Maintainer `indyzai`                                 |
 
 The source-built `openpos` package on the AUR is community maintained; the OpenPOS project does not publish, audit, or support it.
 
@@ -25,7 +25,7 @@ makepkg --verifysource
 makepkg -sri
 ```
 
-The source URLs must resolve to `https://github.com/dongdongbh/OpenPOS`, executable and source artifacts must have full SHA-256 checksums, and `.SRCINFO` must match `PKGBUILD`. OpenPOS AUR packages must not contain install scripts, remote-shell commands, persistence hooks, or `SKIP` checksums for executable/source content.
+The source URLs must resolve to `https://github.com/indyzai/OpenPOS`, executable and source artifacts must have full SHA-256 checksums, and `.SRCINFO` must match `PKGBUILD`. OpenPOS AUR packages must not contain install scripts, remote-shell commands, persistence hooks, or `SKIP` checksums for executable/source content.
 
 ### Beta package rename
 
@@ -69,7 +69,7 @@ A recognized AUR maintenance response (pushes disabled) marks the channel delaye
 
 ## Maintainer security
 
-- Keep `dongdongbh` as maintainer or co-maintainer of all recognized packages.
+- Keep `indyzai` as maintainer or co-maintainer of all recognized packages.
 - Use a dedicated, passphrase-protected Ed25519 AUR key that is not shared with GitHub, servers, or general build machines.
 - Store the publishing key only as the `AUR_SSH_PRIVATE_KEY` secret in the protected `aur-publish` Environment.
 - Never orphan a package for temporary maintenance convenience and never force-push AUR history.

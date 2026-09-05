@@ -51,7 +51,7 @@ Important properties:
 
 The detailed algorithm, edge cases, and tie-break rules are documented in the public docs site. The source for those pages lives in the OpenPOS web docs source:
 
-- [Docs source](https://github.com/dongdongbh/openpos-web/tree/main/docs)
+- [Docs source](https://github.com/indyzai/openpos-web/tree/main/docs)
 - [Architecture](https://docs.openpos.app/developers/architecture)
 - [Sync Algorithm](https://docs.openpos.app/data-sync/sync-algorithm)
 - [Data and Sync](https://docs.openpos.app/data-sync/)

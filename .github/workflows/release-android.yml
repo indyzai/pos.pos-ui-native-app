@@ -140,7 +140,7 @@ jobs:
           GOOGLE_PLAY_ACCESS_TOKEN: ${{ steps.play_auth.outputs.access_token }}
         run: |
           set -euo pipefail
-          PACKAGE="tech.dongdongbh.openpos"
+          PACKAGE="tech.indyzai.openpos"
           RESULT_FILE=$(mktemp)
           python3 scripts/ci/google-play-edit.py max-version-code \
             --package "$PACKAGE" \
@@ -628,7 +628,7 @@ jobs:
           GOOGLE_PLAY_ACCESS_TOKEN: ${{ steps.play_auth.outputs.access_token }}
         run: |
           set -euo pipefail
-          PACKAGE="tech.dongdongbh.openpos"
+          PACKAGE="tech.indyzai.openpos"
           VERSION="${{ needs.preflight.outputs.version }}"
           EXPECTED_VERSION_CODE="${{ needs.preflight.outputs.version_code }}"
           AAB_PATH="apps/mobile/build/openpos-${VERSION}.aab"
@@ -725,7 +725,7 @@ jobs:
           RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
           set -euo pipefail
-          PACKAGE="tech.dongdongbh.openpos"
+          PACKAGE="tech.indyzai.openpos"
           VERSION="${{ needs.preflight.outputs.version }}"
           EXPECTED_VERSION_CODE="${{ needs.preflight.outputs.version_code }}"
           AAB_PATH="apps/mobile/build/openpos-${VERSION}.aab"
@@ -794,7 +794,7 @@ jobs:
           RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
           set -euo pipefail
-          PACKAGE="tech.dongdongbh.openpos"
+          PACKAGE="tech.indyzai.openpos"
           VERSION="${{ needs.preflight.outputs.version }}"
           EXPECTED_VERSION_CODE="${{ needs.preflight.outputs.internal_version_code }}"
           PLAN_FILE=$(mktemp)

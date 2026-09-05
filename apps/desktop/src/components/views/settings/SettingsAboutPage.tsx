@@ -178,10 +178,10 @@ export function SettingsAboutPage({
                 <div data-settings-key="github" className="flex justify-between items-center">
                     <span className="text-muted-foreground">{t.github}</span>
                     <button
-                        onClick={() => onOpenLink('https://github.com/dongdongbh/OpenPOS')}
+                        onClick={() => onOpenLink('https://github.com/indyzai/OpenPOS')}
                         className="text-info hover:underline cursor-pointer flex items-center gap-1"
                     >
-                        github.com/dongdongbh/OpenPOS
+                        github.com/indyzai/OpenPOS
                         <ExternalLink className="w-3 h-3" />
                     </button>
                 </div>
@@ -206,7 +206,7 @@ export function SettingsAboutPage({
                 isConfigured={feedbackConfigured}
                 isOpen={feedbackOpen}
                 onClose={() => setFeedbackOpen(false)}
-                onOpenIssue={() => onOpenLink('https://github.com/dongdongbh/OpenPOS/issues/new/choose')}
+                onOpenIssue={() => onOpenLink('https://github.com/indyzai/OpenPOS/issues/new/choose')}
                 onSubmit={onSubmitFeedback}
                 t={t}
             />

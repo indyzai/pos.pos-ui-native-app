@@ -327,12 +327,12 @@ fn detect_install_source() -> String {
             &[
                 "list",
                 "--id",
-                "dongdongbh.OpenPOS",
+                "indyzai.OpenPOS",
                 "--exact",
                 "--disable-interactivity",
             ],
         ) {
-            if list_output.contains("dongdongbh.openpos") && list_output.contains("winget") {
+            if list_output.contains("indyzai.openpos") && list_output.contains("winget") {
                 return "winget".to_string();
             }
         }

@@ -46,21 +46,21 @@ test("native CI generates clean projects and compiles Android and iOS sources", 
   expect(androidJob).toContain("name: Verify packaged Android lock JNI symbols");
   expect(androidJob).toContain("jni/arm64-v8a/libsync-file-lock.so");
   expect(androidJob).toContain(
-    "Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryLock",
+    "Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_tryLock",
   );
   expect(androidJob).toContain(
-    "Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryOfdLock",
+    "Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_tryOfdLock",
   );
   expect(androidJob).toContain("name: Verify packaged Android attachment JNI symbols");
   expect(androidJob).toContain("jni/arm64-v8a/libattachment-file-installer.so");
   expect(androidJob).toContain(
-    "Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_publishRelativeNoReplace",
+    "Java_tech_indyzai_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_publishRelativeNoReplace",
   );
   expect(androidJob).toContain(
-    "Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireEmptyDirectoryIfIdentity",
+    "Java_tech_indyzai_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireEmptyDirectoryIfIdentity",
   );
   expect(androidJob).toContain(
-    "Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireReservedPrivateStage",
+    "Java_tech_indyzai_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireReservedPrivateStage",
   );
   expect(androidJob).toContain("name: Run Android native recovery tests");
   expect(androidJob).toContain(":attachment-file-installer:testDebugUnitTest");
@@ -96,7 +96,7 @@ test("native CI generates clean projects and compiles Android and iOS sources", 
 
 test("attachment installer native CI collects the recovery suites", () => {
   const androidTests = readFileSync(
-    "apps/mobile/modules/attachment-file-installer/android/src/test/java/tech/dongdongbh/openpos/attachmentfileinstaller/AttachmentFileInstallerCoreTest.kt",
+    "apps/mobile/modules/attachment-file-installer/android/src/test/java/tech/indyzai/openpos/attachmentfileinstaller/AttachmentFileInstallerCoreTest.kt",
     "utf8",
   );
   const androidPublisher = readFileSync(
@@ -186,7 +186,7 @@ test("attachment installer native CI collects the recovery suites", () => {
 
 test("File Sync lock native CI collects stable-authority suites", () => {
   const androidTests = readFileSync(
-    "apps/mobile/modules/sync-file-lock/android/src/test/java/tech/dongdongbh/openpos/syncfilelock/SyncFileLockModuleTest.kt",
+    "apps/mobile/modules/sync-file-lock/android/src/test/java/tech/indyzai/openpos/syncfilelock/SyncFileLockModuleTest.kt",
     "utf8",
   );
   const androidStableLock = readFileSync(

@@ -1,4 +1,4 @@
-app-id: tech.dongdongbh.openpos
+app-id: tech.indyzai.openpos
 finish-args:
   - --socket=wayland
 build-options:
@@ -11,5 +11,5 @@ modules:
       - echo "generator layout changed"
     sources:
       - type: git
-        url: https://github.com/dongdongbh/OpenPOS.git
+        url: https://github.com/indyzai/OpenPOS.git
         commit: 0123456789abcdef0123456789abcdef01234567

@@ -189,9 +189,9 @@ jobs:
               if [ -f "$METAINFO_SOURCE" ]; then
                 mkdir -p appdir/usr/share/metainfo
                 rm -f appdir/usr/share/metainfo/*.xml
-                cp "$METAINFO_SOURCE" appdir/usr/share/metainfo/tech.dongdongbh.openpos.metainfo.xml
+                cp "$METAINFO_SOURCE" appdir/usr/share/metainfo/tech.indyzai.openpos.metainfo.xml
                 # appdir-lint in AppImageHub looks for *.appdata.xml specifically.
-                cp "$METAINFO_SOURCE" appdir/usr/share/metainfo/tech.dongdongbh.openpos.appdata.xml
+                cp "$METAINFO_SOURCE" appdir/usr/share/metainfo/tech.indyzai.openpos.appdata.xml
                 rm -f appdir/*.metainfo.xml appdir/*.appdata.xml || true
                 echo "Injected AppStream metainfo/appdata in usr/share/metainfo"
               fi

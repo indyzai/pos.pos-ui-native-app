@@ -87,9 +87,9 @@ jobs:
         run: |
           set -euo pipefail
           BRANCH="${{ steps.stability.outputs.flathub_branch }}"
-          REPO_URL="https://github.com/flathub/tech.dongdongbh.openpos.git"
+          REPO_URL="https://github.com/flathub/tech.indyzai.openpos.git"
           if ! git ls-remote --exit-code --heads "$REPO_URL" "$BRANCH" >/dev/null 2>&1; then
-            echo "Missing Flathub branch ${BRANCH} in flathub/tech.dongdongbh.openpos. Create it before enabling ${BRANCH} RC publication." >&2
+            echo "Missing Flathub branch ${BRANCH} in flathub/tech.indyzai.openpos. Create it before enabling ${BRANCH} RC publication." >&2
             exit 1
           fi
 
@@ -97,7 +97,7 @@ jobs:
         if: steps.stability.outputs.skip != 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          repository: flathub/tech.dongdongbh.openpos
+          repository: flathub/tech.indyzai.openpos
           ref: ${{ steps.stability.outputs.flathub_branch }}
           path: flathub
           persist-credentials: false
@@ -192,7 +192,7 @@ jobs:
             --check \
             "$worktree_dir/apps/desktop/package-lock.json"
 
-          python3 - "$GITHUB_WORKSPACE/flathub/tech.dongdongbh.openpos.node-sources.json" "$worktree_dir/apps/desktop/package-lock.json" "$worktree_dir/packages/core/package-lock.json" <<'PY'
+          python3 - "$GITHUB_WORKSPACE/flathub/tech.indyzai.openpos.node-sources.json" "$worktree_dir/apps/desktop/package-lock.json" "$worktree_dir/packages/core/package-lock.json" <<'PY'
           import json
           import pathlib
           import sys
@@ -255,7 +255,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           TAG="${{ steps.version.outputs.tag }}"
           BRANCH="${{ steps.branch.outputs.branch }}"
-          REPO="flathub/tech.dongdongbh.openpos"
+          REPO="flathub/tech.indyzai.openpos"
 
           cd flathub
           gh auth setup-git --hostname github.com
@@ -277,9 +277,9 @@ jobs:
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
           git add \
-            tech.dongdongbh.openpos.yml \
-            tech.dongdongbh.openpos.node-sources.json \
-            tech.dongdongbh.openpos.cargo-sources.json
+            tech.indyzai.openpos.yml \
+            tech.indyzai.openpos.node-sources.json \
+            tech.indyzai.openpos.cargo-sources.json
           if [ -f .gitmodules ]; then
             git add .gitmodules
           fi
@@ -306,7 +306,7 @@ jobs:
             exit 0
           fi
 
-          pr_body=$'Automated update from '"${GITHUB_REPOSITORY}"$' release '"${TAG}"$'.\n\n- Updates the pinned upstream commit\n- Regenerates tech.dongdongbh.openpos.cargo-sources.json\n- Regenerates tech.dongdongbh.openpos.node-sources.json'
+          pr_body=$'Automated update from '"${GITHUB_REPOSITORY}"$' release '"${TAG}"$'.\n\n- Updates the pinned upstream commit\n- Regenerates tech.indyzai.openpos.cargo-sources.json\n- Regenerates tech.indyzai.openpos.node-sources.json'
 
           pr_url="$(gh pr create \
             --repo "$REPO" \

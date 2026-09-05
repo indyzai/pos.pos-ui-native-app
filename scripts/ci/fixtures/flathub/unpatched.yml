@@ -1,8 +1,8 @@
-app-id: tech.dongdongbh.openpos
+app-id: tech.indyzai.openpos
 finish-args:
   - --socket=wayland
   - --share=network
-  - --talk-name=org.tech_dongdongbh_openpos.SingleInstance
+  - --talk-name=org.tech_indyzai_openpos.SingleInstance
 build-options:
   env:
     - VITE_ANALYTICS_HEARTBEAT_URL=https://old.example/
@@ -21,5 +21,5 @@ modules:
       - type: patch
         path: appstream-homepage.patch
       - type: git
-        url: https://github.com/dongdongbh/OpenPOS.git
+        url: https://github.com/indyzai/OpenPOS.git
         commit: 0123456789abcdef0123456789abcdef01234567

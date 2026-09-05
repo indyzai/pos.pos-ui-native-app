@@ -1,11 +1,11 @@
-# Maintainer: dongdongbh <dongdongbhbh@gmail.com>
+# Maintainer: indyzai <indyzaibh@gmail.com>
 pkgname=openpos-beta-bin
 pkgver=__PKGVER__
 epoch=1
 pkgrel=1
 pkgdesc="A complete Getting Things Done (GTD) productivity system - Mind Like Water (beta binary release)"
 arch=('x86_64')
-url="https://github.com/dongdongbh/OpenPOS"
+url="https://github.com/indyzai/OpenPOS"
 license=('AGPL3')
 depends=('webkit2gtk-4.1' 'gtk3' 'libappindicator-gtk3')
 optdepends=('evolution-data-server: GNOME system calendar integration')

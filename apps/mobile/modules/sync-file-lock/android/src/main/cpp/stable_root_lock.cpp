@@ -5,8 +5,9 @@
 #include "file_compat_lock.h"
 
 extern "C" JNIEXPORT jint JNICALL
-Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryLock(
-    JNIEnv *, jobject, jint fd) {
+Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_tryLock(JNIEnv *,
+                                                                    jobject,
+                                                                    jint fd) {
   if (fd < 0) {
     return EBADF;
   }
@@ -17,8 +18,9 @@ Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryLock(
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_unlock(
-    JNIEnv *, jobject, jint fd) {
+Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_unlock(JNIEnv *,
+                                                                   jobject,
+                                                                   jint fd) {
   if (fd < 0) {
     return EBADF;
   }
@@ -29,13 +31,13 @@ Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_unlock(
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryOfdLock(
+Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_tryOfdLock(
     JNIEnv *, jobject, jint fd) {
   return openpos_try_ofd_write_lock(fd);
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_unlockOfdLock(
+Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_unlockOfdLock(
     JNIEnv *, jobject, jint fd) {
   return openpos_unlock_ofd_write_lock(fd);
 }

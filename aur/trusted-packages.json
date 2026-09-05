@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "upstreamRepository": "https://github.com/dongdongbh/OpenPOS",
+  "upstreamRepository": "https://github.com/indyzai/OpenPOS",
   "releaseSigningKeyFingerprint": "0358999BBE704F588B9094979E553245CB17047D",
   "packages": {
     "openpos-bin": {
-      "maintainer": "dongdongbh",
+      "maintainer": "indyzai",
       "coMaintainers": [],
       "trackedFiles": [
         ".SRCINFO",
@@ -13,7 +13,7 @@
       ]
     },
     "openpos-beta-bin": {
-      "maintainer": "dongdongbh",
+      "maintainer": "indyzai",
       "coMaintainers": [],
       "trackedFiles": [
         ".SRCINFO",
@@ -21,7 +21,7 @@
       ]
     },
     "openpos-bin-beta": {
-      "maintainer": "dongdongbh",
+      "maintainer": "indyzai",
       "coMaintainers": [],
       "trackedFiles": [
         ".SRCINFO",

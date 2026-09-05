@@ -135,7 +135,7 @@ def make_plan(root: Path) -> dict[str, object]:
     image = root / "phone.png"
     image.write_bytes(b"png-bytes")
     return {
-        "package": "tech.dongdongbh.openpos",
+        "package": "tech.indyzai.openpos",
         "artifactPath": str(artifact),
         "expectedVersionCode": 42,
         "tracks": [
@@ -288,7 +288,7 @@ class GooglePlayEditTest(unittest.TestCase):
                         ):
                             MODULE.GooglePlayTransport().request(
                                 "POST",
-                                "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1:commit",
+                                "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1:commit",
                             )
 
                 self.assertTrue(connection.closed)
@@ -307,7 +307,7 @@ class GooglePlayEditTest(unittest.TestCase):
             ):
                 result = MODULE.GooglePlayTransport().request(
                     "POST",
-                    "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1:commit",
+                    "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1:commit",
                 )
 
         self.assertEqual(result["id"], "edit-1")
@@ -328,7 +328,7 @@ class GooglePlayEditTest(unittest.TestCase):
                 with self.assertRaisesRegex(MODULE.GooglePlayApiError, "HTTP 400"):
                     MODULE.GooglePlayTransport().request(
                         "POST",
-                        "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1:commit",
+                        "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1:commit",
                     )
 
     def test_validates_every_local_input_before_creating_edit(self) -> None:
@@ -351,34 +351,34 @@ class GooglePlayEditTest(unittest.TestCase):
         self.assertEqual(
             operations,
             [
-                ("POST", "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits"),
+                ("POST", "/androidpublisher/v3/applications/tech.indyzai.openpos/edits"),
                 (
                     "POST",
-                    "/upload/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1/bundles?uploadType=media",
+                    "/upload/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1/bundles?uploadType=media",
                 ),
                 (
                     "DELETE",
-                    "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1/listings/en-US/phoneScreenshots",
+                    "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1/listings/en-US/phoneScreenshots",
                 ),
                 (
                     "POST",
-                    "/upload/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1/listings/en-US/phoneScreenshots?uploadType=media",
+                    "/upload/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1/listings/en-US/phoneScreenshots?uploadType=media",
                 ),
                 (
                     "PUT",
-                    "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1/listings/en-US",
+                    "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1/listings/en-US",
                 ),
                 (
                     "PUT",
-                    "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1/tracks/production",
+                    "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1/tracks/production",
                 ),
                 (
                     "PUT",
-                    "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1/tracks/beta",
+                    "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1/tracks/beta",
                 ),
                 (
                     "POST",
-                    "/androidpublisher/v3/applications/tech.dongdongbh.openpos/edits/edit-1:commit",
+                    "/androidpublisher/v3/applications/tech.indyzai.openpos/edits/edit-1:commit",
                 ),
             ],
         )
@@ -475,7 +475,7 @@ class GooglePlayEditTest(unittest.TestCase):
     def test_reads_max_version_code_and_cleans_up_read_edit(self) -> None:
         transport = FakeTransport()
 
-        maximum = MODULE.read_max_version_code("tech.dongdongbh.openpos", transport)
+        maximum = MODULE.read_max_version_code("tech.indyzai.openpos", transport)
 
         self.assertEqual(maximum, 19)
         self.assertEqual(transport.calls[-1]["method"], "DELETE")
@@ -582,7 +582,7 @@ class GooglePlayEditTest(unittest.TestCase):
                         [
                             "max-version-code",
                             "--package",
-                            "tech.dongdongbh.openpos",
+                            "tech.indyzai.openpos",
                             "--result",
                             str(result_path),
                         ]

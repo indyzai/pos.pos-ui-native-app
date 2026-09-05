@@ -365,7 +365,7 @@ export function useSettingsAboutPage({
         if (installSource === 'winget') {
             await openLink(WINGET_PACKAGE_URL);
             setDownloadNotice(
-                'Update via winget: winget upgrade --id dongdongbh.OpenPOS --exact',
+                'Update via winget: winget upgrade --id indyzai.OpenPOS --exact',
             );
             return;
         }

@@ -313,9 +313,9 @@ jobs:
           unzip -l "$LOCK_AAR" | grep -F 'jni/arm64-v8a/libsync-file-lock.so'
           unzip -p "$LOCK_AAR" jni/arm64-v8a/libsync-file-lock.so > "$RUNNER_TEMP/libsync-file-lock.so"
           readelf --dyn-syms --wide "$RUNNER_TEMP/libsync-file-lock.so" \
-            | grep -F 'Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryLock'
+            | grep -F 'Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_tryLock'
           readelf --dyn-syms --wide "$RUNNER_TEMP/libsync-file-lock.so" \
-            | grep -F 'Java_tech_dongdongbh_openpos_syncfilelock_StableRootLockNative_tryOfdLock'
+            | grep -F 'Java_tech_indyzai_openpos_syncfilelock_StableRootLockNative_tryOfdLock'
 
       - name: Verify packaged Android attachment JNI symbols
         working-directory: apps/mobile/android
@@ -330,11 +330,11 @@ jobs:
           unzip -p "$ATTACHMENT_AAR" jni/arm64-v8a/libattachment-file-installer.so \
             > "$RUNNER_TEMP/libattachment-file-installer.so"
           readelf --dyn-syms --wide "$RUNNER_TEMP/libattachment-file-installer.so" \
-            | grep -F 'Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_publishRelativeNoReplace'
+            | grep -F 'Java_tech_indyzai_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_publishRelativeNoReplace'
           readelf --dyn-syms --wide "$RUNNER_TEMP/libattachment-file-installer.so" \
-            | grep -F 'Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireEmptyDirectoryIfIdentity'
+            | grep -F 'Java_tech_indyzai_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireEmptyDirectoryIfIdentity'
           readelf --dyn-syms --wide "$RUNNER_TEMP/libattachment-file-installer.so" \
-            | grep -F 'Java_tech_dongdongbh_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireReservedPrivateStage'
+            | grep -F 'Java_tech_indyzai_openpos_attachmentfileinstaller_ExactAttachmentPublisherNative_retireReservedPrivateStage'
 
       - name: Run Android native recovery tests
         working-directory: apps/mobile/android

@@ -14,7 +14,7 @@ import { SettingRow, SettingsCard, SettingsSectionHeader } from './SettingRow';
 import { useUiStore } from '../../../store/ui-store';
 import { HIDEABLE_SIDEBAR_VIEW_IDS, type HideableSidebarViewId } from '../../../lib/sidebar-views';
 
-const FLATPAK_QUICK_ADD_COMMAND = 'flatpak run tech.dongdongbh.openpos --quick-add';
+const FLATPAK_QUICK_ADD_COMMAND = 'flatpak run tech.indyzai.openpos --quick-add';
 
 type ThemeMode = DesktopThemeMode;
 type DensityMode = 'comfortable' | 'compact' | 'condensed';

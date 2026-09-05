@@ -19,20 +19,20 @@ function fixture({
   const directory = mkdtempSync(join(tmpdir(), "openpos-aur-validator-"));
   const srcinfoSource =
     source ??
-    "https://github.com/dongdongbh/OpenPOS/releases/download/v1.2.0/openpos_1.2.0_amd64.deb";
+    "https://github.com/indyzai/OpenPOS/releases/download/v1.2.0/openpos_1.2.0_amd64.deb";
   const renderedPkgbuildSource = pkgbuildSource ?? srcinfoSource;
   execFileSync("git", ["init", "-q", directory]);
   writeFileSync(
     join(directory, "PKGBUILD"),
-    `# Maintainer: dongdongbh <dongdongbhbh@gmail.com>\n` +
+    `# Maintainer: indyzai <indyzaibh@gmail.com>\n` +
     `pkgname=${packageName}\npkgver=1.2.0\npkgrel=1\n` +
-    `url="https://github.com/dongdongbh/OpenPOS"\n` +
+    `url="https://github.com/indyzai/OpenPOS"\n` +
     `source_x86_64=("${renderedPkgbuildSource}")\n` +
     `sha256sums_x86_64=('${checksumValue}')\n${extraPkgbuild}`,
   );
   writeFileSync(
     join(directory, ".SRCINFO"),
-    `pkgbase = ${packageName}\n\turl = https://github.com/dongdongbh/OpenPOS\n` +
+    `pkgbase = ${packageName}\n\turl = https://github.com/indyzai/OpenPOS\n` +
     `\tsource_x86_64 = ${srcinfoSource}\n` +
     `\tsha256sums_x86_64 = ${checksumValue}\n\npkgname = ${packageName}\n`,
   );

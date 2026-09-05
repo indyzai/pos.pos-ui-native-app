@@ -20,7 +20,7 @@ const updateInfo: UpdateInfo = {
     hasUpdate: true,
     currentVersion: '0.9.10',
     latestVersion: '1.0.0',
-    releaseUrl: 'https://github.com/dongdongbh/OpenPOS/releases/latest',
+    releaseUrl: 'https://github.com/indyzai/OpenPOS/releases/latest',
     latestReleasedAt: null,
     releaseNotes: 'Release notes',
     downloadUrl: null,

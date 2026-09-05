@@ -282,7 +282,7 @@ jobs:
           USE_PLAY_TRACKS: ${{ github.event_name != 'workflow_dispatch' || inputs.run_android }}
         run: |
           set -euo pipefail
-          PACKAGE="tech.dongdongbh.openpos"
+          PACKAGE="tech.indyzai.openpos"
           LOCAL_CODE=$(jq -r '.expo.android.versionCode' apps/mobile/app.json)
           if [ -z "$LOCAL_CODE" ] || [ "$LOCAL_CODE" = "null" ]; then
             echo "Missing expo.android.versionCode in apps/mobile/app.json" >&2
@@ -538,7 +538,7 @@ jobs:
       - name: Checkout packages repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          repository: dongdongbh/homebrew-openpos
+          repository: indyzai/homebrew-openpos
           token: ${{ secrets.PACKAGES_REPO_TOKEN }}
           path: packages-repo
 
@@ -594,13 +594,13 @@ jobs:
              '.version = $v
               | .architecture."64bit".url = $url
               | .architecture."64bit".hash = $hash
-             | .autoupdate.architecture."64bit".url = "https://github.com/dongdongbh/OpenPOS/releases/download/v\($v)/openpos_\($v)_x64-setup.exe#/dl.7z"' \
+             | .autoupdate.architecture."64bit".url = "https://github.com/indyzai/OpenPOS/releases/download/v\($v)/openpos_\($v)_x64-setup.exe#/dl.7z"' \
              "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
 
       - name: Check Winget package exists
         id: winget_check
         run: |
-          PKG_ID="dongdongbh.OpenPOS"
+          PKG_ID="indyzai.OpenPOS"
           PKG_LOWER="${PKG_ID,,}"
           FIRST="${PKG_LOWER:0:1}"
           URL="https://github.com/microsoft/winget-pkgs/tree/master/manifests/${FIRST}/${PKG_ID//./\/}"
@@ -616,7 +616,7 @@ jobs:
         if: steps.winget_check.outputs.exists == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          repository: dongdongbh/winget-pkgs
+          repository: indyzai/winget-pkgs
           token: ${{ secrets.PACKAGES_REPO_TOKEN }}
           path: winget-pkgs
 
@@ -629,13 +629,13 @@ jobs:
           SHA_EXE="${{ steps.hashes.outputs.sha_exe }}"
           RELEASE_DATE="$(date -u +%Y-%m-%d)"
           INSTALLER_URL="https://github.com/${REPO}/releases/download/${TAG}/openpos_${VERSION}_x64-setup.exe"
-          MANIFEST_DIR="winget-pkgs/manifests/d/dongdongbh/OpenPOS/${VERSION}"
+          MANIFEST_DIR="winget-pkgs/manifests/d/indyzai/OpenPOS/${VERSION}"
 
           mkdir -p "$MANIFEST_DIR"
 
-          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/dongdongbh.OpenPOS.installer.yaml"
+          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/indyzai.OpenPOS.installer.yaml"
           # yaml-language-server: \$schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
-          PackageIdentifier: dongdongbh.OpenPOS
+          PackageIdentifier: indyzai.OpenPOS
           PackageVersion: ${VERSION}
           InstallerLocale: en-US
           InstallerType: nullsoft
@@ -664,22 +664,22 @@ jobs:
           ManifestVersion: 1.10.0
           EOF
 
-          INSTALLER_MANIFEST="$MANIFEST_DIR/dongdongbh.OpenPOS.installer.yaml"
+          INSTALLER_MANIFEST="$MANIFEST_DIR/indyzai.OpenPOS.installer.yaml"
           test -s "$INSTALLER_MANIFEST"
 
-          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/dongdongbh.OpenPOS.locale.en-US.yaml"
+          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/indyzai.OpenPOS.locale.en-US.yaml"
           # yaml-language-server: \$schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
-          PackageIdentifier: dongdongbh.OpenPOS
+          PackageIdentifier: indyzai.OpenPOS
           PackageVersion: ${VERSION}
           PackageLocale: en-US
-          Publisher: dongdongbh
-          PublisherUrl: https://github.com/dongdongbh
-          PublisherSupportUrl: https://github.com/dongdongbh/OpenPOS/issues
-          Author: dongdongbh
+          Publisher: indyzai
+          PublisherUrl: https://github.com/indyzai
+          PublisherSupportUrl: https://github.com/indyzai/OpenPOS/issues
+          Author: indyzai
           PackageName: OpenPOS
-          PackageUrl: https://github.com/dongdongbh/OpenPOS
+          PackageUrl: https://github.com/indyzai/OpenPOS
           License: AGPL-3.0
-          LicenseUrl: https://github.com/dongdongbh/OpenPOS/blob/HEAD/LICENSE
+          LicenseUrl: https://github.com/indyzai/OpenPOS/blob/HEAD/LICENSE
           ShortDescription: A complete Getting Things Done (GTD) productivity system.
           Description: A complete Getting Things Done (GTD) productivity system.
           Moniker: openpos
@@ -699,19 +699,19 @@ jobs:
           ManifestVersion: 1.10.0
           EOF
 
-          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/dongdongbh.OpenPOS.locale.zh-CN.yaml"
+          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/indyzai.OpenPOS.locale.zh-CN.yaml"
           # yaml-language-server: \$schema=https://aka.ms/winget-manifest.locale.1.10.0.schema.json
-          PackageIdentifier: dongdongbh.OpenPOS
+          PackageIdentifier: indyzai.OpenPOS
           PackageVersion: ${VERSION}
           PackageLocale: zh-CN
-          Publisher: dongdongbh
-          PublisherUrl: https://github.com/dongdongbh
-          PublisherSupportUrl: https://github.com/dongdongbh/OpenPOS/issues
-          Author: dongdongbh
+          Publisher: indyzai
+          PublisherUrl: https://github.com/indyzai
+          PublisherSupportUrl: https://github.com/indyzai/OpenPOS/issues
+          Author: indyzai
           PackageName: OpenPOS
-          PackageUrl: https://github.com/dongdongbh/OpenPOS
+          PackageUrl: https://github.com/indyzai/OpenPOS
           License: AGPL-3.0
-          LicenseUrl: https://github.com/dongdongbh/OpenPOS/blob/HEAD/LICENSE
+          LicenseUrl: https://github.com/indyzai/OpenPOS/blob/HEAD/LICENSE
           ShortDescription: 完整的 GTD（搞定）任务管理系统。
           Description: 完整的 GTD（搞定）任务管理系统。
           Moniker: openpos
@@ -731,9 +731,9 @@ jobs:
           ManifestVersion: 1.10.0
           EOF
 
-          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/dongdongbh.OpenPOS.yaml"
+          cat <<EOF | sed 's/^          //' > "$MANIFEST_DIR/indyzai.OpenPOS.yaml"
           # yaml-language-server: \$schema=https://aka.ms/winget-manifest.version.1.10.0.schema.json
-          PackageIdentifier: dongdongbh.OpenPOS
+          PackageIdentifier: indyzai.OpenPOS
           PackageVersion: ${VERSION}
           DefaultLocale: en-US
           ManifestType: version
@@ -749,14 +749,14 @@ jobs:
           BRANCH="openpos-${VERSION}"
           cd winget-pkgs
           git checkout -b "$BRANCH"
-          git add manifests/d/dongdongbh/OpenPOS/"$VERSION"
+          git add manifests/d/indyzai/OpenPOS/"$VERSION"
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
           git commit -m "New version: OpenPOS ${VERSION}"
           git push -u origin "$BRANCH"
           gh pr create \
             --repo microsoft/winget-pkgs \
-            --head "dongdongbh:${BRANCH}" \
+            --head "indyzai:${BRANCH}" \
             --base master \
             --title "New version: OpenPOS ${VERSION}" \
             --body "Automated manifest update for OpenPOS ${VERSION}."

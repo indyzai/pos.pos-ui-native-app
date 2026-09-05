@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>OpenPOSWidgets</string>
     <key>CFBundleIdentifier</key>
-    <string>tech.dongdongbh.openpos.OpenPOSWidgets</string>
+    <string>tech.indyzai.openpos.OpenPOSWidgets</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
