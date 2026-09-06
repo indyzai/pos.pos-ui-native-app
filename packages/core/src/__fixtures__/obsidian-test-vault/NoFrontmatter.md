@@ -1,1 +1,0 @@
-- [ ] Plain task without metadata

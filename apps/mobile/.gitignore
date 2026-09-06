@@ -36,12 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
-
 # generated native folders
 /ios
 /android
-
-# Build artifacts and logs
-*.apk
-error_*.json

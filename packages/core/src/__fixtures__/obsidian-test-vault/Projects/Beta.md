@@ -1,4 +1,0 @@
-- [ ] Parent task
-  - [ ] Subtask 1
-    - [ ] Sub-subtask
-	- [x] Tab indented subtask
