@@ -1,6 +1,8 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppPressable } from '../../../components/ui/AppPressable';
 import { colors, radii } from '../../../constants/theme';
+import { SwipeableCartRow } from './SwipeableCartRow';
 import type { CartItem, PaymentMethod } from '../types/billing';
 
 type Props = {
@@ -30,9 +32,20 @@ export function OrderCart({
   onCheckout,
   onClose,
 }: Props) {
+  const headerPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gesture) =>
+          gesture.dy > 10 && gesture.dy > Math.abs(gesture.dx),
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dy > 70 || gesture.vy > 1) onClose();
+        },
+      }),
+    [onClose],
+  );
   return (
     <View style={s.cart}>
-      <View style={s.head}>
+      <View {...headerPanResponder.panHandlers} style={s.head}>
         <View>
           <Text style={s.title}>Current order</Text>
           <Text style={s.subtitle}>
@@ -51,27 +64,29 @@ export function OrderCart({
       {items.length ? (
         <ScrollView style={s.rows}>
           {items.map((item) => (
-            <View key={item.id} style={s.row}>
-              <View style={[s.thumb, { backgroundColor: item.color }]}>
-                <Text>{item.emoji}</Text>
+            <SwipeableCartRow key={item.id} onRemove={() => onChange(item.id, -item.quantity)}>
+              <View style={s.row}>
+                <View style={[s.thumb, { backgroundColor: item.color }]}>
+                  <Text>{item.emoji}</Text>
+                </View>
+                <View style={s.product}>
+                  <Text numberOfLines={1} style={s.productName}>
+                    {item.name}
+                  </Text>
+                  <Text style={s.productPrice}>{money(item.price)}</Text>
+                </View>
+                <View style={s.qty}>
+                  <AppPressable onPress={() => onChange(item.id, -1)} style={s.qtyButton}>
+                    <Text style={s.qtySymbol}>−</Text>
+                  </AppPressable>
+                  <Text style={s.qtyValue}>{item.quantity}</Text>
+                  <AppPressable onPress={() => onChange(item.id, 1)} style={s.qtyButton}>
+                    <Text style={s.qtySymbol}>+</Text>
+                  </AppPressable>
+                </View>
+                <Text style={s.lineTotal}>{money(item.price * item.quantity)}</Text>
               </View>
-              <View style={s.product}>
-                <Text numberOfLines={1} style={s.productName}>
-                  {item.name}
-                </Text>
-                <Text style={s.productPrice}>{money(item.price)}</Text>
-              </View>
-              <View style={s.qty}>
-                <AppPressable onPress={() => onChange(item.id, -1)} style={s.qtyButton}>
-                  <Text style={s.qtySymbol}>−</Text>
-                </AppPressable>
-                <Text style={s.qtyValue}>{item.quantity}</Text>
-                <AppPressable onPress={() => onChange(item.id, 1)} style={s.qtyButton}>
-                  <Text style={s.qtySymbol}>+</Text>
-                </AppPressable>
-              </View>
-              <Text style={s.lineTotal}>{money(item.price * item.quantity)}</Text>
-            </View>
+            </SwipeableCartRow>
           ))}
         </ScrollView>
       ) : (
@@ -80,36 +95,40 @@ export function OrderCart({
           <Text style={s.emptyText}>Your cart is empty</Text>
         </View>
       )}
-      <View style={s.summary}>
-        <Line label="Subtotal" value={money(subtotal)} />
-        <Line label="GST (5%)" value={money(tax)} />
-        <View style={s.total}>
-          <Text style={s.totalLabel}>Total</Text>
-          <Text style={s.totalValue}>{money(total)}</Text>
+      <View style={s.checkoutFooter}>
+        <View style={s.summary}>
+          <Line label="Subtotal" value={money(subtotal)} />
+          <Line label="GST (5%)" value={money(tax)} />
+          <View style={s.total}>
+            <Text style={s.totalLabel}>Total</Text>
+            <Text style={s.totalValue}>{money(total)}</Text>
+          </View>
         </View>
+        <View style={s.paymentRow}>
+          {(
+            [
+              ['₹', 'Cash'],
+              ['◈', 'UPI'],
+              ['▣', 'Card'],
+            ] as const
+          ).map(([icon, method]) => (
+            <AppPressable
+              key={method}
+              onPress={() => onPayment(method)}
+              style={[s.payment, payment === method && s.paymentActive]}
+            >
+              <Text style={[s.paymentIcon, payment === method && s.paymentTextActive]}>{icon}</Text>
+              <Text style={[s.paymentText, payment === method && s.paymentTextActive]}>{method}</Text>
+            </AppPressable>
+          ))}
+        </View>
+        <AppPressable onPress={onCheckout} style={[s.charge, !items.length && s.chargeOff]}>
+          <Text style={s.chargeText}>
+            {items.length ? `Charge ${money(total)}` : 'Add items to checkout'}
+          </Text>
+          <Text style={s.arrow}>→</Text>
+        </AppPressable>
       </View>
-      <View style={s.paymentRow}>
-        {(
-          [
-            ['₹', 'Cash'],
-            ['◈', 'UPI'],
-            ['▣', 'Card'],
-          ] as const
-        ).map(([icon, method]) => (
-          <AppPressable
-            key={method}
-            onPress={() => onPayment(method)}
-            style={[s.payment, payment === method && s.paymentActive]}
-          >
-            <Text style={[s.paymentIcon, payment === method && s.paymentTextActive]}>{icon}</Text>
-            <Text style={[s.paymentText, payment === method && s.paymentTextActive]}>{method}</Text>
-          </AppPressable>
-        ))}
-      </View>
-      <AppPressable onPress={onCheckout} style={[s.charge, !items.length && s.chargeOff]}>
-        <Text style={s.chargeText}>{items.length ? `Charge ${money(total)}` : 'Add items to checkout'}</Text>
-        <Text style={s.arrow}>→</Text>
-      </AppPressable>
     </View>
   );
 }
@@ -157,6 +176,7 @@ const s = StyleSheet.create({
     gap: 7,
     borderBottomWidth: 1,
     borderColor: '#F3F4F8',
+    backgroundColor: colors.surface,
   },
   thumb: { width: 30, height: 30, borderRadius: radii.small, alignItems: 'center', justifyContent: 'center' },
   product: { flex: 1, minWidth: 0 },
@@ -175,13 +195,14 @@ const s = StyleSheet.create({
   qtyValue: { fontSize: 11, fontWeight: '800', color: '#3C4055', minWidth: 12, textAlign: 'center' },
   lineTotal: { width: 48, textAlign: 'right', fontSize: 11, fontWeight: '900', color: '#31364D' },
   empty: {
-    height: 62,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
     borderColor: colors.outlineMuted,
   },
   emptyText: { fontSize: 11, fontWeight: '600', color: '#A0A5B4', marginTop: 2 },
+  checkoutFooter: { marginTop: 'auto' },
   summary: { paddingTop: 8, gap: 4 },
   summaryLine: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryLabel: { fontSize: 11, color: '#8D93A5' },

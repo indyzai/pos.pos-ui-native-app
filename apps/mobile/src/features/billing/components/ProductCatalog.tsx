@@ -1,37 +1,57 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { AppPressable } from '../../../components/ui/AppPressable';
 import { colors } from '../../../constants/theme';
+import { useAppTheme } from '../../../contexts/ThemeContext';
 import type { Product } from '../types/billing';
 
 type Props = { category: string; products: Product[]; onAdd: (product: Product) => void };
 
 export function ProductCatalog({ category, products, onAdd }: Props) {
+  const { width } = useWindowDimensions();
+  const { themeColors: c } = useAppTheme();
+  const isTablet = width >= 700;
+  const columns = width >= 1024 ? 5 : isTablet ? 4 : 2;
+  const horizontalPadding = isTablet ? 28 : 16;
+  const gap = isTablet ? 14 : 9;
+  const cardWidth = (width - horizontalPadding * 2 - gap * (columns - 1)) / columns;
   return (
-    <View style={s.catalog}>
-      <Text style={s.title}>{category === 'All' ? 'Popular products' : category}</Text>
-      <View style={s.grid}>
+    <View style={[s.catalog, { paddingHorizontal: horizontalPadding, backgroundColor: c.background }]}>
+      <Text style={[s.title, { color: c.text }]}>{category === 'All' ? 'Popular products' : category}</Text>
+      <View style={[s.grid, { gap }]}>
         {products.map((product) => (
-          <AppPressable key={product.id} onPress={() => onAdd(product)} style={s.card}>
-            <View style={[s.image, { backgroundColor: product.color }]}>
+          <AppPressable
+            key={product.id}
+            onPress={() => onAdd(product)}
+            style={[s.card, { width: cardWidth, backgroundColor: c.surface }]}
+          >
+            <View style={[s.image, { height: isTablet ? 112 : 76, backgroundColor: product.color }]}>
               <Text style={s.emoji}>{product.emoji}</Text>
-              <AppPressable onPress={() => onAdd(product)} style={s.add}>
+              <AppPressable onPress={() => onAdd(product)} style={[s.add, { backgroundColor: c.primary }]}>
                 <Text style={s.addText}>+</Text>
               </AppPressable>
             </View>
-            <Text numberOfLines={1} style={s.name}>
+            <Text numberOfLines={1} style={[s.name, { color: c.text }]}>
               {product.name}
             </Text>
             <View style={s.footer}>
-              <Text style={s.price}>₹{product.price.toFixed(2)}</Text>
-              <Text style={[s.stock, product.stock < 10 && s.lowStock]}>{product.stock} left</Text>
+              <Text style={[s.price, { color: c.primary }]}>₹{product.price.toFixed(2)}</Text>
+              <Text
+                style={[
+                  s.stock,
+                  { color: c.textSecondary, backgroundColor: c.surfaceMuted },
+                  product.stock < 10 && { color: c.error, backgroundColor: c.errorSoft },
+                ]}
+              >
+                {product.stock} left
+              </Text>
             </View>
           </AppPressable>
         ))}
       </View>
       {!products.length && (
         <View style={s.empty}>
-          <Text style={s.emptyIcon}>⌕</Text>
-          <Text style={s.emptyText}>No products found</Text>
+          <Text style={[s.emptyIcon, { color: c.textSecondary }]}>⌕</Text>
+          <Text style={[s.emptyText, { color: c.textSecondary }]}>No products found</Text>
         </View>
       )}
     </View>
@@ -41,9 +61,8 @@ export function ProductCatalog({ category, products, onAdd }: Props) {
 const s = StyleSheet.create({
   catalog: { paddingHorizontal: 16, paddingBottom: 96, paddingTop: 8 },
   title: { fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 9 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
   card: {
-    width: '48.4%',
     padding: 8,
     borderRadius: 14,
     backgroundColor: colors.surface,
