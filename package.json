@@ -14,7 +14,9 @@
     "start": "bun run --filter @indyzai/pos-ui-app start",
     "android": "bun run --filter @indyzai/pos-ui-app android",
     "ios": "bun run --filter @indyzai/pos-ui-app ios",
-    "web": "bun run --filter @indyzai/pos-ui-app web"
+    "web": "bun run --filter @indyzai/pos-ui-app web",
+    "format": "bun run --filter @indyzai/pos-ui-app format",
+    "format:check": "bun run --filter @indyzai/pos-ui-app format:check"
   },
   "private": true
 }
