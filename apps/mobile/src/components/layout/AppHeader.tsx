@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LogOut, Menu, Moon, Repeat2, Sun, UserRound } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { colors } from '../../constants/theme';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { AppPressable } from '../ui/AppPressable';
+import { PosLogo } from '../branding/PosLogo';
 
 type Props = { title?: string; subtitle?: string; initials?: string; onMenuToggle?: () => void };
 
 /** Shared POS app header with store identity, user badge, and appearance controls. */
 export function AppHeader({
-  title = 'Indyz Mart',
+  title = 'Indyz POS',
   subtitle = 'Counter 01',
   initials = 'SK',
   onMenuToggle,
@@ -20,12 +23,10 @@ export function AppHeader({
       <View style={s.brand}>
         {onMenuToggle && (
           <AppPressable onPress={onMenuToggle} style={s.burger}>
-            <Text style={[s.burgerText, { color: themeColors.textSecondary }]}>☰</Text>
+            <Menu size={21} color={themeColors.textSecondary} />
           </AppPressable>
         )}
-        <View style={[s.logo, { backgroundColor: themeColors.primary }]}>
-          <Text style={s.logoText}>i</Text>
-        </View>
+        <PosLogo size={36} />
         <View>
           <Text style={[s.title, { color: themeColors.text }]}>{title}</Text>
           <Text style={[s.subtitle, { color: themeColors.textSecondary }]}>
@@ -38,8 +39,13 @@ export function AppHeader({
           onPress={() => setMode(mode === 'light' ? 'dark' : 'light')}
           style={[s.themeToggle, { backgroundColor: themeColors.primarySoft }]}
         >
+          {mode === 'light' ? (
+            <Sun size={14} color={themeColors.primary} />
+          ) : (
+            <Moon size={14} color={themeColors.primary} />
+          )}
           <Text style={[s.toggleText, { color: themeColors.primary }]}>
-            {mode === 'light' ? '☀ Light' : '☾ Dark'}
+            {mode === 'light' ? 'Light' : 'Dark'}
           </Text>
         </AppPressable>
         <AppPressable
@@ -63,10 +69,14 @@ export function AppHeader({
               <Text style={[s.menuName, { color: themeColors.text }]}>Selva Kumar</Text>
               <Text style={[s.menuRole, { color: themeColors.textSecondary }]}>Store manager</Text>
               <View style={[s.menuDivider, { backgroundColor: themeColors.outline }]} />
-              <MenuOption icon="◉" label="My profile" />
-              <MenuOption icon="⇄" label="Switch business" />
+              <MenuOption icon={<UserRound size={17} color={themeColors.text} />} label="My profile" />
+              <MenuOption icon={<Repeat2 size={17} color={themeColors.text} />} label="Switch business" />
               <View style={[s.menuDivider, { backgroundColor: themeColors.outline }]} />
-              <MenuOption icon="↪" label="Sign out" destructive />
+              <MenuOption
+                icon={<LogOut size={17} color={themeColors.error} />}
+                label="Sign out"
+                destructive
+              />
             </View>
           </View>
         </Modal>
@@ -80,7 +90,7 @@ function MenuOption({
   label,
   destructive = false,
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
   destructive?: boolean;
 }) {
@@ -88,7 +98,7 @@ function MenuOption({
   const color = destructive ? themeColors.error : themeColors.text;
   return (
     <AppPressable style={s.themeOption}>
-      <Text style={[s.themeIcon, { color }]}>{icon}</Text>
+      <View style={s.themeIcon}>{icon}</View>
       <Text style={[s.themeText, { color }]}>{label}</Text>
     </AppPressable>
   );
@@ -108,9 +118,6 @@ const s = StyleSheet.create({
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   burger: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  burgerText: { fontSize: 20, fontWeight: '800' },
-  logo: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontSize: 24, fontWeight: '900', fontStyle: 'italic', color: '#FFFFFF' },
   title: { fontSize: 16, fontWeight: '800' },
   subtitle: { fontSize: 11, marginTop: 2 },
   online: { fontSize: 10 },
@@ -121,6 +128,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 17,
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 5,
     justifyContent: 'center',
   },
   toggleText: { fontSize: 11, fontWeight: '900' },
@@ -153,6 +162,6 @@ const s = StyleSheet.create({
     gap: 8,
     borderRadius: 10,
   },
-  themeIcon: { fontSize: 17, fontWeight: '900' },
+  themeIcon: { width: 18, alignItems: 'center' },
   themeText: { fontSize: 13, fontWeight: '800' },
 });

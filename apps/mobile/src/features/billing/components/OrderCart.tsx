@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ArrowRight, Banknote, CreditCard, ScanLine } from 'lucide-react-native';
 import { AppPressable } from '../../../components/ui/AppPressable';
 import { colors, radii } from '../../../constants/theme';
 import { SwipeableCartRow } from './SwipeableCartRow';
@@ -107,17 +108,17 @@ export function OrderCart({
         <View style={s.paymentRow}>
           {(
             [
-              ['₹', 'Cash'],
-              ['◈', 'UPI'],
-              ['▣', 'Card'],
+              [Banknote, 'Cash'],
+              [ScanLine, 'UPI'],
+              [CreditCard, 'Card'],
             ] as const
-          ).map(([icon, method]) => (
+          ).map(([Icon, method]) => (
             <AppPressable
               key={method}
               onPress={() => onPayment(method)}
               style={[s.payment, payment === method && s.paymentActive]}
             >
-              <Text style={[s.paymentIcon, payment === method && s.paymentTextActive]}>{icon}</Text>
+              <Icon size={14} color={payment === method ? colors.primary : '#8990A4'} strokeWidth={2.2} />
               <Text style={[s.paymentText, payment === method && s.paymentTextActive]}>{method}</Text>
             </AppPressable>
           ))}
@@ -126,7 +127,7 @@ export function OrderCart({
           <Text style={s.chargeText}>
             {items.length ? `Charge ${money(total)}` : 'Add items to checkout'}
           </Text>
-          <Text style={s.arrow}>→</Text>
+          <ArrowRight size={21} color="#FFFFFF" strokeWidth={2.7} />
         </AppPressable>
       </View>
     </View>
@@ -231,7 +232,6 @@ const s = StyleSheet.create({
     backgroundColor: '#FBFBFD',
   },
   paymentActive: { backgroundColor: colors.surfaceAccent, borderColor: '#636CD2' },
-  paymentIcon: { fontSize: 12, fontWeight: '900', color: '#8990A4' },
   paymentText: { fontSize: 10, fontWeight: '800', color: '#70778C' },
   paymentTextActive: { color: colors.primary },
   charge: {
@@ -250,5 +250,4 @@ const s = StyleSheet.create({
   },
   chargeOff: { backgroundColor: '#AEB3D8' },
   chargeText: { fontSize: 14, fontWeight: '900', color: '#fff' },
-  arrow: { fontSize: 23, color: '#fff' },
 });

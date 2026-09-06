@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "pos.pos-ui-native-app",
-    "slug": "pos.pos-ui-native-app",
+    "name": "Indyz POS",
+    "slug": "indyz-pos",
     "version": "1.0.0",
+    "scheme": "indyzai-pos",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

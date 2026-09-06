@@ -1,14 +1,24 @@
 import { StyleSheet, Text, View } from 'react-native';
+import {
+  ChartNoAxesCombined,
+  Package,
+  ReceiptText,
+  Settings,
+  UsersRound,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react-native';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { AppPressable } from '../ui/AppPressable';
+import { PosLogo } from '../branding/PosLogo';
 
 const items = [
-  ['▦', 'Billing'],
-  ['▤', 'Orders'],
-  ['◉', 'Customers'],
-  ['▣', 'Inventory'],
-  ['◔', 'Reports'],
-  ['⚙', 'Settings'],
+  { Icon: ReceiptText, label: 'Billing' },
+  { Icon: ReceiptText, label: 'Orders' },
+  { Icon: UsersRound, label: 'Customers' },
+  { Icon: Package, label: 'Inventory' },
+  { Icon: ChartNoAxesCombined, label: 'Reports' },
+  { Icon: Settings, label: 'Settings' },
 ];
 export function TabletNavigationPane({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { themeColors: c } = useAppTheme();
@@ -17,12 +27,17 @@ export function TabletNavigationPane({ collapsed, onToggle }: { collapsed: boole
       style={[s.pane, collapsed && s.collapsed, { backgroundColor: c.surface, borderRightColor: c.outline }]}
     >
       <AppPressable onPress={onToggle} style={s.toggle}>
-        <Text style={[s.brand, { color: c.primary }]}>{collapsed ? 'i' : 'indyz'}</Text>
-        <Text style={[s.toggleIcon, { color: c.textSecondary }]}>{collapsed ? '›' : '‹'}</Text>
+        <PosLogo size={collapsed ? 31 : 34} />
+        {!collapsed && <Text style={[s.brand, { color: c.text }]}>INDYZ POS</Text>}
+        {collapsed ? (
+          <PanelLeftOpen size={19} color={c.textSecondary} />
+        ) : (
+          <PanelLeftClose size={19} color={c.textSecondary} />
+        )}
       </AppPressable>
-      {items.map(([icon, label], index) => (
+      {items.map(({ Icon, label }, index) => (
         <AppPressable key={label} style={[s.item, index === 0 && { backgroundColor: c.primarySoft }]}>
-          <Text style={[s.icon, { color: index === 0 ? c.primary : c.textSecondary }]}>{icon}</Text>
+          <Icon size={18} color={index === 0 ? c.primary : c.textSecondary} strokeWidth={2.2} />
           {!collapsed && (
             <Text style={[s.label, { color: index === 0 ? c.primary : c.textSecondary }]}>{label}</Text>
           )}
@@ -41,8 +56,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 18,
   },
-  brand: { fontSize: 21, fontWeight: '900', fontStyle: 'italic' },
-  toggleIcon: { fontSize: 22 },
+  brand: { fontSize: 15, fontWeight: '900', letterSpacing: 0.4 },
   item: {
     height: 44,
     borderRadius: 12,
@@ -52,6 +66,5 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 6,
   },
-  icon: { fontSize: 18, fontWeight: '800' },
   label: { fontSize: 13, fontWeight: '800' },
 });
