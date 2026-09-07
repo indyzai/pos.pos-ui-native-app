@@ -2,5 +2,71 @@ import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppPressable } from '../../components/ui/AppPressable';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { authApi } from '../auth/authApi';
-export function DeviceSettingsSection(){const {themeColors:c}=useAppTheme();const [pin,setPin]=require('react').useState('');const [confirm,setConfirm]=require('react').useState('');const [busy,setBusy]=require('react').useState(false);const save=async()=>{if(pin!==confirm)return Alert.alert('Device PIN','PIN entries do not match.');setBusy(true);try{await authApi.changeDevicePin(pin);Alert.alert('PIN changed','Your device PIN has been updated.');}catch(e){Alert.alert('PIN change failed',e instanceof Error?e.message:'Try again.');}finally{setBusy(false)}};return <View><Text style={[s.title,{color:c.textSecondary}]}>Change device PIN</Text><Text style={[s.note,{color:c.textSecondary}]}>Verify locally with Face ID, fingerprint, or device passcode before changing this PIN.</Text><TextInput value={pin} onChangeText={(v)=>setPin(v.replace(/\D/g,'').slice(0,8))} keyboardType="number-pad" secureTextEntry placeholder="New PIN" placeholderTextColor={c.textSecondary} style={[s.input,{color:c.text,borderColor:c.outline}]}/><TextInput value={confirm} onChangeText={(v)=>setConfirm(v.replace(/\D/g,'').slice(0,8))} keyboardType="number-pad" secureTextEntry placeholder="Confirm new PIN" placeholderTextColor={c.textSecondary} style={[s.input,{color:c.text,borderColor:c.outline}]}/><AppPressable disabled={busy} onPress={()=>void save()} style={s.button}><Text style={s.buttonText}>{busy?'Updating…':'Change device PIN'}</Text></AppPressable></View>}
-const s=StyleSheet.create({title:{fontSize:16,fontWeight:'800',marginTop:20},note:{fontSize:13,lineHeight:19,marginTop:7,marginBottom:20},input:{height:50,borderWidth:1,borderRadius:10,paddingHorizontal:14,fontSize:16,marginBottom:12},button:{height:50,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#4F46E5',marginTop:6},buttonText:{color:'#fff',fontSize:15,fontWeight:'900'}});
+export function DeviceSettingsSection() {
+  const { themeColors: c } = useAppTheme();
+  const [pin, setPin] = require('react').useState('');
+  const [confirm, setConfirm] = require('react').useState('');
+  const [busy, setBusy] = require('react').useState(false);
+  const save = async () => {
+    if (pin !== confirm) return Alert.alert('Device PIN', 'PIN entries do not match.');
+    setBusy(true);
+    try {
+      await authApi.changeDevicePin(pin);
+      Alert.alert('PIN changed', 'Your device PIN has been updated.');
+    } catch (e) {
+      Alert.alert('PIN change failed', e instanceof Error ? e.message : 'Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <View>
+      <Text style={[s.title, { color: c.textSecondary }]}>Change device PIN</Text>
+      <Text style={[s.note, { color: c.textSecondary }]}>
+        Verify locally with Face ID, fingerprint, or device passcode before changing this PIN.
+      </Text>
+      <TextInput
+        value={pin}
+        onChangeText={(v) => setPin(v.replace(/\D/g, '').slice(0, 8))}
+        keyboardType="number-pad"
+        secureTextEntry
+        placeholder="New PIN"
+        placeholderTextColor={c.textSecondary}
+        style={[s.input, { color: c.text, borderColor: c.outline }]}
+      />
+      <TextInput
+        value={confirm}
+        onChangeText={(v) => setConfirm(v.replace(/\D/g, '').slice(0, 8))}
+        keyboardType="number-pad"
+        secureTextEntry
+        placeholder="Confirm new PIN"
+        placeholderTextColor={c.textSecondary}
+        style={[s.input, { color: c.text, borderColor: c.outline }]}
+      />
+      <AppPressable disabled={busy} onPress={() => void save()} style={s.button}>
+        <Text style={s.buttonText}>{busy ? 'Updating…' : 'Change device PIN'}</Text>
+      </AppPressable>
+    </View>
+  );
+}
+const s = StyleSheet.create({
+  title: { fontSize: 16, fontWeight: '800', marginTop: 20 },
+  note: { fontSize: 13, lineHeight: 19, marginTop: 7, marginBottom: 20 },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  button: {
+    height: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4F46E5',
+    marginTop: 6,
+  },
+  buttonText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+});

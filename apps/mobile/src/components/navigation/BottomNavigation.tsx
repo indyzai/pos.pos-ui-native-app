@@ -126,7 +126,18 @@ function MoreMenu({
           </View>
           <ScrollView contentContainerStyle={s.menuGrid} showsVerticalScrollIndicator={false}>
             {items.map(([icon, label]) => (
-              <AppPressable key={label} onPress={label === 'Settings' ? () => { onClose(); router.push('/settings'); } : undefined} style={[s.menuItem, { backgroundColor: c.surfaceMuted }]}>
+              <AppPressable
+                key={label}
+                onPress={
+                  label === 'Settings'
+                    ? () => {
+                        onClose();
+                        router.push('/settings');
+                      }
+                    : undefined
+                }
+                style={[s.menuItem, { backgroundColor: c.surfaceMuted }]}
+              >
                 <View style={[s.menuIcon, { backgroundColor: c.primarySoft }]}>
                   <Text style={[s.menuIconText, { color: c.primary }]}>{icon}</Text>
                 </View>
