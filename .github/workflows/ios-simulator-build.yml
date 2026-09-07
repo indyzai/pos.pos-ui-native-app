@@ -72,51 +72,109 @@ jobs:
         working-directory: apps/mobile/ios
         run: pod install
 
-      - name: Build iOS Simulator app
+      - name: Detect workspace and scheme
+        id: xcode
         working-directory: apps/mobile
         run: |
           set -euo pipefail
-          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -type d -print -quit)"
           if [ -z "$workspace" ]; then
             echo "::error::Expo prebuild did not create an iOS workspace."
             exit 1
           fi
-          echo "Using workspace: $workspace"
+          echo "Workspace: $workspace"
 
           xcodebuild -list -json -workspace "$workspace" > /tmp/ios-workspace.json
           cat /tmp/ios-workspace.json
 
           scheme="$(ruby -rjson -e '
-            schemes = JSON.parse(STDIN.read).dig("workspace", "schemes") || []
-            puts(schemes.find { |s| !s.start_with?("Pods-") })
+            data  = JSON.parse(STDIN.read)
+            items = data.dig("workspace","schemes") || []
+            puts items.find { |s| !s.start_with?("Pods-") }.to_s
           ' < /tmp/ios-workspace.json)"
 
           if [ -z "$scheme" ]; then
-            echo "::error::Could not find an application scheme in $workspace."
+            echo "::error::Could not find an application scheme."
             exit 1
           fi
-          echo "Using scheme: $scheme"
+          echo "Scheme: $scheme"
+
+          # Resolve a concrete simulator UDID so xcodebuild always knows exactly
+          # where to place the build output.
+          sim_udid="$(
+            xcrun simctl list devices available --json \
+              | ruby -rjson -e '
+                  devices = JSON.parse(STDIN.read)["devices"]
+                  iphone  = devices
+                    .select { |k,_| k.include?("iOS") }
+                    .values.flatten
+                    .select { |d| d["isAvailable"] && d["name"].start_with?("iPhone") }
+                    .max_by { |d| d["name"] }
+                  puts iphone ? iphone["udid"] : ""
+                '
+          )"
+
+          if [ -z "$sim_udid" ]; then
+            echo "::error::No available iPhone simulator found."
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Simulator UDID: $sim_udid"
+
+          # Expose values to subsequent steps via GITHUB_OUTPUT.
+          {
+            echo "workspace=$workspace"
+            echo "scheme=$scheme"
+            echo "sim_udid=$sim_udid"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build iOS Simulator app
+        working-directory: apps/mobile
+        env:
+          WORKSPACE:  ${{ steps.xcode.outputs.workspace }}
+          SCHEME:     ${{ steps.xcode.outputs.scheme }}
+          SIM_UDID:   ${{ steps.xcode.outputs.sim_udid }}
+        run: |
+          set -euo pipefail
 
           xcodebuild \
-            -workspace "$workspace" \
-            -scheme "$scheme" \
+            -workspace "$WORKSPACE" \
+            -scheme    "$SCHEME" \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "id=$SIM_UDID" \
             -derivedDataPath "$IOS_DERIVED_DATA" \
+            ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            ENABLE_BITCODE=NO \
+            build \
+            | tee /tmp/xcodebuild.log \
+            | grep -E "^(error:|warning:|note:|Build succeeded|** BUILD)" \
+            || true
+
+          # Ensure the underlying xcodebuild exit code is propagated even
+          # through the tee pipeline.
+          exit "${PIPESTATUS[0]}"
 
       - name: Package .app as zip
         run: |
           set -euo pipefail
-          app="$(find "$IOS_DERIVED_DATA/Build/Products" -maxdepth 2 -name '*.app' -type d -print -quit)"
+
+          echo "=== Derived data contents ==="
+          find "$IOS_DERIVED_DATA/Build" -maxdepth 3 -type d 2>/dev/null || echo "(Build dir not found)"
+
+          app="$(find "$IOS_DERIVED_DATA/Build/Products" -maxdepth 3 -name '*.app' -type d -print -quit 2>/dev/null || true)"
+
           if [ -z "$app" ]; then
-            echo "::error::No .app bundle found. Build output:"
-            find "$IOS_DERIVED_DATA" -type d | head -40 || true
+            echo "::error::No .app bundle found after build. Full derived data tree:"
+            find "$IOS_DERIVED_DATA" -type d | head -60 || true
+            echo "=== Last 50 lines of xcodebuild log ==="
+            tail -50 /tmp/xcodebuild.log || true
             exit 1
           fi
+
           echo "Packaging: $app"
           ditto -c -k --sequesterRsrc --keepParent "$app" "$IOS_APP_ZIP"
           echo "Archive size: $(du -sh "$IOS_APP_ZIP" | cut -f1)"
@@ -128,3 +186,12 @@ jobs:
           path: /tmp/indyz-pos-simulator.zip
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days || 14 }}
+
+      - name: Upload xcodebuild log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log-${{ github.sha }}
+          path: /tmp/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 3
