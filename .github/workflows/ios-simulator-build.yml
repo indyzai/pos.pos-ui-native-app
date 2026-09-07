@@ -145,9 +145,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          xcodebuild \
+          if ! xcodebuild \
             -workspace "$WORKSPACE" \
-            -scheme    "$SCHEME" \
+            -scheme "$SCHEME" \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination "id=$SIM_UDID" \
@@ -156,14 +156,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             ENABLE_BITCODE=NO \
-            build \
-            | tee /tmp/xcodebuild.log \
-            | grep -E "^(error:|warning:|note:|Build succeeded|** BUILD)" \
-            || true
+            build > /tmp/xcodebuild.log 2>&1; then
+            grep -E "(error:|warning:|\*\* BUILD)" /tmp/xcodebuild.log || true
+            tail -100 /tmp/xcodebuild.log
+            exit 1
+          fi
 
-          # Ensure the underlying xcodebuild exit code is propagated even
-          # through the tee pipeline.
-          exit "${PIPESTATUS[0]}"
+          grep -E "(warning:|\*\* BUILD SUCCEEDED \*\*)" /tmp/xcodebuild.log || true
 
       - name: Package .app as zip
         run: |
