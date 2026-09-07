@@ -1,0 +1,203 @@
+name: iOS Simulator Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: Artifact retention in days
+        required: true
+        default: "14"
+        type: string
+  pull_request:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/ios-simulator-build.yml"
+      - "apps/mobile/**"
+      - "package.json"
+      - "bun.lock"
+      - ".bun-version"
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/ios-simulator-build.yml"
+      - "apps/mobile/**"
+      - "package.json"
+      - "bun.lock"
+      - ".bun-version"
+
+permissions:
+  contents: read
+
+env:
+  EXPO_NO_TELEMETRY: "1"
+  NODE_OPTIONS: --max-old-space-size=6144
+  IOS_DERIVED_DATA: /tmp/indyz-pos-derived-data
+  IOS_APP_ZIP: /tmp/indyz-pos-simulator.zip
+
+concurrency:
+  group: ios-simulator-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-simulator:
+    name: iOS Simulator Build
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate iOS project
+        working-directory: apps/mobile
+        run: bunx expo prebuild --clean --platform ios --non-interactive --no-install
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/mobile/ios
+        run: pod install
+
+      - name: Detect workspace and scheme
+        id: xcode
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -type d -print -quit)"
+          if [ -z "$workspace" ]; then
+            echo "::error::Expo prebuild did not create an iOS workspace."
+            exit 1
+          fi
+          echo "Workspace: $workspace"
+
+          project="$(find ios -maxdepth 1 -name '*.xcodeproj' -type d -print -quit)"
+          if [ -z "$project" ]; then
+            echo "::error::Expo prebuild did not create an iOS application project."
+            exit 1
+          fi
+          project_name="${project##*/}"
+          project_name="${project_name%.xcodeproj}"
+          echo "Application project: $project"
+
+          xcodebuild -list -json -project "$project" > /tmp/ios-project.json
+          scheme="$(ruby -rjson -e '
+            project_name = ARGV.fetch(0)
+            items = JSON.parse(STDIN.read).dig("project", "schemes") || []
+            puts(items.find { |item| item == project_name } || items.first).to_s
+          ' "$project_name" < /tmp/ios-project.json)"
+
+          if [ -z "$scheme" ]; then
+            echo "::error::Could not find an application scheme."
+            exit 1
+          fi
+          echo "Scheme: $scheme"
+
+          # Resolve a concrete simulator UDID so xcodebuild always knows exactly
+          # where to place the build output.
+          sim_udid="$(
+            xcrun simctl list devices available --json \
+              | ruby -rjson -e '
+                  devices = JSON.parse(STDIN.read)["devices"]
+                  iphone  = devices
+                    .select { |k,_| k.include?("iOS") }
+                    .values.flatten
+                    .select { |d| d["isAvailable"] && d["name"].start_with?("iPhone") }
+                    .max_by { |d| d["name"] }
+                  puts iphone ? iphone["udid"] : ""
+                '
+          )"
+
+          if [ -z "$sim_udid" ]; then
+            echo "::error::No available iPhone simulator found."
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Simulator UDID: $sim_udid"
+
+          # Expose values to subsequent steps via GITHUB_OUTPUT.
+          {
+            echo "workspace=$workspace"
+            echo "scheme=$scheme"
+            echo "sim_udid=$sim_udid"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build iOS Simulator app
+        working-directory: apps/mobile
+        env:
+          WORKSPACE:  ${{ steps.xcode.outputs.workspace }}
+          SCHEME:     ${{ steps.xcode.outputs.scheme }}
+          SIM_UDID:   ${{ steps.xcode.outputs.sim_udid }}
+        run: |
+          set -euo pipefail
+
+          if ! xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "id=$SIM_UDID" \
+            -derivedDataPath "$IOS_DERIVED_DATA" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            ENABLE_BITCODE=NO \
+            build > /tmp/xcodebuild.log 2>&1; then
+            grep -E "(error:|warning:|\*\* BUILD)" /tmp/xcodebuild.log || true
+            tail -100 /tmp/xcodebuild.log
+            exit 1
+          fi
+
+          grep -E "(warning:|\*\* BUILD SUCCEEDED \*\*)" /tmp/xcodebuild.log || true
+
+      - name: Package .app as zip
+        run: |
+          set -euo pipefail
+
+          echo "=== Derived data contents ==="
+          find "$IOS_DERIVED_DATA/Build" -maxdepth 3 -type d 2>/dev/null || echo "(Build dir not found)"
+
+          app="$(find "$IOS_DERIVED_DATA/Build/Products" -maxdepth 3 -name '*.app' -type d -print -quit 2>/dev/null || true)"
+
+          if [ -z "$app" ]; then
+            echo "::error::No .app bundle found after build. Full derived data tree:"
+            find "$IOS_DERIVED_DATA" -type d | head -60 || true
+            echo "=== Last 50 lines of xcodebuild log ==="
+            tail -50 /tmp/xcodebuild.log || true
+            exit 1
+          fi
+
+          echo "Packaging: $app"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$IOS_APP_ZIP"
+          echo "Archive size: $(du -sh "$IOS_APP_ZIP" | cut -f1)"
+
+      - name: Upload iOS Simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: indyz-pos-ios-simulator-${{ github.sha }}
+          path: /tmp/indyz-pos-simulator.zip
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days || 14 }}
+
+      - name: Upload xcodebuild log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log-${{ github.sha }}
+          path: /tmp/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 3
