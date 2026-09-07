@@ -6,6 +6,20 @@
     "scheme": "indyzai-pos",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Indyz POS to use your camera to scan barcodes and QR codes."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Indyz POS to use Face ID to unlock your POS session."
+        }
+      ]
+    ],
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true

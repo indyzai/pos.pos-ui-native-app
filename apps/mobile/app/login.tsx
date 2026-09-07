@@ -16,12 +16,16 @@ export default function LoginRoute() {
       <LoginScreen
         onLogin={async (credentials) => {
           await authApi.login(credentials);
-          router.replace('/billing');
+          router.replace((await authApi.hasRegisteredDevice()) ? '/billing' : '/device-setup');
         }}
         onSignUp={() => router.push('/signup')}
         onSocialLogin={async (provider) => {
           const completed = await authApi.authorize(provider);
-          if (completed) router.replace('/billing');
+          if (completed) router.replace((await authApi.hasRegisteredDevice()) ? '/billing' : '/device-setup');
+        }}
+        onDeviceLogin={async () => {
+          await authApi.authenticateWithDevice();
+          router.replace('/billing');
         }}
       />
     </SafeAreaView>

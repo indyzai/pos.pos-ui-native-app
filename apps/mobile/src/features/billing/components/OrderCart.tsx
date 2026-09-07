@@ -3,6 +3,7 @@ import { PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight, Banknote, CreditCard, ScanLine } from 'lucide-react-native';
 import { AppPressable } from '../../../components/ui/AppPressable';
 import { colors, radii } from '../../../constants/theme';
+import { useAppTheme } from '../../../contexts/ThemeContext';
 import { SwipeableCartRow } from './SwipeableCartRow';
 import type { CartItem, PaymentMethod } from '../types/billing';
 
@@ -33,6 +34,7 @@ export function OrderCart({
   onCheckout,
   onClose,
 }: Props) {
+  const { themeColors: c } = useAppTheme();
   const headerPanResponder = useMemo(
     () =>
       PanResponder.create({
@@ -45,64 +47,74 @@ export function OrderCart({
     [onClose],
   );
   return (
-    <View style={s.cart}>
+    <View style={[s.cart, { backgroundColor: c.surface }]}>
       <View {...headerPanResponder.panHandlers} style={s.head}>
         <View>
-          <Text style={s.title}>Current order</Text>
-          <Text style={s.subtitle}>
+          <Text style={[s.title, { color: c.text }]}>Current order</Text>
+          <Text style={[s.subtitle, { color: c.textSecondary }]}>
             {itemCount ? `${itemCount} item${itemCount > 1 ? 's' : ''} in cart` : 'Add items to start a sale'}
           </Text>
         </View>
         <View style={s.headActions}>
           <AppPressable disabled={!items.length} onPress={onClear}>
-            <Text style={[s.clear, !items.length && s.muted]}>Clear</Text>
+            <Text style={[s.clear, { color: c.error }, !items.length && { color: c.outline }]}>Clear</Text>
           </AppPressable>
-          <AppPressable accessibilityLabel="Close cart" onPress={onClose} style={s.close}>
-            <Text style={s.closeText}>×</Text>
+          <AppPressable
+            accessibilityLabel="Close cart"
+            onPress={onClose}
+            style={[s.close, { backgroundColor: c.surfaceMuted }]}
+          >
+            <Text style={[s.closeText, { color: c.textSecondary }]}>×</Text>
           </AppPressable>
         </View>
       </View>
       {items.length ? (
-        <ScrollView style={s.rows}>
+        <ScrollView style={[s.rows, { borderColor: c.outlineMuted }]}>
           {items.map((item) => (
             <SwipeableCartRow key={item.id} onRemove={() => onChange(item.id, -item.quantity)}>
-              <View style={s.row}>
+              <View style={[s.row, { borderColor: c.outlineMuted, backgroundColor: c.surface }]}>
                 <View style={[s.thumb, { backgroundColor: item.color }]}>
                   <Text>{item.emoji}</Text>
                 </View>
                 <View style={s.product}>
-                  <Text numberOfLines={1} style={s.productName}>
+                  <Text numberOfLines={1} style={[s.productName, { color: c.text }]}>
                     {item.name}
                   </Text>
-                  <Text style={s.productPrice}>{money(item.price)}</Text>
+                  <Text style={[s.productPrice, { color: c.textSecondary }]}>{money(item.price)}</Text>
                 </View>
                 <View style={s.qty}>
-                  <AppPressable onPress={() => onChange(item.id, -1)} style={s.qtyButton}>
-                    <Text style={s.qtySymbol}>−</Text>
+                  <AppPressable
+                    onPress={() => onChange(item.id, -1)}
+                    style={[s.qtyButton, { backgroundColor: c.surfaceMuted }]}
+                  >
+                    <Text style={[s.qtySymbol, { color: c.textSecondary }]}>−</Text>
                   </AppPressable>
-                  <Text style={s.qtyValue}>{item.quantity}</Text>
-                  <AppPressable onPress={() => onChange(item.id, 1)} style={s.qtyButton}>
-                    <Text style={s.qtySymbol}>+</Text>
+                  <Text style={[s.qtyValue, { color: c.text }]}>{item.quantity}</Text>
+                  <AppPressable
+                    onPress={() => onChange(item.id, 1)}
+                    style={[s.qtyButton, { backgroundColor: c.surfaceMuted }]}
+                  >
+                    <Text style={[s.qtySymbol, { color: c.textSecondary }]}>+</Text>
                   </AppPressable>
                 </View>
-                <Text style={s.lineTotal}>{money(item.price * item.quantity)}</Text>
+                <Text style={[s.lineTotal, { color: c.text }]}>{money(item.price * item.quantity)}</Text>
               </View>
             </SwipeableCartRow>
           ))}
         </ScrollView>
       ) : (
-        <View style={s.empty}>
+        <View style={[s.empty, { borderColor: c.outlineMuted }]}>
           <Text>🛍</Text>
-          <Text style={s.emptyText}>Your cart is empty</Text>
+          <Text style={[s.emptyText, { color: c.textSecondary }]}>Your cart is empty</Text>
         </View>
       )}
       <View style={s.checkoutFooter}>
         <View style={s.summary}>
           <Line label="Subtotal" value={money(subtotal)} />
           <Line label="GST (5%)" value={money(tax)} />
-          <View style={s.total}>
-            <Text style={s.totalLabel}>Total</Text>
-            <Text style={s.totalValue}>{money(total)}</Text>
+          <View style={[s.total, { borderColor: c.outlineMuted }]}>
+            <Text style={[s.totalLabel, { color: c.text }]}>Total</Text>
+            <Text style={[s.totalValue, { color: c.primary }]}>{money(total)}</Text>
           </View>
         </View>
         <View style={s.paymentRow}>
@@ -116,10 +128,22 @@ export function OrderCart({
             <AppPressable
               key={method}
               onPress={() => onPayment(method)}
-              style={[s.payment, payment === method && s.paymentActive]}
+              style={[
+                s.payment,
+                { borderColor: c.outline, backgroundColor: c.surface },
+                payment === method && { backgroundColor: c.surfaceAccent, borderColor: c.primary },
+              ]}
             >
-              <Icon size={14} color={payment === method ? colors.primary : '#8990A4'} strokeWidth={2.2} />
-              <Text style={[s.paymentText, payment === method && s.paymentTextActive]}>{method}</Text>
+              <Icon size={14} color={payment === method ? c.primary : c.textSecondary} strokeWidth={2.2} />
+              <Text
+                style={[
+                  s.paymentText,
+                  { color: c.textSecondary },
+                  payment === method && { color: c.primary },
+                ]}
+              >
+                {method}
+              </Text>
             </AppPressable>
           ))}
         </View>
@@ -134,10 +158,11 @@ export function OrderCart({
   );
 }
 function Line({ label, value }: { label: string; value: string }) {
+  const { themeColors: c } = useAppTheme();
   return (
     <View style={s.summaryLine}>
-      <Text style={s.summaryLabel}>{label}</Text>
-      <Text style={s.summaryValue}>{value}</Text>
+      <Text style={[s.summaryLabel, { color: c.textSecondary }]}>{label}</Text>
+      <Text style={[s.summaryValue, { color: c.text }]}>{value}</Text>
     </View>
   );
 }
@@ -149,9 +174,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: radii.sheet,
     borderTopRightRadius: radii.sheet,
-    shadowColor: '#21264B',
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
+    boxShadow: '0px -5px 14px rgba(33, 38, 75, 0.12)',
     elevation: 12,
   },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10 },
@@ -243,9 +266,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#303992',
-    shadowOpacity: 0.28,
-    shadowRadius: 7,
+    boxShadow: '0px 3px 7px rgba(48, 57, 146, 0.28)',
     elevation: 4,
   },
   chargeOff: { backgroundColor: '#AEB3D8' },

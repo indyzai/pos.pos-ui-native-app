@@ -7,6 +7,7 @@ export type Product = {
   emoji: string;
   color: string;
   quick?: boolean;
+  barcode?: string;
 };
 export type CartItem = Product & { quantity: number };
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';

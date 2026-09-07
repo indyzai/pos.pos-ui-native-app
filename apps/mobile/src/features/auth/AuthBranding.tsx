@@ -50,8 +50,11 @@ export function AuthBranding({
             style={s.mobileFullBackground}
           />
           <View
-            pointerEvents="box-none"
-            style={[s.mobileHeaderOverlay, isCompactLandscape && s.landscapeRoot]}
+            style={[
+              s.mobileHeaderOverlay,
+              { pointerEvents: 'box-none' },
+              isCompactLandscape && s.landscapeRoot,
+            ]}
           >
             {header}
           </View>
@@ -256,9 +259,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,.12)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,.2)',
-    shadowColor: '#13195A',
-    shadowOpacity: 0.32,
-    shadowRadius: 22,
+    boxShadow: '0px 10px 22px rgba(19, 25, 90, 0.32)',
     elevation: 8,
   },
   visualTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },

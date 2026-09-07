@@ -1,0 +1,110 @@
+name: iOS Simulator Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: Artifact retention in days
+        required: true
+        default: "14"
+        type: string
+  pull_request:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/ios-simulator-build.yml"
+      - "apps/mobile/**"
+      - "package.json"
+      - "bun.lock"
+      - ".bun-version"
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/ios-simulator-build.yml"
+      - "apps/mobile/**"
+      - "package.json"
+      - "bun.lock"
+      - ".bun-version"
+
+permissions:
+  contents: read
+
+env:
+  EXPO_NO_TELEMETRY: "1"
+  NODE_OPTIONS: --max-old-space-size=6144
+
+concurrency:
+  group: ios-simulator-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-simulator:
+    name: iOS Simulator Build
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate iOS project
+        working-directory: apps/mobile
+        run: bunx expo prebuild --clean --platform ios --non-interactive --no-install
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/mobile/ios
+        run: pod install
+
+      - name: Build iOS Simulator app
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+          if [ -z "$workspace" ]; then
+            echo "::error::Expo prebuild did not create an iOS workspace."
+            exit 1
+          fi
+          xcodebuild -list -json -workspace "$workspace" > "$RUNNER_TEMP/ios-workspace.json"
+          scheme="$(ruby -rjson -e 'schemes = JSON.parse(STDIN.read).dig("workspace", "schemes") || []; puts(schemes.find { |item| !item.start_with?("Pods-") })' < "$RUNNER_TEMP/ios-workspace.json")"
+          if [ -z "$scheme" ]; then
+            echo "::error::Could not find an application scheme in $workspace."
+            exit 1
+          fi
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/indyz-pos-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Upload iOS Simulator app
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: indyz-pos-ios-simulator-${{ github.sha }}
+          path: ${{ runner.temp }}/indyz-pos-derived-data/Build/Products/Debug-iphonesimulator/*.app
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days || 14 }}

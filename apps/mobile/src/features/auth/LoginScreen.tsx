@@ -16,14 +16,25 @@ import { EyeIcon, GoogleIcon, MicrosoftIcon } from './AuthIcons';
 import type { LoginCredentials } from './authApi';
 import { ShieldCheck } from 'lucide-react-native';
 
+function getLoginErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (/unauthori[sz]ed|invalid credentials|incorrect password/i.test(message))
+    return 'Incorrect email address or password. Please try again.';
+  if (/network request failed|failed to fetch|network/i.test(message))
+    return 'We could not reach the sign-in service. Check your connection and try again.';
+  return message || 'We could not sign you in. Please try again.';
+}
+
 export function LoginScreen({
   onLogin,
   onSignUp,
   onSocialLogin,
+  onDeviceLogin,
 }: {
   onLogin: (credentials: LoginCredentials) => Promise<void>;
   onSignUp: () => void;
   onSocialLogin: (provider: 'google' | 'microsoft') => Promise<void>;
+  onDeviceLogin: () => Promise<void>;
 }) {
   const { themeColors: c } = useAppTheme();
   const { width, height } = useWindowDimensions();
@@ -39,24 +50,38 @@ export function LoginScreen({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const submit = async () => {
     if (!email.trim() || !password)
       return Alert.alert('Sign in', 'Enter your email address and password to continue.');
+    setAuthError(null);
     setLoading(true);
     try {
       await onLogin({ email: email.trim(), password });
     } catch (error) {
-      Alert.alert('Sign in failed', error instanceof Error ? error.message : 'Please try again.');
+      setAuthError(getLoginErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
   const socialLogin = async (provider: 'google' | 'microsoft') => {
+    setAuthError(null);
     setLoading(true);
     try {
       await onSocialLogin(provider);
     } catch (error) {
-      Alert.alert('Sign in failed', error instanceof Error ? error.message : 'Please try again.');
+      setAuthError(getLoginErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+  const deviceLogin = async () => {
+    setAuthError(null);
+    setLoading(true);
+    try {
+      await onDeviceLogin();
+    } catch (error) {
+      setAuthError(getLoginErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -92,10 +117,21 @@ export function LoginScreen({
             Welcome back
           </Text>
           <Text style={[s.subtitle, { color: c.textSecondary }]}>Please sign in to continue</Text>
+          {authError && (
+            <View
+              accessibilityRole="alert"
+              style={[s.errorMessage, { backgroundColor: c.errorSoft, borderColor: c.error }]}
+            >
+              <Text style={[s.errorText, { color: c.error }]}>{authError}</Text>
+            </View>
+          )}
           <Text style={[s.label, { color: c.text }]}>Email address</Text>
           <TextInput
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (authError) setAuthError(null);
+            }}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
@@ -109,7 +145,10 @@ export function LoginScreen({
           <View style={[s.passwordInput, { borderColor: c.outline }]}>
             <TextInput
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(value) => {
+                setPassword(value);
+                if (authError) setAuthError(null);
+              }}
               secureTextEntry={!showPassword}
               autoComplete="password"
               placeholder="Enter your password"
@@ -159,6 +198,19 @@ export function LoginScreen({
               <Text style={[s.socialText, { color: c.text }]}>Microsoft</Text>
             </AppPressable>
           </View>
+          <AppPressable
+            disabled={loading}
+            onPress={() => void deviceLogin()}
+            style={[
+              s.deviceLogin,
+              { borderColor: c.outline, backgroundColor: c.surfaceMuted },
+              loading && s.disabled,
+            ]}
+          >
+            <Text style={[s.deviceLoginText, { color: c.text }]}>
+              Unlock with Face ID, fingerprint, or device passcode
+            </Text>
+          </AppPressable>
           <Text style={[s.footer, { color: c.textSecondary }]}>
             Don’t have an account?{' '}
             <Text style={s.link} onPress={onSignUp}>
@@ -189,14 +241,20 @@ const s = StyleSheet.create({
     padding: 30,
     borderRadius: 16,
     borderWidth: 1,
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
+    boxShadow: '0px 10px 22px rgba(15, 23, 42, 0.12)',
     elevation: 5,
   },
   compactCard: { padding: 20, borderRadius: 14 },
   title: { fontSize: 25, fontWeight: '800', textAlign: 'center' },
   subtitle: { fontSize: 15, textAlign: 'center', marginTop: 8, marginBottom: 28 },
+  errorMessage: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: { fontSize: 12, fontWeight: '700', lineHeight: 18 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 7 },
   input: {
     height: 50,
@@ -253,6 +311,15 @@ const s = StyleSheet.create({
     gap: 8,
   },
   socialText: { fontSize: 14, fontWeight: '700' },
+  deviceLogin: {
+    height: 44,
+    marginTop: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deviceLoginText: { fontSize: 12, fontWeight: '800' },
   footer: { textAlign: 'center', fontSize: 13, marginTop: 26 },
   formNote: {
     flexDirection: 'row',
@@ -265,9 +332,7 @@ const s = StyleSheet.create({
     minHeight: 34,
     borderRadius: 17,
     borderWidth: 1,
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    boxShadow: '0px 3px 8px rgba(15, 23, 42, 0.08)',
     elevation: 2,
   },
   formNoteText: { fontSize: 11, fontWeight: '600' },

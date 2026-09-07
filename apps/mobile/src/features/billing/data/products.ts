@@ -10,6 +10,7 @@ export const products: Product[] = [
     emoji: '🥤',
     color: '#E6DCFF',
     quick: true,
+    barcode: '8901000000011',
   },
   {
     id: 'water',
@@ -20,6 +21,7 @@ export const products: Product[] = [
     emoji: '💧',
     color: '#D8EEFF',
     quick: true,
+    barcode: '8901000000028',
   },
   {
     id: 'juice',
@@ -29,6 +31,7 @@ export const products: Product[] = [
     stock: 18,
     emoji: '🧃',
     color: '#FFE5C8',
+    barcode: '8901000000035',
   },
   {
     id: 'cookies',
@@ -39,6 +42,7 @@ export const products: Product[] = [
     emoji: '🍪',
     color: '#FFEBBD',
     quick: true,
+    barcode: '8901000000042',
   },
   {
     id: 'chips',
@@ -48,6 +52,7 @@ export const products: Product[] = [
     stock: 42,
     emoji: '🥔',
     color: '#FFF0C9',
+    barcode: '8901000000059',
   },
   {
     id: 'chocolate',
@@ -57,6 +62,7 @@ export const products: Product[] = [
     stock: 29,
     emoji: '🍫',
     color: '#ECD7C4',
+    barcode: '8901000000066',
   },
   {
     id: 'rice',
@@ -66,6 +72,7 @@ export const products: Product[] = [
     stock: 31,
     emoji: '🌾',
     color: '#F4EBCD',
+    barcode: '8901000000073',
   },
   {
     id: 'oil',
@@ -75,5 +82,6 @@ export const products: Product[] = [
     stock: 12,
     emoji: '🫒',
     color: '#DEEBC8',
+    barcode: '8901000000080',
   },
 ];

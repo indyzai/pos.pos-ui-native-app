@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Modal, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
@@ -65,7 +66,7 @@ export function BottomNavigation() {
           <Text style={[s.centerLabel, { color: c.primary }]}>{centerItem.label}</Text>
         </AppPressable>
       )}
-      <MoreMenu visible={moreOpen} onClose={() => setMoreOpen(false)} />
+      <MoreMenu visible={moreOpen} onClose={() => setMoreOpen(false)} bottomOffset={66 + insets.bottom} />
     </View>
   );
 }
@@ -92,7 +93,16 @@ function NavigationItem({
   );
 }
 
-function MoreMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function MoreMenu({
+  visible,
+  onClose,
+  bottomOffset,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  bottomOffset: number;
+}) {
+  const router = useRouter();
   const { themeColors: c } = useAppTheme();
   const items = [
     ['◉', 'Customers'],
@@ -106,7 +116,7 @@ function MoreMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={s.menuOverlay}>
         <AppPressable style={s.menuBackdrop} onPress={onClose} />
-        <View style={[s.menuSheet, { backgroundColor: c.surface }]}>
+        <View style={[s.menuSheet, { backgroundColor: c.surface, marginBottom: bottomOffset }]}>
           <View style={[s.menuHandle, { backgroundColor: c.outline }]} />
           <View style={s.menuHeader}>
             <Text style={[s.menuTitle, { color: c.text }]}>More</Text>
@@ -116,7 +126,7 @@ function MoreMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
           </View>
           <ScrollView contentContainerStyle={s.menuGrid} showsVerticalScrollIndicator={false}>
             {items.map(([icon, label]) => (
-              <AppPressable key={label} style={[s.menuItem, { backgroundColor: c.surfaceMuted }]}>
+              <AppPressable key={label} onPress={label === 'Settings' ? () => { onClose(); router.push('/settings'); } : undefined} style={[s.menuItem, { backgroundColor: c.surfaceMuted }]}>
                 <View style={[s.menuIcon, { backgroundColor: c.primarySoft }]}>
                   <Text style={[s.menuIconText, { color: c.primary }]}>{icon}</Text>
                 </View>
@@ -141,9 +151,7 @@ const s = StyleSheet.create({
     borderTopColor: colors.outline,
     paddingHorizontal: 8,
     elevation: 12,
-    shadowColor: '#000000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.06)',
   },
   items: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   item: { flex: 1, height: 62, alignItems: 'center', justifyContent: 'center', gap: 3 },

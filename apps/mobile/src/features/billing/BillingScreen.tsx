@@ -13,25 +13,30 @@ import {
 } from 'react-native';
 import { BillingHeader } from './components/BillingHeader';
 import { useBottomNavigation } from '../../contexts/BottomNavigationContext';
+import { useAppTheme } from '../../contexts/ThemeContext';
 import { TabletNavigationPane } from '../../components/navigation/TabletNavigationPane';
 import { AppPressable } from '../../components/ui/AppPressable';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { OrderCart } from './components/OrderCart';
 import { ProductCatalog } from './components/ProductCatalog';
+import { BarcodeScannerModal } from './components/BarcodeScannerModal';
 import { products } from './data/products';
 import { useBillingCart } from './hooks/useBillingCart';
 import type { PaymentMethod } from './types/billing';
 
 export function BillingScreen() {
+  const { themeColors } = useAppTheme();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [payment, setPayment] = useState<PaymentMethod>('Cash');
   const [cartOpen, setCartOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { width, height } = useWindowDimensions();
   const isTablet = width >= 700;
   const isWide = isTablet && width > height;
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
+  const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
   const cart = useBillingCart();
   const visibleProducts = useMemo(
@@ -50,6 +55,21 @@ export function BillingScreen() {
     Alert.alert('Payment complete', `₹${cart.total.toFixed(2)} received by ${payment}.`, [
       { text: 'New sale', onPress: cart.clearCart },
     ]);
+  };
+  const handleScannedCode = (value: string) => {
+    if (scanHandled.current) return;
+    scanHandled.current = true;
+    setScannerOpen(false);
+    const product = products.find(
+      (item) => item.barcode === value || item.id.toLowerCase() === value.toLowerCase(),
+    );
+    if (product) {
+      cart.addItem(product);
+      Alert.alert('Added to cart', product.name);
+      return;
+    }
+    setSearch(value);
+    Alert.alert('Code scanned', `No product matched “${value}”. Showing it in search.`);
   };
   useEffect(() => {
     setCenterItem({
@@ -85,7 +105,7 @@ export function BillingScreen() {
     [sheetTranslateY],
   );
   return (
-    <View style={s.root}>
+    <View style={[s.root, { backgroundColor: themeColors.background }]}>
       <View style={s.workspace}>
         {isWide && (
           <TabletNavigationPane
@@ -104,12 +124,15 @@ export function BillingScreen() {
             category={category}
             onSearch={setSearch}
             onCategory={setCategory}
-            onScan={() => Alert.alert('Scanner', 'Barcode and QR scanning will open here.')}
+            onScan={() => {
+              scanHandled.current = false;
+              setScannerOpen(true);
+            }}
           />
           <ProductCatalog category={category} products={visibleProducts} onAdd={cart.addItem} />
         </ScrollView>
         {isWide && cartOpen && (
-          <View style={s.rightCart}>
+          <View style={[s.rightCart, { borderLeftColor: themeColors.outline }]}>
             <OrderCart
               items={cart.items}
               subtotal={cart.subtotal}
@@ -141,7 +164,12 @@ export function BillingScreen() {
         <View style={s.modal}>
           <Pressable style={s.backdrop} onPress={closeCart} />
           <Animated.View
-            style={[s.sheet, isTablet && s.tabletSheet, { transform: [{ translateY: sheetTranslateY }] }]}
+            style={[
+              s.sheet,
+              { backgroundColor: themeColors.surface },
+              isTablet && s.tabletSheet,
+              { transform: [{ translateY: sheetTranslateY }] },
+            ]}
           >
             <View {...sheetPanResponder.panHandlers} style={s.dragArea}>
               <View style={s.handle} />
@@ -165,6 +193,11 @@ export function BillingScreen() {
           </Animated.View>
         </View>
       </Modal>
+      <BarcodeScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScannedCode}
+      />
     </View>
   );
 }

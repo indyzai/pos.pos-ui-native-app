@@ -4,10 +4,13 @@
   "main": "expo-router/entry",
   "dependencies": {
     "expo": "~57.0.20",
+    "expo-application": "~57.0.2",
     "expo-auth-session": "~57.0.11",
+    "expo-camera": "~57.0.4",
     "expo-constants": "~57.0.17",
     "expo-linear-gradient": "~57.0.1",
     "expo-linking": "~57.0.9",
+    "expo-local-authentication": "~57.0.2",
     "expo-router": "~57.0.19",
     "expo-secure-store": "~57.0.3",
     "expo-status-bar": "~57.0.1",
@@ -27,10 +30,10 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "expo start --port 3511",
+    "android": "expo start --android --port 3511",
+    "ios": "expo start --ios --port 3511",
+    "web": "expo start --web --port 3511",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

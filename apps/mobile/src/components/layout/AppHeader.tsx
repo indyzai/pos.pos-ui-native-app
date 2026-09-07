@@ -1,23 +1,69 @@
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LogOut, Menu, Moon, Repeat2, Sun, UserRound } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LogOut, Menu, Moon, Repeat2, Settings, Sun, UserRound } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { colors } from '../../constants/theme';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { AppPressable } from '../ui/AppPressable';
 import { PosLogo } from '../branding/PosLogo';
+import { authApi, type AuthTenant, type AuthUser } from '../../features/auth/authApi';
 
 type Props = { title?: string; subtitle?: string; initials?: string; onMenuToggle?: () => void };
 
 /** Shared POS app header with store identity, user badge, and appearance controls. */
-export function AppHeader({
-  title = 'Indyz POS',
-  subtitle = 'Counter 01',
-  initials = 'SK',
-  onMenuToggle,
-}: Props) {
+export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initials, onMenuToggle }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<AuthTenant | null>(null);
+  const router = useRouter();
   const { mode, setMode, themeColors } = useAppTheme();
+  useEffect(() => {
+    void Promise.all([authApi.getStoredUser(), authApi.getSelectedTenant()]).then(([storedUser, tenant]) => {
+      setUser(storedUser);
+      setSelectedTenant(tenant);
+    });
+  }, []);
+
+  const userInitials = useMemo(() => {
+    if (initials) return initials;
+    const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+    return (name || user?.email || 'User')
+      .split(/[\s@]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('');
+  }, [initials, user]);
+  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'User';
+  const role = selectedTenant?.role ?? user?.tenants?.[0]?.role ?? user?.role;
+  const userRole = role ? `${role[0]?.toUpperCase()}${role.slice(1)}` : 'Team member';
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    await authApi.logout();
+    router.replace('/login');
+  };
+  const handleDebugUser = async () => {
+    const storedUser = await authApi.getStoredUser();
+    Alert.alert('Debug user', storedUser ? JSON.stringify(storedUser, null, 2) : 'No stored user found.');
+  };
+  const handleSwitchBusiness = () => {
+    const tenants = user?.tenants ?? [];
+    if (tenants.length < 2) {
+      Alert.alert('Switch business', 'There are no other businesses linked to this account.');
+      return;
+    }
+    Alert.alert('Switch business', 'Choose the business you want to use.', [
+      ...tenants.map((tenant) => ({
+        text: tenant.name || 'Unnamed business',
+        onPress: () => {
+          void authApi.selectTenant(tenant.id).then(setSelectedTenant);
+        },
+      })),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
   return (
     <View style={[s.header, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
       <View style={s.brand}>
@@ -53,7 +99,7 @@ export function AppHeader({
           onPress={() => setMenuOpen((open) => !open)}
           style={[s.avatar, { backgroundColor: themeColors.primarySoft }]}
         >
-          <Text style={[s.avatarText, { color: themeColors.primary }]}>{initials}</Text>
+          <Text style={[s.avatarText, { color: themeColors.primary }]}>{userInitials}</Text>
         </AppPressable>
       </View>
       {menuOpen && (
@@ -66,16 +112,41 @@ export function AppHeader({
                 { backgroundColor: themeColors.surface, borderColor: themeColors.outline },
               ]}
             >
-              <Text style={[s.menuName, { color: themeColors.text }]}>Selva Kumar</Text>
-              <Text style={[s.menuRole, { color: themeColors.textSecondary }]}>Store manager</Text>
+              <Text style={[s.menuName, { color: themeColors.text }]}>{userName}</Text>
+              <Text style={[s.menuRole, { color: themeColors.textSecondary }]}>{userRole}</Text>
               <View style={[s.menuDivider, { backgroundColor: themeColors.outline }]} />
-              <MenuOption icon={<UserRound size={17} color={themeColors.text} />} label="My profile" />
-              <MenuOption icon={<Repeat2 size={17} color={themeColors.text} />} label="Switch business" />
+              <MenuOption
+                icon={<UserRound size={17} color={themeColors.text} />}
+                label="My profile"
+                onPress={() => {
+                  setMenuOpen(false);
+                  router.push('/profile');
+                }}
+              />
+              <MenuOption
+                icon={<UserRound size={17} color={themeColors.text} />}
+                label="Debug user"
+                onPress={() => void handleDebugUser()}
+              />
+              <MenuOption
+                icon={<Repeat2 size={17} color={themeColors.text} />}
+                label="Switch business"
+                onPress={handleSwitchBusiness}
+              />
+              <MenuOption
+                icon={<Settings size={17} color={themeColors.text} />}
+                label="Settings"
+                onPress={() => {
+                  setMenuOpen(false);
+                  router.push('/settings');
+                }}
+              />
               <View style={[s.menuDivider, { backgroundColor: themeColors.outline }]} />
               <MenuOption
                 icon={<LogOut size={17} color={themeColors.error} />}
                 label="Sign out"
                 destructive
+                onPress={() => void handleLogout()}
               />
             </View>
           </View>
@@ -89,15 +160,17 @@ function MenuOption({
   icon,
   label,
   destructive = false,
+  onPress,
 }: {
   icon: ReactNode;
   label: string;
   destructive?: boolean;
+  onPress?: () => void;
 }) {
   const { themeColors } = useAppTheme();
   const color = destructive ? themeColors.error : themeColors.text;
   return (
-    <AppPressable style={s.themeOption}>
+    <AppPressable style={s.themeOption} onPress={onPress}>
       <View style={s.themeIcon}>{icon}</View>
       <Text style={[s.themeText, { color }]}>{label}</Text>
     </AppPressable>
@@ -143,9 +216,7 @@ const s = StyleSheet.create({
     padding: 8,
     borderRadius: 16,
     borderWidth: 1,
-    shadowColor: '#000000',
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
+    boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.14)',
     elevation: 20,
   },
   menuOverlay: { flex: 1 },

@@ -1,8 +1,10 @@
 import { useMemo, useRef, type ReactNode } from 'react';
 import { Animated, PanResponder, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../../constants/theme';
+import { useAppTheme } from '../../../contexts/ThemeContext';
 
 export function SwipeableCartRow({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
+  const { themeColors } = useAppTheme();
   const translateX = useRef(new Animated.Value(0)).current;
   const removed = useRef(false);
   const panResponder = useMemo(
@@ -35,7 +37,7 @@ export function SwipeableCartRow({ children, onRemove }: { children: ReactNode; 
   );
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { backgroundColor: themeColors.error }]}>
       <View style={s.removeAction}>
         <Text style={s.removeText}>Remove</Text>
       </View>

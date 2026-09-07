@@ -23,6 +23,9 @@ function RootNavigator() {
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
         <Stack.Screen name="billing" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="device-setup" />
+        <Stack.Screen name="settings" />
       </Stack>
     </>
   );
