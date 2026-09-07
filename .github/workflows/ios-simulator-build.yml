@@ -85,14 +85,21 @@ jobs:
           fi
           echo "Workspace: $workspace"
 
-          xcodebuild -list -json -workspace "$workspace" > /tmp/ios-workspace.json
-          cat /tmp/ios-workspace.json
+          project="$(find ios -maxdepth 1 -name '*.xcodeproj' -type d -print -quit)"
+          if [ -z "$project" ]; then
+            echo "::error::Expo prebuild did not create an iOS application project."
+            exit 1
+          fi
+          project_name="${project##*/}"
+          project_name="${project_name%.xcodeproj}"
+          echo "Application project: $project"
 
+          xcodebuild -list -json -project "$project" > /tmp/ios-project.json
           scheme="$(ruby -rjson -e '
-            data  = JSON.parse(STDIN.read)
-            items = data.dig("workspace","schemes") || []
-            puts items.find { |s| !s.start_with?("Pods-") }.to_s
-          ' < /tmp/ios-workspace.json)"
+            project_name = ARGV.fetch(0)
+            items = JSON.parse(STDIN.read).dig("project", "schemes") || []
+            puts(items.find { |item| item == project_name } || items.first).to_s
+          ' "$project_name" < /tmp/ios-project.json)"
 
           if [ -z "$scheme" ]; then
             echo "::error::Could not find an application scheme."
