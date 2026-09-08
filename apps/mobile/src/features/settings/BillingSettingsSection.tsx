@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
 export function BillingSettingsSection() {
   const { themeColors: c } = useAppTheme();
   return (

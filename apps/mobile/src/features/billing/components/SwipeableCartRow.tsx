@@ -1,7 +1,7 @@
 import { useMemo, useRef, type ReactNode } from 'react';
 import { Animated, PanResponder, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../constants/theme';
-import { useAppTheme } from '../../../contexts/ThemeContext';
+import { colors } from '../../../config/theme';
+import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 
 export function SwipeableCartRow({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
   const { themeColors } = useAppTheme();

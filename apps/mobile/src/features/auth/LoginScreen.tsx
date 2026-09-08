@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -9,8 +10,8 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { AppPressable } from '../../components/ui/AppPressable';
-import { useAppTheme } from '../../contexts/ThemeContext';
+import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { AuthBranding } from './AuthBranding';
 import { EyeIcon, GoogleIcon, MicrosoftIcon } from './AuthIcons';
 import type { LoginCredentials } from './authApi';
@@ -198,19 +199,21 @@ export function LoginScreen({
               <Text style={[s.socialText, { color: c.text }]}>Microsoft</Text>
             </AppPressable>
           </View>
-          <AppPressable
-            disabled={loading}
-            onPress={() => void deviceLogin()}
-            style={[
-              s.deviceLogin,
-              { borderColor: c.outline, backgroundColor: c.surfaceMuted },
-              loading && s.disabled,
-            ]}
-          >
-            <Text style={[s.deviceLoginText, { color: c.text }]}>
-              Unlock with Face ID, fingerprint, or device passcode
-            </Text>
-          </AppPressable>
+          {Platform.OS !== 'web' && (
+            <AppPressable
+              disabled={loading}
+              onPress={() => void deviceLogin()}
+              style={[
+                s.deviceLogin,
+                { borderColor: c.outline, backgroundColor: c.surfaceMuted },
+                loading && s.disabled,
+              ]}
+            >
+              <Text style={[s.deviceLoginText, { color: c.text }]}>
+                Unlock with Face ID, fingerprint, or device passcode
+              </Text>
+            </AppPressable>
+          )}
           <Text style={[s.footer, { color: c.textSecondary }]}>
             Don’t have an account?{' '}
             <Text style={s.link} onPress={onSignUp}>

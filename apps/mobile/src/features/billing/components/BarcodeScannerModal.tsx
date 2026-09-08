@@ -2,7 +2,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Camera, X } from 'lucide-react-native';
-import { AppPressable } from '../../../components/ui/AppPressable';
+import { AppPressable } from '../../../shared/components/ui/AppPressable';
 
 type Props = {
   visible: boolean;

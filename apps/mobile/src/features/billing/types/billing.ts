@@ -8,6 +8,7 @@ export type Product = {
   color: string;
   quick?: boolean;
   barcode?: string;
+  taxRate?: number;
 };
 export type CartItem = Product & { quantity: number };
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';

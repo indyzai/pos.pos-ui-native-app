@@ -1,7 +1,7 @@
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { AppPressable } from '../../../components/ui/AppPressable';
-import { colors } from '../../../constants/theme';
-import { useAppTheme } from '../../../contexts/ThemeContext';
+import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { colors } from '../../../config/theme';
+import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { Product } from '../types/billing';
 
 type Props = { category: string; products: Product[]; onAdd: (product: Product) => void };

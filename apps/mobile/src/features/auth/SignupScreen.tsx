@@ -9,8 +9,8 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { AppPressable } from '../../components/ui/AppPressable';
-import { useAppTheme } from '../../contexts/ThemeContext';
+import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { AuthBranding } from './AuthBranding';
 import { EyeIcon } from './AuthIcons';
 import type { RegistrationPayload } from './authApi';

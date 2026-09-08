@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ShoppingCart } from 'lucide-react-native';
 import {
   Alert,
   Animated,
@@ -12,15 +13,16 @@ import {
   View,
 } from 'react-native';
 import { BillingHeader } from './components/BillingHeader';
-import { useBottomNavigation } from '../../contexts/BottomNavigationContext';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TabletNavigationPane } from '../../components/navigation/TabletNavigationPane';
-import { AppPressable } from '../../components/ui/AppPressable';
+import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { TabletNavigationPane } from '../../shared/components/navigation/TabletNavigationPane';
+import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { OrderCart } from './components/OrderCart';
 import { ProductCatalog } from './components/ProductCatalog';
 import { BarcodeScannerModal } from './components/BarcodeScannerModal';
-import { products } from './data/products';
+import { billingApi } from './billingApi';
+import { useBillingData } from './hooks/useBillingData';
 import { useBillingCart } from './hooks/useBillingCart';
 import type { PaymentMethod } from './types/billing';
 
@@ -39,6 +41,13 @@ export function BillingScreen() {
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
   const cart = useBillingCart();
+  const billing = useBillingData();
+  const products = billing.data?.cache.products || [];
+  const saving = useRef(false);
+  useEffect(() => {
+    cart.clearCart();
+    setCategory('All');
+  }, [billing.data?.key]);
   const visibleProducts = useMemo(
     () =>
       products.filter(
@@ -48,13 +57,26 @@ export function BillingScreen() {
             ? category !== 'Quick picks' || product.quick
             : product.category === category),
       ),
-    [category, search],
+    [category, search, products],
   );
-  const checkout = () => {
-    if (!cart.items.length) return;
-    Alert.alert('Payment complete', `₹${cart.total.toFixed(2)} received by ${payment}.`, [
-      { text: 'New sale', onPress: cart.clearCart },
-    ]);
+  const checkout = async () => {
+    if (!cart.items.length || saving.current) return;
+    saving.current = true;
+    try {
+      if (!billing.data) throw new Error('Load billing before checkout.');
+      await billingApi.checkout(billing.data.key, cart.items, payment);
+      cart.clearCart();
+      setCartOpen(false);
+      await billing.reload();
+      Alert.alert(
+        'Sale saved on this device',
+        'Queued for server sync. This records payment only; it does not charge a card or UPI account.',
+      );
+    } catch (e) {
+      Alert.alert('Sale not saved', e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      saving.current = false;
+    }
   };
   const handleScannedCode = (value: string) => {
     if (scanHandled.current) return;
@@ -74,7 +96,7 @@ export function BillingScreen() {
   useEffect(() => {
     setCenterItem({
       label: 'Cart',
-      icon: '🛒',
+      icon: ShoppingCart,
       badge: cart.itemCount,
       onPress: () => setCartOpen(true),
     });
@@ -118,8 +140,17 @@ export function BillingScreen() {
           stickyHeaderIndices={[1]}
           contentContainerStyle={s.content}
         >
-          <BillingHeader onMenuToggle={isWide ? () => setSidebarCollapsed((value) => !value) : undefined} />
+          <BillingHeader
+            onMenuToggle={isWide ? () => setSidebarCollapsed((value) => !value) : undefined}
+            session={billing.data?.cache.session}
+            pendingSales={billing.data?.cache.queue.length || 0}
+            updated={billing.data?.cache.updated}
+            error={billing.error}
+            syncing={billing.busy}
+            onRefresh={() => void billing.refresh()}
+          />
           <CatalogToolbar
+            categories={['All', ...new Set(products.map((p) => p.category))]}
             search={search}
             category={category}
             onSearch={setSearch}
@@ -143,10 +174,7 @@ export function BillingScreen() {
               onPayment={setPayment}
               onChange={cart.changeQuantity}
               onClear={cart.clearCart}
-              onCheckout={() => {
-                checkout();
-                setCartOpen(false);
-              }}
+              onCheckout={checkout}
               onClose={closeCart}
             />
           </View>
@@ -184,10 +212,7 @@ export function BillingScreen() {
               onPayment={setPayment}
               onChange={cart.changeQuantity}
               onClear={cart.clearCart}
-              onCheckout={() => {
-                checkout();
-                setCartOpen(false);
-              }}
+              onCheckout={checkout}
               onClose={closeCart}
             />
           </Animated.View>

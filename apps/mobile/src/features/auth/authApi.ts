@@ -1,3 +1,4 @@
+import { requestJson } from '../../core/api/baseApi';
 import * as AuthSession from 'expo-auth-session';
 import * as Application from 'expo-application';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
@@ -24,7 +25,7 @@ function getExpoGoAuthApiUrl(): string | undefined {
 
 const baseUrl =
   process.env.EXPO_PUBLIC_AUTH_API_URL ??
-  (!__DEV__
+  (__DEV__
     ? (getExpoGoAuthApiUrl() ?? 'http://localhost:3504/api/v1')
     : 'https://api.indyzai.com/auth/api/v1');
 const appId = process.env.EXPO_PUBLIC_AUTH_APP_ID ?? (Platform.OS === 'web' ? 'pos' : 'pos-app');
@@ -35,12 +36,13 @@ const selectedTenantKey = 'indyzai.selected-tenant';
 const deviceIdKey = 'indyzai.device-id';
 const deviceTokenKey = 'indyzai.device-token';
 const sessionFallback = new Map<string, string>();
+let sessionUserPromise: Promise<AuthUser | null> | undefined;
 const deviceTokenOptions =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient
     ? undefined
     : { requireAuthentication: true };
 
-type Tokens = { accessToken?: string; refreshToken?: string };
+type Tokens = { accessToken?: string; refreshToken?: string; user?: AuthUser };
 export type AuthTenant = { id: string; name: string; role: string };
 export type AuthUser = {
   id: string;
@@ -53,6 +55,15 @@ export type AuthUser = {
 };
 type AuthResponse = Tokens & { tokens?: Tokens; user?: AuthUser };
 type CodeResponse = AuthResponse & { code?: string; applicationCode?: string };
+
+async function fetchCurrentUser(accessToken: string): Promise<AuthUser> {
+  const body = await requestJson<AuthUser & { user?: AuthUser }>(`${baseUrl}/users/me`, {
+    token: accessToken,
+  });
+  const user = body.user ?? body;
+  if (!user.id) throw new Error('Your sign-in did not include a user profile.');
+  return user;
+}
 
 async function setSessionValue(key: string, value: string): Promise<void> {
   if (Platform.OS === 'web') {
@@ -93,36 +104,16 @@ async function deleteSessionValue(key: string): Promise<void> {
   }
 }
 
-async function request<T>(path: string, body: Record<string, string> = {}): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const data = (await response.json().catch(() => ({}))) as { message?: string | string[] } & T;
-  if (!response.ok)
-    throw new Error(
-      Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Authentication request failed',
-    );
-  return data;
+function request<T>(path: string, body: Record<string, string> = {}): Promise<T> {
+  return requestJson<T>(baseUrl + path, { method: 'POST', body });
 }
 
-async function authenticatedRequest<T>(
+function authenticatedRequest<T>(
   path: string,
   body: Record<string, string>,
   accessToken: string,
 ): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(body),
-  });
-  const data = (await response.json().catch(() => ({}))) as { message?: string | string[] } & T;
-  if (!response.ok)
-    throw new Error(
-      Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Device request failed',
-    );
-  return data;
+  return requestJson<T>(baseUrl + path, { method: 'POST', body, token: accessToken });
 }
 
 async function getDeviceIdentifier(): Promise<string> {
@@ -141,15 +132,53 @@ async function saveSession(response: AuthResponse): Promise<void> {
   const tokens = response.tokens ?? response;
   if (!tokens.accessToken || !tokens.refreshToken)
     throw new Error('The authentication service did not return a complete session.');
-  const writes: Promise<void>[] = [
+  // The auth service can return the profile either beside tokens or inside
+  // the tokens object (the contract used by pos.pos-ui-new).
+  const user = response.user ?? tokens.user ?? (await fetchCurrentUser(tokens.accessToken));
+  const selectedTenantId = await getSessionValue(selectedTenantKey);
+  const selectedTenant = user.tenants?.find((tenant) => tenant.id === selectedTenantId) ?? user.tenants?.[0];
+  await Promise.all([
     setSessionValue(accessTokenKey, tokens.accessToken),
     setSessionValue(refreshTokenKey, tokens.refreshToken),
-  ];
-  writes.push(
-    response.user ? setSessionValue(userKey, JSON.stringify(response.user)) : deleteSessionValue(userKey),
-  );
-  writes.push(deleteSessionValue(selectedTenantKey));
-  await Promise.all(writes);
+    setSessionValue(userKey, JSON.stringify(user)),
+    selectedTenant
+      ? setSessionValue(selectedTenantKey, selectedTenant.id)
+      : deleteSessionValue(selectedTenantKey),
+  ]);
+}
+
+async function hydrateSessionUser(): Promise<AuthUser | null> {
+  const user = await authApi.getStoredUser();
+  if (user?.tenants?.length) return user;
+  const accessToken = await getSessionValue(accessTokenKey);
+  if (!accessToken) return user;
+  let hydratedUser: AuthUser;
+  try {
+    hydratedUser = await fetchCurrentUser(accessToken);
+  } catch (error) {
+    if (!user) throw error;
+    return user;
+  }
+  const selectedTenantId = await getSessionValue(selectedTenantKey);
+  const selectedTenant =
+    hydratedUser.tenants?.find((tenant) => tenant.id === selectedTenantId) ?? hydratedUser.tenants?.[0];
+  await Promise.all([
+    setSessionValue(userKey, JSON.stringify(hydratedUser)),
+    selectedTenant
+      ? setSessionValue(selectedTenantKey, selectedTenant.id)
+      : deleteSessionValue(selectedTenantKey),
+  ]);
+  return hydratedUser;
+}
+
+/** Coalesces concurrent billing/header requests while a token-only session is hydrated. */
+async function getSessionUser(): Promise<AuthUser | null> {
+  if (!sessionUserPromise) {
+    sessionUserPromise = hydrateSessionUser().finally(() => {
+      sessionUserPromise = undefined;
+    });
+  }
+  return sessionUserPromise;
 }
 
 async function exchangeCode(code: string, applicationCode = false, codeVerifier?: string): Promise<void> {
@@ -172,7 +201,9 @@ export type RegistrationPayload = {
 };
 
 export const authApi = {
+  getAccessToken: () => getSessionValue(accessTokenKey),
   async hasRegisteredDevice(): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
     try {
       const [deviceId, deviceToken] = await Promise.all([
         getSessionValue(deviceIdKey),
@@ -193,8 +224,9 @@ export const authApi = {
       return null;
     }
   },
-  async getSelectedTenant(): Promise<AuthTenant | null> {
-    const user = await this.getStoredUser();
+  getSessionUser,
+  async getSelectedTenant(profile?: AuthUser | null): Promise<AuthTenant | null> {
+    const user = profile ?? (await this.getStoredUser());
     const tenants = user?.tenants ?? [];
     if (!tenants.length) return null;
     const selectedTenantId = await getSessionValue(selectedTenantKey);
@@ -216,6 +248,7 @@ export const authApi = {
     ]);
   },
   async registerDevice(pin: string): Promise<void> {
+    if (Platform.OS === 'web') throw new Error('Device authentication is disabled on web.');
     if (!/^\d{4,8}$/.test(pin)) throw new Error('Choose a 4 to 8 digit device PIN.');
     const accessToken = await getSessionValue(accessTokenKey);
     if (!accessToken) throw new Error('Sign in before registering this device.');
@@ -240,6 +273,10 @@ export const authApi = {
     }
   },
   async authenticateWithDevice(): Promise<void> {
+    if (Platform.OS === 'web')
+      throw new Error(
+        'Device authentication is disabled on web. Sign in with your password or Google/Microsoft.',
+      );
     const [deviceId, deviceToken] = await Promise.all([
       getSessionValue(deviceIdKey),
       SecureStore.getItemAsync(deviceTokenKey, deviceTokenOptions),
@@ -256,13 +293,20 @@ export const authApi = {
       deviceToken,
     });
     if (!result.tokens.accessToken) throw new Error('The device did not return a valid session.');
+    const selectedTenantId = await getSessionValue(selectedTenantKey);
+    const selectedTenant =
+      result.user.tenants?.find((tenant) => tenant.id === selectedTenantId) ?? result.user.tenants?.[0];
     await Promise.all([
       setSessionValue(accessTokenKey, result.tokens.accessToken),
       setSessionValue(userKey, JSON.stringify(result.user)),
+      selectedTenant
+        ? setSessionValue(selectedTenantKey, selectedTenant.id)
+        : deleteSessionValue(selectedTenantKey),
       SecureStore.setItemAsync(deviceTokenKey, result.deviceToken, deviceTokenOptions),
     ]);
   },
   async changeDevicePin(pin: string): Promise<void> {
+    if (Platform.OS === 'web') throw new Error('Device authentication is disabled on web.');
     const verified = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Verify to change device PIN',
       disableDeviceFallback: false,

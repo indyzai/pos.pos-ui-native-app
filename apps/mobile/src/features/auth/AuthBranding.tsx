@@ -1,9 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Moon, Sparkles, Sun } from 'lucide-react-native';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { PosLogo } from '../../components/branding/PosLogo';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { AppPressable } from '../../components/ui/AppPressable';
+import { PosLogo } from '../../shared/components/branding/PosLogo';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { AppPressable } from '../../shared/components/ui/AppPressable';
 
 export function AuthBranding({
   title,

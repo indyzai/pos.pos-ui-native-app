@@ -18,10 +18,14 @@ export function useBillingCart() {
     );
   const totals = useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const tax = items.reduce(
+      (sum, item) => sum + Math.round(item.price * item.quantity * (item.taxRate || 0)) / 100,
+      0,
+    );
     return {
       subtotal,
-      tax: subtotal * 0.05,
-      total: subtotal * 1.05,
+      tax,
+      total: subtotal + tax,
       itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
     };
   }, [items]);

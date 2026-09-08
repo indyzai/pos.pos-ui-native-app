@@ -1,0 +1,83 @@
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+type RequestOptions = {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  body?: unknown;
+  token?: string;
+  tenantId?: string;
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+};
+
+function errorMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object' || !('message' in body)) return;
+  const message = body.message;
+  if (typeof message === 'string') return message;
+  if (Array.isArray(message)) return message.filter((item) => typeof item === 'string').join(', ');
+}
+
+/** Shared JSON transport. No automatic retries, especially for writes. */
+export async function requestJson<T>(url: string, options: RequestOptions = {}): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 15_000);
+  try {
+    const response = await fetch(url, {
+      method: options.method ?? 'GET',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.token ? { Authorization: 'Bearer ' + options.token } : {}),
+        ...(options.tenantId ? { 'x-tenant-id': options.tenantId } : {}),
+        ...options.headers,
+      },
+      ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+    });
+    if (response.status === 204) return undefined as T;
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      if (response.ok) throw new ApiError('API returned invalid JSON.', response.status);
+    }
+    if (!response.ok) {
+      throw new ApiError(
+        errorMessage(body) ||
+          (response.status === 401
+            ? 'Session expired. Sign in again.'
+            : 'API request failed (' + response.status + ').'),
+        response.status,
+      );
+    }
+    return body as T;
+  } catch (error) {
+    if (controller.signal.aborted) throw new ApiError('Request timed out. Please try again.');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function requestGraphQL<T>(
+  url: string,
+  query: string,
+  variables: Record<string, unknown> = {},
+  options: Omit<RequestOptions, 'method' | 'body'> = {},
+): Promise<T> {
+  const result = await requestJson<{ data?: T; errors?: { message: string }[] }>(url, {
+    ...options,
+    method: 'POST',
+    body: { query, variables },
+  });
+  if (result?.errors?.length) throw new ApiError(result.errors.map((error) => error.message).join('; '));
+  if (result?.data == null) throw new ApiError('API returned no data.');
+  return result.data;
+}

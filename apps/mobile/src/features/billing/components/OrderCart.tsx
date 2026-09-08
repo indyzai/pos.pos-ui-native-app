@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight, Banknote, CreditCard, ScanLine } from 'lucide-react-native';
-import { AppPressable } from '../../../components/ui/AppPressable';
-import { colors, radii } from '../../../constants/theme';
-import { useAppTheme } from '../../../contexts/ThemeContext';
+import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { colors, radii } from '../../../config/theme';
+import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { SwipeableCartRow } from './SwipeableCartRow';
 import type { CartItem, PaymentMethod } from '../types/billing';
 
@@ -111,7 +111,7 @@ export function OrderCart({
       <View style={s.checkoutFooter}>
         <View style={s.summary}>
           <Line label="Subtotal" value={money(subtotal)} />
-          <Line label="GST (5%)" value={money(tax)} />
+          <Line label="Tax" value={money(tax)} />
           <View style={[s.total, { borderColor: c.outlineMuted }]}>
             <Text style={[s.totalLabel, { color: c.text }]}>Total</Text>
             <Text style={[s.totalValue, { color: c.primary }]}>{money(total)}</Text>

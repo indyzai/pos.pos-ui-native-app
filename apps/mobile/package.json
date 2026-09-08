@@ -3,16 +3,20 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
+    "drizzle-orm": "^0.45.2",
     "expo": "~57.0.20",
     "expo-application": "~57.0.2",
     "expo-auth-session": "~57.0.11",
     "expo-camera": "~57.0.4",
     "expo-constants": "~57.0.17",
+    "expo-crypto": "~57.0.2",
     "expo-linear-gradient": "~57.0.1",
     "expo-linking": "~57.0.9",
     "expo-local-authentication": "~57.0.2",
     "expo-router": "~57.0.19",
     "expo-secure-store": "~57.0.3",
+    "expo-sqlite": "~57.0.2",
     "expo-status-bar": "~57.0.1",
     "expo-web-browser": "~57.0.2",
     "lucide-react-native": "^1.41.0",
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "drizzle-kit": "^0.31.10",
     "prettier": "^3.9.6",
     "typescript": "~6.0.3"
   },
@@ -34,6 +39,8 @@
     "android": "expo start --android --port 3511",
     "ios": "expo start --ios --port 3511",
     "web": "expo start --web --port 3511",
+    "db:generate": "drizzle-kit generate",
+    "test": "bun test tests",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

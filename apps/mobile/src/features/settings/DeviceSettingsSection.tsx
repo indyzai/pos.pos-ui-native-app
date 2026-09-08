@@ -1,6 +1,6 @@
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AppPressable } from '../../components/ui/AppPressable';
-import { useAppTheme } from '../../contexts/ThemeContext';
+import { Alert, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { authApi } from '../auth/authApi';
 export function DeviceSettingsSection() {
   const { themeColors: c } = useAppTheme();
@@ -19,6 +19,12 @@ export function DeviceSettingsSection() {
       setBusy(false);
     }
   };
+  if (Platform.OS === 'web')
+    return (
+      <Text style={[s.note, { color: c.textSecondary }]}>
+        Device PIN and biometric authentication are available only in the mobile app.
+      </Text>
+    );
   return (
     <View>
       <Text style={[s.title, { color: c.textSecondary }]}>Change device PIN</Text>

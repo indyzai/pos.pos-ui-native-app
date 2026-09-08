@@ -1,10 +1,10 @@
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AppPressable } from '../../../components/ui/AppPressable';
-import { colors, radii } from '../../../constants/theme';
-import { useAppTheme } from '../../../contexts/ThemeContext';
-import { categories } from '../data/products';
+import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { colors, radii } from '../../../config/theme';
+import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 
 type Props = {
+  categories: string[];
   search: string;
   category: string;
   onSearch: (value: string) => void;
@@ -12,7 +12,7 @@ type Props = {
   onScan: () => void;
 };
 
-export function CatalogToolbar({ search, category, onSearch, onCategory, onScan }: Props) {
+export function CatalogToolbar({ categories, search, category, onSearch, onCategory, onScan }: Props) {
   const { themeColors: c } = useAppTheme();
   return (
     <View style={[s.toolbar, { backgroundColor: c.background }]}>
