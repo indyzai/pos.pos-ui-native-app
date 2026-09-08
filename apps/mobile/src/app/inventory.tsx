@@ -1,6 +1,12 @@
-import { Package } from 'lucide-react-native';
-import { ModulePlaceholder } from '../shared/components/layout/ModulePlaceholder';
+import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
+import { BottomNavigationProvider } from '../shared/providers/BottomNavigationProvider';
+import { InventoryScreen } from '../features/inventory/InventoryScreen';
 
 export default function InventoryRoute() {
-  return <ModulePlaceholder title="Inventory" icon={Package} />;
+  return (
+    <BottomNavigationProvider>
+      <InventoryScreen />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

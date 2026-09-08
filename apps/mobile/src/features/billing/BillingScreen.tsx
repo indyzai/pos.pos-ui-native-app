@@ -25,6 +25,7 @@ import { billingApi } from './billingApi';
 import { useBillingData } from './hooks/useBillingData';
 import { useBillingCart } from './hooks/useBillingCart';
 import type { PaymentMethod } from './types/billing';
+import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
 
 export function BillingScreen() {
   const { themeColors } = useAppTheme();
@@ -40,10 +41,21 @@ export function BillingScreen() {
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
+  const { setMenuToggle, setFeatureRefresh } = useAppHeader();
   const cart = useBillingCart();
   const billing = useBillingData();
   const products = billing.data?.cache.products || [];
+  const refreshRef = useRef(billing.refresh);
+  refreshRef.current = billing.refresh;
   const saving = useRef(false);
+  useEffect(() => {
+    setMenuToggle(isWide ? () => setSidebarCollapsed((value) => !value) : undefined);
+    return () => setMenuToggle(undefined);
+  }, [isWide, setMenuToggle]);
+  useEffect(() => {
+    setFeatureRefresh(() => refreshRef.current(), billing.busy);
+    return () => setFeatureRefresh(undefined);
+  }, [billing.busy, setFeatureRefresh]);
   useEffect(() => {
     cart.clearCart();
     setCategory('All');
@@ -141,13 +153,11 @@ export function BillingScreen() {
           contentContainerStyle={s.content}
         >
           <BillingHeader
-            onMenuToggle={isWide ? () => setSidebarCollapsed((value) => !value) : undefined}
             session={billing.data?.cache.session}
             pendingSales={billing.data?.cache.queue.length || 0}
             updated={billing.data?.cache.updated}
             error={billing.error}
             syncing={billing.busy}
-            onRefresh={() => void billing.refresh()}
           />
           <CatalogToolbar
             categories={['All', ...new Set(products.map((p) => p.category))]}

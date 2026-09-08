@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LogOut, Menu, Moon, Repeat2, Settings, Sun, UserRound } from 'lucide-react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LogOut, Menu, Moon, RefreshCw, Repeat2, Settings, Sun, UserRound } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { colors } from '../../../config/theme';
 import { useAppTheme } from '../../providers/ThemeProvider';
@@ -10,6 +10,7 @@ import { PosLogo } from '../branding/PosLogo';
 import { authApi } from '../../../features/auth/authApi';
 import { useAuthSession } from '../../../features/auth/AuthSessionContext';
 import { useLocalDatabase } from '../../../db/DatabaseProvider';
+import { useAppHeader } from '../../providers/AppHeaderProvider';
 
 type Props = { title?: string; subtitle?: string; initials?: string; onMenuToggle?: () => void };
 
@@ -17,6 +18,7 @@ type Props = { title?: string; subtitle?: string; initials?: string; onMenuToggl
 export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initials, onMenuToggle }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const local = useLocalDatabase();
+  const { featureRefresh, featureRefreshing } = useAppHeader();
   const router = useRouter();
   const { mode, setMode, themeColors } = useAppTheme();
   const { session, user, refreshSession } = useAuthSession();
@@ -80,11 +82,25 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
       </View>
       <View style={s.headerActions}>
         <AppPressable
-          accessibilityLabel={local.error || 'Local storage ' + local.status}
-          disabled={local.status !== 'error'}
-          onPress={() => void local.retry()}
+          accessibilityLabel={
+            local.status === 'error'
+              ? local.error || 'Retry local storage'
+              : featureRefresh
+                ? 'Refresh current feature'
+                : 'Local storage ' + local.status
+          }
+          disabled={local.status !== 'error' && (!featureRefresh || featureRefreshing)}
+          onPress={() => void (local.status === 'error' ? local.retry() : featureRefresh?.())}
           style={[s.themeToggle, { backgroundColor: themeColors.surfaceMuted }]}
         >
+          {featureRefreshing ? (
+            <ActivityIndicator size="small" color={themeColors.primary} />
+          ) : (
+            <RefreshCw
+              size={14}
+              color={local.status === 'error' ? themeColors.error : themeColors.textSecondary}
+            />
+          )}
           <Text
             style={[
               s.toggleText,
@@ -92,7 +108,9 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
             ]}
           >
             {local.status === 'ready'
-              ? '● Storage ready'
+              ? featureRefresh
+                ? 'Storage ready'
+                : '● Storage ready'
               : local.status === 'error'
                 ? '↻ Storage'
                 : '◌ Preparing'}

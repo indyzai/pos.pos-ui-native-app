@@ -33,7 +33,7 @@ export default function ProfileRoute() {
   );
   const role = tenant?.role ?? user?.tenants?.[0]?.role ?? user?.role ?? 'Team member';
   return (
-    <SafeAreaView style={[s.screen, { backgroundColor: c.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[s.screen, { backgroundColor: c.background }]} edges={['left', 'right', 'bottom']}>
       <View style={[s.header, { borderColor: c.outline, backgroundColor: c.surface }]}>
         <AppPressable
           accessibilityLabel="Back"

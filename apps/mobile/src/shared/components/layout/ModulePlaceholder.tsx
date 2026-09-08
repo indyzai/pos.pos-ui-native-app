@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomNavigationProvider } from '../../providers/BottomNavigationProvider';
 import { useAppTheme } from '../../providers/ThemeProvider';
 import { BottomNavigation } from '../navigation/BottomNavigation';
-import { AppHeader } from './AppHeader';
 
 export function ModulePlaceholder({ title, icon: Icon }: { title: string; icon: LucideIcon }) {
   return (
@@ -18,8 +17,10 @@ export function ModulePlaceholder({ title, icon: Icon }: { title: string; icon: 
 function ModuleContent({ title, icon: Icon }: { title: string; icon: LucideIcon }) {
   const { themeColors: c } = useAppTheme();
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: c.background }]}>
-      <AppHeader />
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: c.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <View style={styles.content}>
         <View style={[styles.icon, { backgroundColor: c.primarySoft }]}>
           <Icon size={32} color={c.primary} />

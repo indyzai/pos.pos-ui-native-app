@@ -1,28 +1,17 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { AppHeader } from '../../../shared/components/layout/AppHeader';
+import { StyleSheet, Text, View } from 'react-native';
 import { radii } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CounterSession } from '../../sales/salesOutbox';
 
 type BillingHeaderProps = {
-  onMenuToggle?: () => void;
   session: CounterSession | null | undefined;
   pendingSales: number;
   updated?: string;
   error?: string;
   syncing: boolean;
-  onRefresh: () => void;
 };
 
-export function BillingHeader({
-  onMenuToggle,
-  session,
-  pendingSales,
-  updated,
-  error,
-  syncing,
-  onRefresh,
-}: BillingHeaderProps) {
+export function BillingHeader({ session, pendingSales, updated, error, syncing }: BillingHeaderProps) {
   const { themeColors } = useAppTheme();
   const status = error
     ? error
@@ -36,7 +25,6 @@ export function BillingHeader({
     : 'Not cached yet';
   return (
     <View style={[s.wrapper, { backgroundColor: themeColors.background }]}>
-      <AppHeader onMenuToggle={onMenuToggle} />
       <View style={[s.statusBar, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
         <View style={s.statusCopy}>
           <View style={s.statusTitle}>
@@ -61,19 +49,6 @@ export function BillingHeader({
             {cacheLabel}
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Refresh billing data"
-          disabled={syncing}
-          onPress={onRefresh}
-          style={[s.refresh, { backgroundColor: themeColors.primary }, syncing && s.refreshDisabled]}
-        >
-          {syncing ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={s.refreshText}>↻ Refresh</Text>
-          )}
-        </Pressable>
       </View>
     </View>
   );
@@ -95,13 +70,4 @@ const s = StyleSheet.create({
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   statusText: { flex: 1, fontSize: 13, fontWeight: '800' },
   statusMeta: { fontSize: 11, fontWeight: '600', marginLeft: 15 },
-  refresh: {
-    minHeight: 36,
-    paddingHorizontal: 12,
-    borderRadius: radii.medium,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  refreshDisabled: { opacity: 0.65 },
-  refreshText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
 });

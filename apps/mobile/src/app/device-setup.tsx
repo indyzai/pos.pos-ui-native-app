@@ -32,7 +32,7 @@ export default function DeviceSetup() {
   };
   if (Platform.OS === 'web') return <Redirect href="/login" />;
   return (
-    <SafeAreaView style={[s.screen, { backgroundColor: c.background }]}>
+    <SafeAreaView style={[s.screen, { backgroundColor: c.background }]} edges={['left', 'right', 'bottom']}>
       <View style={[s.card, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
         <Text style={[s.title, { color: c.text }]}>Secure this device</Text>
         <Text style={[s.copy, { color: c.textSecondary }]}>

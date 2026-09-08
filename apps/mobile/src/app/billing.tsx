@@ -9,7 +9,10 @@ export default function BillingRoute() {
   const { themeColors } = useAppTheme();
   return (
     <BottomNavigationProvider>
-      <SafeAreaView style={[styles.screen, { backgroundColor: themeColors.background }]} edges={['top']}>
+      <SafeAreaView
+        style={[styles.screen, { backgroundColor: themeColors.background }]}
+        edges={['left', 'right']}
+      >
         <BillingScreen />
         <BottomNavigation />
       </SafeAreaView>

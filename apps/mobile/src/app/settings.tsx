@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
-import { AppHeader } from '../shared/components/layout/AppHeader';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { authApi } from '../features/auth/authApi';
 import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
@@ -58,8 +57,7 @@ function SettingsContent() {
     return () => setCenterItem(null);
   }, [section, pin, confirm]);
   return (
-    <SafeAreaView style={[s.screen, { backgroundColor: c.background }]}>
-      <AppHeader />
+    <SafeAreaView style={[s.screen, { backgroundColor: c.background }]} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
           <View style={[s.card, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
