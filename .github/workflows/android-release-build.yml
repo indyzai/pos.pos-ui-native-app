@@ -1,4 +1,4 @@
-name: Android Debug APK + AAB
+name: Android Release Build
 
 on:
   workflow_dispatch:
@@ -13,14 +13,6 @@ on:
         required: true
         default: "14"
         type: string
-  pull_request:
-    branches: [main, master]
-    paths:
-      - ".github/workflows/android-debug-build.yml"
-      - "apps/mobile/**"
-      - "package.json"
-      - "bun.lock"
-      - ".bun-version"
   push:
     branches: [main, master]
     paths:
@@ -36,22 +28,22 @@ permissions:
 env:
   EXPO_NO_TELEMETRY: "1"
   NODE_OPTIONS: --max-old-space-size=6144
-  # Set to non-empty by the signing step when the keystore secret is present.
-  SIGNING_FLAGS: ""
 
 concurrency:
-  group: android-debug-apk-${{ github.ref }}
+  group: android-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  android-debug:
-    name: Android Debug APK
+  android-release:
+    name: Android Release APK + AAB
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       # Expose secret presence as a plain env var — secrets context is not
       # available in step `if:` expressions, but env context is.
-      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      # Use a dedicated UPLOAD key — NOT the app signing key managed by Google Play.
+      # See: https://developer.android.com/studio/publish/app-signing#generate-key
+      HAS_UPLOAD_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
 
     steps:
       - name: Checkout code
@@ -93,50 +85,66 @@ jobs:
         working-directory: apps/mobile
         run: bunx expo prebuild --clean --platform android --non-interactive --no-install
 
-      - name: Prepare Android signing
-        # Signing is optional — skipped on forks or when the keystore secret is absent.
-        if: env.HAS_KEYSTORE == 'true'
+      # ─────────────────────────────────────────────────────────────────────────
+      # Upload key signing
+      #
+      # Requires these repository secrets (Settings → Secrets → Actions):
+      #   ANDROID_UPLOAD_KEYSTORE_BASE64  — base64 of your upload .jks/.keystore
+      #   ANDROID_UPLOAD_STORE_PASSWORD   — keystore store password
+      #   ANDROID_UPLOAD_KEY_ALIAS        — key alias inside the keystore
+      #   ANDROID_UPLOAD_KEY_PASSWORD     — key password
+      #
+      # IMPORTANT: this must be a SEPARATE key from the app signing key that
+      # Google Play manages. To generate one:
+      #   keytool -genkeypair -v \
+      #     -keystore upload-key.jks -alias upload \
+      #     -keyalg RSA -keysize 2048 -validity 10000
+      # Then register it in Play Console → Setup → App signing → Upload key.
+      # ─────────────────────────────────────────────────────────────────────────
+      - name: Prepare upload key
+        if: env.HAS_UPLOAD_KEY == 'true'
         env:
-          ANDROID_KEYSTORE_BASE64:  ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS:         ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD:      ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           KEYSTORE_PATH="$GITHUB_WORKSPACE/apps/mobile/android/app/upload-keystore.jks"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-          # Write keystore.properties so Gradle can pick it up via signingConfigs.
-          cat > "$GITHUB_WORKSPACE/apps/mobile/android/app/keystore.properties" <<EOF
-          storeFile=upload-keystore.jks
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          keyPassword=$ANDROID_KEY_PASSWORD
-          EOF
-          # Also export as Gradle -P flags for the build step.
-          echo "SIGNING_FLAGS=-Pandroid.injected.signing.store.file=$KEYSTORE_PATH -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+          # Export as Gradle -P signing flags consumed by the build step.
+          {
+            echo "SIGNING_FLAGS=-Pandroid.injected.signing.store.file=$KEYSTORE_PATH"
+            echo " -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD"
+            echo " -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS"
+            echo " -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD"
+          } | tr -d '\n' >> "$GITHUB_ENV"
+          echo "" >> "$GITHUB_ENV"
 
-      - name: Build debug APK and AAB
+      - name: Build release APK and AAB
         working-directory: apps/mobile/android
         env:
           ARCHS: ${{ inputs.archs || 'arm64-v8a,armeabi-v7a' }}
         run: |
-          ./gradlew app:assembleDebug app:bundleDebug \
+          # assembleRelease / bundleRelease → non-debuggable, release-signed.
+          # SIGNING_FLAGS is empty when HAS_UPLOAD_KEY is false (unsigned release).
+          ./gradlew app:assembleRelease app:bundleRelease \
             --no-daemon \
             --no-configuration-cache \
             -PreactNativeArchitectures="$ARCHS" \
             $SIGNING_FLAGS
 
-      - name: Upload Android debug APK
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: indyz-pos-android-debug-apk-${{ github.sha }}
-          path: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          name: indyz-pos-android-release-apk-${{ github.sha }}
+          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days || 14 }}
 
-      - name: Upload Android debug AAB
+      - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
-          name: indyz-pos-android-debug-aab-${{ github.sha }}
-          path: apps/mobile/android/app/build/outputs/bundle/debug/*.aab
+          name: indyz-pos-android-release-aab-${{ github.sha }}
+          path: apps/mobile/android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days || 14 }}
