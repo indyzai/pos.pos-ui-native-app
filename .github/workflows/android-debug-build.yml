@@ -48,6 +48,10 @@ jobs:
     name: Android Debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # Expose secret presence as a plain env var — secrets context is not
+      # available in step `if:` expressions, but env context is.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
 
     steps:
       - name: Checkout code
@@ -90,8 +94,8 @@ jobs:
         run: bunx expo prebuild --clean --platform android --non-interactive --no-install
 
       - name: Prepare Android signing
-        # Signing is optional — skipped on forks or when secrets are absent.
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        # Signing is optional — skipped on forks or when the keystore secret is absent.
+        if: env.HAS_KEYSTORE == 'true'
         env:
           ANDROID_KEYSTORE_BASE64:  ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
