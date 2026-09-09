@@ -36,6 +36,8 @@ permissions:
 env:
   EXPO_NO_TELEMETRY: "1"
   NODE_OPTIONS: --max-old-space-size=6144
+  # Set to non-empty by the signing step when the keystore secret is present.
+  SIGNING_FLAGS: ""
 
 concurrency:
   group: android-debug-apk-${{ github.ref }}
@@ -87,6 +89,27 @@ jobs:
         working-directory: apps/mobile
         run: bunx expo prebuild --clean --platform android --non-interactive --no-install
 
+      - name: Prepare Android signing
+        # Signing is optional — skipped on forks or when secrets are absent.
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64:  ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS:         ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD:      ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KEYSTORE_PATH="$GITHUB_WORKSPACE/apps/mobile/android/app/upload-keystore.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          # Write keystore.properties so Gradle can pick it up via signingConfigs.
+          cat > "$GITHUB_WORKSPACE/apps/mobile/android/app/keystore.properties" <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+          # Also export as Gradle -P flags for the build step.
+          echo "SIGNING_FLAGS=-Pandroid.injected.signing.store.file=$KEYSTORE_PATH -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+
       - name: Build debug APK and AAB
         working-directory: apps/mobile/android
         env:
@@ -95,7 +118,8 @@ jobs:
           ./gradlew app:assembleDebug app:bundleDebug \
             --no-daemon \
             --no-configuration-cache \
-            -PreactNativeArchitectures="$ARCHS"
+            -PreactNativeArchitectures="$ARCHS" \
+            $SIGNING_FLAGS
 
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
