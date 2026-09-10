@@ -6,29 +6,14 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
+import { env, resolveAuthApiUrl } from '../../config/env';
 
 WebBrowser.maybeCompleteAuthSession();
 
-function getExpoGoAuthApiUrl(): string | undefined {
-  if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) return undefined;
-
-  try {
-    // Expo Go's linking URI contains the Metro host, e.g.
-    // exp://192.168.1.2:3511. The physical device must use that host to
-    // reach the auth API running on the development machine.
-    const host = new URL(Constants.linkingUri).hostname;
-    return host ? `http://${host}:3504/api/v1` : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-const baseUrl =
-  process.env.EXPO_PUBLIC_AUTH_API_URL ??
-  (__DEV__
-    ? (getExpoGoAuthApiUrl() ?? 'http://localhost:3504/api/v1')
-    : 'https://api.indyzai.com/auth/api/v1');
-const appId = process.env.EXPO_PUBLIC_AUTH_APP_ID ?? (Platform.OS === 'web' ? 'pos' : 'pos-app');
+const authAppId = env.authAppId ?? (Platform.OS === 'web' ? 'pos' : 'pos-app');
+const authApiUrl = resolveAuthApiUrl(
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ? Constants.linkingUri : undefined,
+);
 const accessTokenKey = 'indyzai.access-token';
 const refreshTokenKey = 'indyzai.refresh-token';
 const userKey = 'indyzai.user';
@@ -72,7 +57,7 @@ type AuthResponse = Tokens & { tokens?: Tokens; user?: AuthUser };
 type CodeResponse = AuthResponse & { code?: string; applicationCode?: string };
 
 async function fetchCurrentUser(accessToken: string): Promise<AuthUser> {
-  const body = await requestJson<AuthUser & { user?: AuthUser }>(`${baseUrl}/users/me`, {
+  const body = await requestJson<AuthUser & { user?: AuthUser }>(`${authApiUrl}/users/me`, {
     token: accessToken,
   });
   const user = body.user ?? body;
@@ -120,7 +105,7 @@ async function deleteSessionValue(key: string): Promise<void> {
 }
 
 function request<T>(path: string, body: Record<string, string> = {}): Promise<T> {
-  return requestJson<T>(baseUrl + path, { method: 'POST', body });
+  return requestJson<T>(authApiUrl + path, { method: 'POST', body });
 }
 
 function authenticatedRequest<T>(
@@ -128,7 +113,7 @@ function authenticatedRequest<T>(
   body: Record<string, string>,
   accessToken: string,
 ): Promise<T> {
-  return requestJson<T>(baseUrl + path, { method: 'POST', body, token: accessToken });
+  return requestJson<T>(authApiUrl + path, { method: 'POST', body, token: accessToken });
 }
 
 async function getDeviceIdentifier(): Promise<string> {
@@ -256,10 +241,10 @@ export const authApi = {
       registered: Boolean(deviceId),
       deviceId: deviceId || undefined,
       deviceIdentifier,
-      deviceName: Constants.deviceName || (Platform.OS === 'web' ? 'Web browser' : 'Indyz POS device'),
+      deviceName: Constants.deviceName || (Platform.OS === 'web' ? 'Web browser' : 'IndyzAI POS device'),
       platform: Platform.OS,
       platformVersion: String(Platform.Version),
-      applicationId: Application.applicationId || (Platform.OS === 'web' ? appId : 'Unavailable'),
+      applicationId: Application.applicationId || (Platform.OS === 'web' ? authAppId : 'Unavailable'),
       applicationVersion:
         Application.nativeApplicationVersion || Constants.expoConfig?.version || 'Unavailable',
       buildVersion: Application.nativeBuildVersion || 'Development',
@@ -316,7 +301,12 @@ export const authApi = {
     const tenant = await this.getSelectedTenant();
     const result = await authenticatedRequest<{ deviceId: string; deviceToken: string }>(
       '/device/register',
-      { deviceIdentifier, pin, name: Constants.deviceName || 'Indyz POS device', tenantId: tenant?.id || '' },
+      {
+        deviceIdentifier,
+        pin,
+        name: Constants.deviceName || 'IndyzAI POS device',
+        tenantId: tenant?.id || '',
+      },
       accessToken,
     );
     try {
@@ -344,7 +334,7 @@ export const authApi = {
     if (!deviceId || !deviceToken)
       throw new Error('Set up device access after signing in with your password.');
     const verified = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock Indyz POS',
+      promptMessage: 'Unlock IndyzAI POS',
       disableDeviceFallback: false,
     });
     if (!verified.success) throw new Error('Device authentication was not completed.');
@@ -375,7 +365,12 @@ export const authApi = {
     await this.registerDevice(pin);
   },
   async login({ email, password }: LoginCredentials) {
-    const result = await request<CodeResponse>('/auth/login', { email, password, appId, env: 'prod' });
+    const result = await request<CodeResponse>('/auth/login', {
+      email,
+      password,
+      appId: authAppId,
+      env: 'prod',
+    });
     const tokens = result.tokens ?? result;
     if (tokens.accessToken && tokens.refreshToken) return saveSession(result);
     if (!result.code) throw new Error('The authentication service did not return a login code.');
@@ -390,7 +385,7 @@ export const authApi = {
       Platform.OS === 'web' ? { path: 'auth/callback' } : { scheme: 'indyzai-pos', path: 'auth/callback' },
     );
     const state = new AuthSession.AuthRequest({
-      clientId: appId,
+      clientId: authAppId,
       redirectUri,
       usePKCE: false,
     }).state;
@@ -400,14 +395,14 @@ export const authApi = {
     const callback = new URL(redirectUri);
     callback.searchParams.set('state', state);
     const request = new AuthSession.AuthRequest({
-      clientId: appId,
+      clientId: authAppId,
       redirectUri: callback.toString(),
       responseType: AuthSession.ResponseType.Code,
       usePKCE: true,
       state,
-      extraParams: { appName: appId, redirect: callback.toString() },
+      extraParams: { appName: authAppId, redirect: callback.toString() },
     });
-    const discovery = { authorizationEndpoint: `${baseUrl}/auth/${provider}` };
+    const discovery = { authorizationEndpoint: `${authApiUrl}/auth/${provider}` };
     // PKCE values are generated when Expo prepares the authorization URL.
     // Prepare it explicitly so the verifier can be persisted before Android
     // leaves the app and potentially recreates the callback activity.

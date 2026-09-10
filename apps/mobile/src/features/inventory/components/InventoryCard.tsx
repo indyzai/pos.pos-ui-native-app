@@ -1,11 +1,12 @@
 import { AlertTriangle, Barcode, PackageX } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { InventoryProduct } from '../types';
 
 export function InventoryCard({ product, onPress }: { product: InventoryProduct; onPress: () => void }) {
-  const { themeColors: c } = useAppTheme();
+  const { isDark, themeColors: c } = useAppTheme();
   const out = product.stock <= 0;
   const low = !out && product.stock < 30;
   const statusColor = out ? c.error : low ? '#D97706' : '#16A34A';
@@ -16,9 +17,16 @@ export function InventoryCard({ product, onPress }: { product: InventoryProduct;
     >
       <View style={[styles.accent, { backgroundColor: statusColor }]} />
       <View style={styles.row}>
-        <View style={[styles.avatar, { backgroundColor: product.color || c.primarySoft }]}>
+        <LinearGradient
+          colors={
+            isDark ? ['#2B374A', '#202938'] : [product.color || c.primarySoft, product.color || c.primarySoft]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.avatar}
+        >
           <Text style={styles.emoji}>{product.emoji || '📦'}</Text>
-        </View>
+        </LinearGradient>
         <View style={styles.details}>
           <Text numberOfLines={1} style={[styles.name, { color: c.text }]}>
             {product.name}

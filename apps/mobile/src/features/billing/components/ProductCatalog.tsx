@@ -1,3 +1,5 @@
+import { PackageSearch, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors } from '../../../config/theme';
@@ -8,7 +10,7 @@ type Props = { category: string; products: Product[]; onAdd: (product: Product) 
 
 export function ProductCatalog({ category, products, onAdd }: Props) {
   const { width } = useWindowDimensions();
-  const { themeColors: c } = useAppTheme();
+  const { isDark, themeColors: c } = useAppTheme();
   const isTablet = width >= 700;
   const columns = width >= 1024 ? 5 : isTablet ? 4 : 2;
   const horizontalPadding = isTablet ? 28 : 16;
@@ -22,14 +24,33 @@ export function ProductCatalog({ category, products, onAdd }: Props) {
           <AppPressable
             key={product.id}
             onPress={() => onAdd(product)}
-            style={[s.card, { width: cardWidth, backgroundColor: c.surface }]}
+            style={[
+              s.card,
+              {
+                width: cardWidth,
+                backgroundColor: c.surface,
+                borderColor: c.outlineMuted,
+                boxShadow: isDark
+                  ? '0px 3px 12px rgba(0, 0, 0, 0.24)'
+                  : '0px 3px 10px rgba(48, 58, 122, 0.05)',
+              },
+            ]}
           >
-            <View style={[s.image, { height: isTablet ? 112 : 76, backgroundColor: product.color }]}>
+            <LinearGradient
+              colors={isDark ? ['#2B374A', '#202938'] : [product.color, product.color]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[s.image, { height: isTablet ? 112 : 76 }]}
+            >
               <Text style={s.emoji}>{product.emoji}</Text>
-              <AppPressable onPress={() => onAdd(product)} style={[s.add, { backgroundColor: c.primary }]}>
-                <Text style={s.addText}>+</Text>
+              <AppPressable
+                accessibilityLabel={`Add ${product.name} to cart`}
+                onPress={() => onAdd(product)}
+                style={[s.add, { backgroundColor: c.primarySoft, borderColor: c.primary }]}
+              >
+                <Plus size={18} color={c.primary} strokeWidth={2.8} />
               </AppPressable>
-            </View>
+            </LinearGradient>
             <Text numberOfLines={1} style={[s.name, { color: c.text }]}>
               {product.name}
             </Text>
@@ -50,7 +71,7 @@ export function ProductCatalog({ category, products, onAdd }: Props) {
       </View>
       {!products.length && (
         <View style={s.empty}>
-          <Text style={[s.emptyIcon, { color: c.textSecondary }]}>⌕</Text>
+          <PackageSearch size={42} color={c.textSecondary} strokeWidth={1.7} />
           <Text style={[s.emptyText, { color: c.textSecondary }]}>No products found</Text>
         </View>
       )}
@@ -65,8 +86,8 @@ const s = StyleSheet.create({
   card: {
     padding: 8,
     borderRadius: 14,
+    borderWidth: 1,
     backgroundColor: colors.surface,
-    boxShadow: '0px 3px 10px rgba(48, 58, 122, 0.05)',
     elevation: 2,
   },
   image: { height: 76, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
@@ -80,9 +101,9 @@ const s = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
   },
-  addText: { fontSize: 19, lineHeight: 21, color: '#FFFFFF' },
   name: { fontSize: 12, fontWeight: '800', color: '#30344B', marginTop: 9 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 },
   price: { fontSize: 13, fontWeight: '900', color: colors.primary },
@@ -97,6 +118,5 @@ const s = StyleSheet.create({
   },
   lowStock: { color: colors.error, backgroundColor: colors.errorSoft },
   empty: { alignItems: 'center', paddingTop: 40 },
-  emptyIcon: { fontSize: 42, color: '#B2B7C8' },
   emptyText: { fontSize: 13, fontWeight: '700', color: '#858BA0' },
 });

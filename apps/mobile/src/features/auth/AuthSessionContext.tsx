@@ -3,6 +3,7 @@ import { setUnauthorizedHandler } from '../../core/api/baseApi';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { loadOrganizationDetails, type OrganizationDetails } from '../organization/organizationApi';
 import { authApi, type AuthTenant, type AuthUser } from './authApi';
+import { useAppTheme } from '../../shared/providers/ThemeProvider';
 
 export type AuthSession = {
   user: AuthUser;
@@ -115,15 +116,16 @@ export function useAuthSession() {
 }
 
 function StartupLoader() {
+  const { themeColors: c } = useAppTheme();
   return (
-    <View style={s.loader}>
-      <ActivityIndicator size="large" color="#1B6EF3" />
-      <Text style={s.loaderText}>Preparing your workspace…</Text>
+    <View style={[s.loader, { backgroundColor: c.background }]}>
+      <ActivityIndicator size="large" color={c.primary} />
+      <Text style={[s.loaderText, { color: c.textSecondary }]}>Preparing your workspace…</Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: '#F9FAFF' },
-  loaderText: { color: '#43474F', fontSize: 14, fontWeight: '700' },
+  loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
+  loaderText: { fontSize: 14, fontWeight: '700' },
 });

@@ -44,7 +44,7 @@ type Props = {
 
 /** Shared POS app header with store identity, user badge, and appearance controls. */
 export function AppHeader({
-  title = 'Indyz POS',
+  title = 'IndyzAI POS',
   subtitle = 'Counter 01',
   initials,
   onMenuToggle,
@@ -59,10 +59,12 @@ export function AppHeader({
   const local = useLocalDatabase();
   const { counterDialogRequest, featureRefresh, featureRefreshing } = useAppHeader();
   const router = useRouter();
-  const { mode, setMode, themeColors } = useAppTheme();
+  const { isDark, mode, setMode, themeColors } = useAppTheme();
   const { session, user, refreshSession } = useAuthSession();
   const selectedTenant = session?.tenant ?? null;
   const organization = session?.organization;
+  const businessName = organization?.name || selectedTenant?.name;
+  const headerTitle = businessName ? `${title} (${businessName})` : title;
   const activeCounterSession = organization?.activeSession;
   const fallbackBranch =
     organization?.branches.find((branch) => branch.counters.length) ?? organization?.branches[0];
@@ -129,7 +131,11 @@ export function AppHeader({
       style={[
         s.header,
         isPhone && s.phoneHeader,
-        { backgroundColor: themeColors.surface, borderColor: themeColors.outline },
+        {
+          backgroundColor: themeColors.surface,
+          borderColor: themeColors.outline,
+          boxShadow: isDark ? '0px 3px 10px rgba(0, 0, 0, 0.24)' : 'none',
+        },
       ]}
     >
       <View style={s.brand}>
@@ -152,7 +158,7 @@ export function AppHeader({
         <PosLogo size={isPhone ? 29 : 34} />
         <View style={s.brandCopy}>
           <Text numberOfLines={1} style={[s.title, isPhone && s.phoneTitle, { color: themeColors.text }]}>
-            {title}
+            {headerTitle}
           </Text>
           <View style={s.branchRow}>
             <Text numberOfLines={1} style={[s.subtitle, { color: themeColors.textSecondary }]}>
@@ -365,14 +371,14 @@ const s = StyleSheet.create({
     position: 'relative',
     zIndex: 30,
     elevation: 10,
-    height: 68,
+    height: 72,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
   },
-  phoneHeader: { height: 58, paddingHorizontal: 10 },
+  phoneHeader: { height: 64, paddingHorizontal: 12 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   brandCopy: { minWidth: 0, maxWidth: 240, flexShrink: 1 },
   burger: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

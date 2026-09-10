@@ -90,7 +90,7 @@ export function LoginScreen({
   return (
     <View style={[s.screen, !wideLayout && s.singleColumn, { backgroundColor: c.background }]}>
       <AuthBranding
-        title="Welcome to Indyz POS"
+        title="Welcome to IndyzAI POS"
         subtitle="Run your sales, inventory, and customers from one place."
         fullScreen={brandedMobileLayout}
       />
@@ -223,7 +223,9 @@ export function LoginScreen({
         </View>
         <View style={[s.formNote, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
           <ShieldCheck size={15} color="#6677E8" strokeWidth={2.4} />
-          <Text style={[s.formNoteText, { color: c.text }]}>Secure access for your Indyz POS workspace</Text>
+          <Text style={[s.formNoteText, { color: c.text }]}>
+            Secure access for your IndyzAI POS workspace
+          </Text>
         </View>
       </ScrollView>
     </View>

@@ -56,7 +56,7 @@ export function GeneralSettingsSection() {
 
       <SectionTitle icon={Globe2} title="Application" />
       <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
-        <Detail label="Application" value={Constants.expoConfig?.name || 'Indyz POS'} />
+        <Detail label="Application" value={Constants.expoConfig?.name || 'IndyzAI POS'} />
         <Detail label="Version" value={Constants.expoConfig?.version || 'Development'} last />
       </View>
     </View>

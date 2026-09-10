@@ -200,7 +200,7 @@ export function BillingScreen() {
             ]}
           >
             <View {...sheetPanResponder.panHandlers} style={s.dragArea}>
-              <View style={s.handle} />
+              <View style={[s.handle, { backgroundColor: themeColors.outline }]} />
             </View>
             <OrderCart
               items={cart.items}

@@ -15,18 +15,18 @@ export const colors = {
 } as const;
 export type ThemeColors = Record<keyof typeof colors, string>;
 export const darkColors: ThemeColors = {
-  background: '#111318',
-  surface: '#1B1E24',
-  surfaceMuted: '#22252B',
-  surfaceAccent: '#00458B',
-  primary: '#AAC7FF',
-  primarySoft: '#00458B',
-  text: '#E3E2E6',
-  textSecondary: '#C3C6CF',
-  outline: '#43474E',
-  outlineMuted: '#2D3037',
-  success: '#7CDC94',
-  error: '#FFB4AB',
-  errorSoft: '#93000A',
+  background: '#0F1217',
+  surface: '#1A202B',
+  surfaceMuted: '#222B39',
+  surfaceAccent: '#263B5D',
+  primary: '#78AEFF',
+  primarySoft: '#173A68',
+  text: '#F3F5F9',
+  textSecondary: '#AAB4C5',
+  outline: '#3A4658',
+  outlineMuted: '#293344',
+  success: '#72DA91',
+  error: '#FF918A',
+  errorSoft: '#4A2428',
 };
 export const radii = { small: 8, medium: 12, large: 16, sheet: 22 } as const;

@@ -8,7 +8,7 @@ export function PosLogo({ size = 40 }: { size?: number }) {
       viewBox="0 0 1024 1024"
       fill="none"
       accessibilityRole="image"
-      accessibilityLabel="Indyz POS"
+      accessibilityLabel="IndyzAI POS"
     >
       <Defs>
         <LinearGradient id="posBackground" x1="145" y1="100" x2="879" y2="924" gradientUnits="userSpaceOnUse">

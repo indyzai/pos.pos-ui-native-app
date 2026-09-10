@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Indyz POS",
+    "name": "IndyzAI POS",
     "slug": "indyz-pos",
     "version": "1.0.0",
     "scheme": "indyzai-pos",
@@ -10,13 +10,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Indyz POS to use your camera to scan barcodes and QR codes."
+          "cameraPermission": "Allow IndyzAI POS to use your camera to scan barcodes and QR codes."
         }
       ],
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Allow Indyz POS to use Face ID to unlock your POS session."
+          "faceIDPermission": "Allow IndyzAI POS to use Face ID to unlock your POS session."
         }
       ],
       [
@@ -33,7 +33,7 @@
         }
       ]
     ],
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.indyzai.pos.app",
       "supportsTablet": true

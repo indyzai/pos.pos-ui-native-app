@@ -156,7 +156,7 @@ function BrandLockup({ compact = false }: { compact?: boolean }) {
     <View style={[s.brand, compact && s.mobileBrand]}>
       <PosLogo size={compact ? 34 : 43} />
       <View>
-        <Text style={[s.brandName, compact && s.mobileBrandName]}>INDYZ POS</Text>
+        <Text style={[s.brandName, compact && s.mobileBrandName]}>INDYZAI POS</Text>
         <Text style={s.brandTagline}>SMARTER BUSINESS, EVERY DAY</Text>
       </View>
     </View>

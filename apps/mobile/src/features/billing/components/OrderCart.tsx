@@ -36,7 +36,7 @@ export function OrderCart({
   counterClosed = false,
   onClose,
 }: Props) {
-  const { themeColors: c } = useAppTheme();
+  const { isDark, themeColors: c } = useAppTheme();
   const headerPanResponder = useMemo(
     () =>
       PanResponder.create({
@@ -49,7 +49,15 @@ export function OrderCart({
     [onClose],
   );
   return (
-    <View style={[s.cart, { backgroundColor: c.surface }]}>
+    <View
+      style={[
+        s.cart,
+        {
+          backgroundColor: c.surface,
+          boxShadow: isDark ? '0px -5px 18px rgba(0, 0, 0, 0.32)' : '0px -5px 14px rgba(33, 38, 75, 0.12)',
+        },
+      ]}
+    >
       <View {...headerPanResponder.panHandlers} style={s.head}>
         <View>
           <Text style={[s.title, { color: c.text }]}>Current order</Text>
@@ -152,16 +160,20 @@ export function OrderCart({
         <AppPressable
           disabled={!items.length}
           onPress={onCheckout}
-          style={[s.charge, !items.length && s.chargeOff]}
+          style={[
+            s.charge,
+            { backgroundColor: items.length ? c.primarySoft : c.surfaceMuted },
+            items.length > 0 && { borderColor: c.primary },
+          ]}
         >
-          <Text style={s.chargeText}>
+          <Text style={[s.chargeText, { color: items.length ? c.primary : c.textSecondary }]}>
             {counterClosed
               ? 'Open counter to checkout'
               : items.length
                 ? `Charge ${money(total)}`
                 : 'Add items to checkout'}
           </Text>
-          <ArrowRight size={21} color="#FFFFFF" strokeWidth={2.7} />
+          <ArrowRight size={21} color={items.length ? c.primary : c.textSecondary} strokeWidth={2.7} />
         </AppPressable>
       </View>
     </View>
@@ -184,7 +196,6 @@ const s = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: radii.sheet,
     borderTopRightRadius: radii.sheet,
-    boxShadow: '0px -5px 14px rgba(33, 38, 75, 0.12)',
     elevation: 12,
   },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10 },
@@ -270,7 +281,9 @@ const s = StyleSheet.create({
   charge: {
     height: 49,
     borderRadius: radii.medium,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
     marginVertical: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -279,6 +292,5 @@ const s = StyleSheet.create({
     boxShadow: '0px 3px 7px rgba(48, 57, 146, 0.28)',
     elevation: 4,
   },
-  chargeOff: { backgroundColor: '#AEB3D8' },
   chargeText: { fontSize: 14, fontWeight: '900', color: '#fff' },
 });

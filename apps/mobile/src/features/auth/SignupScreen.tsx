@@ -94,7 +94,7 @@ export function SignupScreen({ onSignUp, onLogin }: Props) {
   return (
     <View style={[s.screen, !wideLayout && s.singleColumn, { backgroundColor: c.background }]}>
       <AuthBranding
-        title="Join Indyz POS"
+        title="Join IndyzAI POS"
         subtitle="Set up your business and start selling in a few simple steps."
         fullScreen={brandedMobileLayout}
       />
@@ -263,7 +263,7 @@ export function SignupScreen({ onSignUp, onLogin }: Props) {
         </View>
         <View style={[s.formNote, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
           <Sparkles size={15} color="#6677E8" strokeWidth={2.4} />
-          <Text style={[s.formNoteText, { color: c.text }]}>Build a smarter business with Indyz POS</Text>
+          <Text style={[s.formNoteText, { color: c.text }]}>Build a smarter business with IndyzAI POS</Text>
         </View>
       </ScrollView>
     </View>

@@ -19,7 +19,7 @@ export function BottomNavigation() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const { centerItem } = useBottomNavigation();
-  const { themeColors: c } = useAppTheme();
+  const { isDark, themeColors: c } = useAppTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -33,6 +33,7 @@ export function BottomNavigation() {
           paddingBottom: insets.bottom,
           backgroundColor: c.surface,
           borderTopColor: c.outline,
+          boxShadow: isDark ? '0px -4px 14px rgba(0, 0, 0, 0.34)' : '0px -2px 8px rgba(0, 0, 0, 0.06)',
         },
       ]}
     >
@@ -64,7 +65,13 @@ export function BottomNavigation() {
           onPress={centerItem.onPress}
           style={s.centerAction}
         >
-          <View style={[s.centerCircle, { backgroundColor: c.primarySoft, borderColor: c.background }]}>
+          <View
+            style={[
+              s.centerCircle,
+              { backgroundColor: c.primarySoft, borderColor: c.background },
+              isDark && { boxShadow: '0px 5px 14px rgba(0, 0, 0, 0.38)' },
+            ]}
+          >
             <centerItem.icon size={27} color={c.primary} strokeWidth={2} />
             <Text style={[s.centerLabel, { color: c.primary }]}>{centerItem.label}</Text>
             {(centerItem.badge ?? 0) > 0 && (
@@ -164,7 +171,6 @@ const s = StyleSheet.create({
     borderTopColor: colors.outline,
     paddingHorizontal: 8,
     elevation: 12,
-    boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.06)',
   },
   items: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   item: { flex: 1, height: 62, alignItems: 'center', justifyContent: 'center', gap: 3 },

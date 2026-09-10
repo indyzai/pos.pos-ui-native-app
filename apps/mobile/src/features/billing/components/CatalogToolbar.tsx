@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ScanBarcode } from 'lucide-react-native';
+import { ScanBarcode, Search, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors, radii } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
@@ -19,12 +19,12 @@ export function CatalogToolbar({ categories, search, category, onSearch, onCateg
     <View style={[s.toolbar, { backgroundColor: c.background }]}>
       <View style={s.searchRow}>
         <View style={[s.search, { backgroundColor: c.surface, borderColor: c.outline }]}>
-          <Text style={s.searchIcon}>⌕</Text>
+          <Search size={19} color={c.primary} strokeWidth={2.4} />
           <TextInput
             value={search}
             onChangeText={onSearch}
             placeholder="Search products"
-            placeholderTextColor="#8990A4"
+            placeholderTextColor={c.textSecondary}
             style={[s.searchInput, { color: c.text }]}
           />
           {search.length > 0 && (
@@ -33,7 +33,7 @@ export function CatalogToolbar({ categories, search, category, onSearch, onCateg
               onPress={() => onSearch('')}
               style={[s.clearButton, { backgroundColor: c.surfaceMuted }]}
             >
-              <Text style={[s.clearText, { color: c.textSecondary }]}>×</Text>
+              <X size={15} color={c.textSecondary} strokeWidth={2.5} />
             </AppPressable>
           )}
         </View>
@@ -57,11 +57,11 @@ export function CatalogToolbar({ categories, search, category, onSearch, onCateg
             onPress={() => onCategory(item)}
             style={[
               s.tab,
-              { backgroundColor: c.surfaceMuted },
-              category === item && { backgroundColor: c.primary },
+              { backgroundColor: c.surfaceMuted, borderColor: c.outlineMuted },
+              category === item && { backgroundColor: c.primarySoft, borderColor: c.primary },
             ]}
           >
-            <Text style={[s.tabText, { color: c.textSecondary }, category === item && s.tabTextSelected]}>
+            <Text style={[s.tabText, { color: c.textSecondary }, category === item && { color: c.primary }]}>
               {item}
             </Text>
           </AppPressable>
@@ -85,8 +85,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.outline,
   },
-  searchIcon: { fontSize: 25, lineHeight: 27, color: colors.primary, marginRight: 6 },
-  searchInput: { flex: 1, height: '100%', fontSize: 13, color: colors.text },
+  searchInput: { flex: 1, height: '100%', fontSize: 14, color: colors.text, marginLeft: 9 },
   clearButton: {
     width: 25,
     height: 25,
@@ -95,7 +94,6 @@ const s = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: colors.surfaceMuted,
   },
-  clearText: { color: colors.textSecondary, fontSize: 19, lineHeight: 21 },
   scanButton: {
     height: 45,
     width: 45,
@@ -111,6 +109,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     justifyContent: 'center',
     borderRadius: 12,
+    borderWidth: 1,
     backgroundColor: '#E9ECF5',
   },
   tabSelected: { backgroundColor: colors.primary },
