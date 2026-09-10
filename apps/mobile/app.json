@@ -18,6 +18,19 @@
         {
           "faceIDPermission": "Allow Indyz POS to use Face ID to unlock your POS session."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F8FAFF",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#111318",
+            "image": "./assets/splash-icon.png"
+          }
+        }
       ]
     ],
     "userInterfaceStyle": "light",
@@ -28,10 +41,8 @@
     "android": {
       "package": "com.indyzai.pos.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#3548B8",
+        "foregroundImage": "./assets/android-icon-foreground-safe.png"
       },
       "predictiveBackGestureEnabled": false
     },
