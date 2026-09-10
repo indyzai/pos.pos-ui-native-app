@@ -31,10 +31,12 @@ import type { InventoryFilter, InventoryProduct } from './types';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
 import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
 import { AddInventoryItemModal } from './components/AddInventoryItemModal';
+import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
 
 export function InventoryScreen() {
   const { themeColors: c } = useAppTheme();
   const { width } = useWindowDimensions();
+  const bottomClearance = useBottomNavigationClearance();
   const data = useInventory();
   const { setFeatureRefresh } = useAppHeader();
   const { setCenterItem } = useBottomNavigation();
@@ -99,7 +101,7 @@ export function InventoryScreen() {
             tintColor={c.primary}
           />
         }
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: bottomClearance }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.heading}>
@@ -275,7 +277,7 @@ function formatValue(value: number) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  content: { padding: 18, paddingBottom: 100 },
+  content: { padding: 18 },
   heading: {
     flexDirection: 'row',
     justifyContent: 'space-between',

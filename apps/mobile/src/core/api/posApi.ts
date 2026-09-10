@@ -1,5 +1,5 @@
 import { requestGraphQL } from './baseApi';
-import { env } from '../../config/env';
+import { getRuntimeApiUrls } from '../../config/runtimeEnvironment';
 
 export function requestPos<T>(
   token: string,
@@ -7,5 +7,7 @@ export function requestPos<T>(
   query: string,
   variables: Record<string, unknown> = {},
 ) {
-  return requestGraphQL<T>(env.posApiUrl, query, variables, { token, tenantId });
+  return getRuntimeApiUrls().then(({ posApiUrl }) =>
+    requestGraphQL<T>(posApiUrl, query, variables, { token, tenantId }),
+  );
 }

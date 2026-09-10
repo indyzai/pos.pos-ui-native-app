@@ -4,6 +4,7 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { useBottomNavigationClearance } from '../../../shared/hooks/useBottomNavigationClearance';
 import type { Product } from '../types/billing';
 
 type Props = { category: string; products: Product[]; onAdd: (product: Product) => void };
@@ -12,12 +13,22 @@ export function ProductCatalog({ category, products, onAdd }: Props) {
   const { width } = useWindowDimensions();
   const { isDark, themeColors: c } = useAppTheme();
   const isTablet = width >= 700;
+  const bottomClearance = useBottomNavigationClearance();
   const columns = width >= 1024 ? 5 : isTablet ? 4 : 2;
   const horizontalPadding = isTablet ? 28 : 16;
   const gap = isTablet ? 14 : 9;
   const cardWidth = (width - horizontalPadding * 2 - gap * (columns - 1)) / columns;
   return (
-    <View style={[s.catalog, { paddingHorizontal: horizontalPadding, backgroundColor: c.background }]}>
+    <View
+      style={[
+        s.catalog,
+        {
+          paddingHorizontal: horizontalPadding,
+          paddingBottom: bottomClearance,
+          backgroundColor: c.background,
+        },
+      ]}
+    >
       <Text style={[s.title, { color: c.text }]}>{category === 'All' ? 'Popular products' : category}</Text>
       <View style={[s.grid, { gap }]}>
         {products.map((product) => (
@@ -80,7 +91,7 @@ export function ProductCatalog({ category, products, onAdd }: Props) {
 }
 
 const s = StyleSheet.create({
-  catalog: { paddingHorizontal: 16, paddingBottom: 96, paddingTop: 8 },
+  catalog: { paddingHorizontal: 16, paddingTop: 8 },
   title: { fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
   card: {

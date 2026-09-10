@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomNavigationProvider } from '../../providers/BottomNavigationProvider';
 import { useAppTheme } from '../../providers/ThemeProvider';
 import { BottomNavigation } from '../navigation/BottomNavigation';
+import { useBottomNavigationClearance } from '../../hooks/useBottomNavigationClearance';
 
 export function ModulePlaceholder({ title, icon: Icon }: { title: string; icon: LucideIcon }) {
   return (
@@ -16,12 +17,13 @@ export function ModulePlaceholder({ title, icon: Icon }: { title: string; icon: 
 
 function ModuleContent({ title, icon: Icon }: { title: string; icon: LucideIcon }) {
   const { themeColors: c } = useAppTheme();
+  const bottomClearance = useBottomNavigationClearance();
   return (
     <SafeAreaView
       style={[styles.screen, { backgroundColor: c.background }]}
       edges={['left', 'right', 'bottom']}
     >
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: bottomClearance }]}>
         <View style={[styles.icon, { backgroundColor: c.primarySoft }]}>
           <Icon size={32} color={c.primary} />
         </View>
@@ -36,7 +38,7 @@ function ModuleContent({ title, icon: Icon }: { title: string; icon: LucideIcon 
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, paddingBottom: 90 },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   icon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   title: { marginTop: 16, fontSize: 24, fontWeight: '900' },
   description: { marginTop: 8, fontSize: 14, textAlign: 'center' },

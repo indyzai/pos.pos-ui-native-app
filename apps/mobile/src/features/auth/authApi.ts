@@ -6,14 +6,12 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
-import { env, resolveAuthApiUrl } from '../../config/env';
+import { env } from '../../config/env';
+import { getRuntimeApiUrls } from '../../config/runtimeEnvironment';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const authAppId = env.authAppId ?? (Platform.OS === 'web' ? 'pos' : 'pos-app');
-const authApiUrl = resolveAuthApiUrl(
-  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ? Constants.linkingUri : undefined,
-);
 const accessTokenKey = 'indyzai.access-token';
 const refreshTokenKey = 'indyzai.refresh-token';
 const userKey = 'indyzai.user';
@@ -25,10 +23,6 @@ const oauthVerifierKey = 'indyzai.oauth-verifier';
 const sessionFallback = new Map<string, string>();
 let sessionUserPromise: Promise<AuthUser | null> | undefined;
 let authorizationCompletion: Promise<void> | undefined;
-const deviceTokenOptions =
-  Constants.executionEnvironment === ExecutionEnvironment.StoreClient
-    ? undefined
-    : { requireAuthentication: true };
 
 type Tokens = { accessToken?: string; refreshToken?: string; user?: AuthUser };
 export type AuthTenant = { id: string; name: string; role: string };
@@ -56,8 +50,45 @@ export type DeviceRegistrationDetails = {
 type AuthResponse = Tokens & { tokens?: Tokens; user?: AuthUser };
 type CodeResponse = AuthResponse & { code?: string; applicationCode?: string };
 
+async function canUseBiometricAuthentication(): Promise<boolean> {
+  if (Platform.OS === 'web' || Constants.executionEnvironment === ExecutionEnvironment.StoreClient)
+    return false;
+  try {
+    return (await LocalAuthentication.hasHardwareAsync()) && (await LocalAuthentication.isEnrolledAsync());
+  } catch {
+    return false;
+  }
+}
+
+async function getDeviceToken(): Promise<string | null> {
+  const requireAuthentication = await canUseBiometricAuthentication();
+  return SecureStore.getItemAsync(
+    deviceTokenKey,
+    requireAuthentication ? { requireAuthentication: true } : undefined,
+  );
+}
+
+async function setDeviceToken(value: string): Promise<void> {
+  const requireAuthentication = await canUseBiometricAuthentication();
+  await SecureStore.setItemAsync(
+    deviceTokenKey,
+    value,
+    requireAuthentication ? { requireAuthentication: true } : undefined,
+  );
+}
+
+async function authenticateDeviceIfAvailable(promptMessage: string): Promise<void> {
+  if (!(await canUseBiometricAuthentication())) return;
+  const verified = await LocalAuthentication.authenticateAsync({
+    promptMessage,
+    disableDeviceFallback: false,
+  });
+  if (!verified.success) throw new Error('Device authentication was not completed.');
+}
+
 async function fetchCurrentUser(accessToken: string): Promise<AuthUser> {
-  const body = await requestJson<AuthUser & { user?: AuthUser }>(`${authApiUrl}/users/me`, {
+  const { authApiUrl: runtimeAuthApiUrl } = await getRuntimeApiUrls();
+  const body = await requestJson<AuthUser & { user?: AuthUser }>(`${runtimeAuthApiUrl}/users/me`, {
     token: accessToken,
   });
   const user = body.user ?? body;
@@ -104,16 +135,18 @@ async function deleteSessionValue(key: string): Promise<void> {
   }
 }
 
-function request<T>(path: string, body: Record<string, string> = {}): Promise<T> {
-  return requestJson<T>(authApiUrl + path, { method: 'POST', body });
+async function request<T>(path: string, body: Record<string, string> = {}): Promise<T> {
+  const { authApiUrl: runtimeAuthApiUrl } = await getRuntimeApiUrls();
+  return requestJson<T>(runtimeAuthApiUrl + path, { method: 'POST', body });
 }
 
-function authenticatedRequest<T>(
+async function authenticatedRequest<T>(
   path: string,
   body: Record<string, string>,
   accessToken: string,
 ): Promise<T> {
-  return requestJson<T>(authApiUrl + path, { method: 'POST', body, token: accessToken });
+  const { authApiUrl: runtimeAuthApiUrl } = await getRuntimeApiUrls();
+  return requestJson<T>(runtimeAuthApiUrl + path, { method: 'POST', body, token: accessToken });
 }
 
 async function getDeviceIdentifier(): Promise<string> {
@@ -310,10 +343,7 @@ export const authApi = {
       accessToken,
     );
     try {
-      await Promise.all([
-        setSessionValue(deviceIdKey, result.deviceId),
-        SecureStore.setItemAsync(deviceTokenKey, result.deviceToken, deviceTokenOptions),
-      ]);
+      await Promise.all([setSessionValue(deviceIdKey, result.deviceId), setDeviceToken(result.deviceToken)]);
     } catch (error) {
       await Promise.all([
         deleteSessionValue(deviceIdKey),
@@ -327,17 +357,10 @@ export const authApi = {
       throw new Error(
         'Device authentication is disabled on web. Sign in with your password or Google/Microsoft.',
       );
-    const [deviceId, deviceToken] = await Promise.all([
-      getSessionValue(deviceIdKey),
-      SecureStore.getItemAsync(deviceTokenKey, deviceTokenOptions),
-    ]);
+    const [deviceId, deviceToken] = await Promise.all([getSessionValue(deviceIdKey), getDeviceToken()]);
     if (!deviceId || !deviceToken)
       throw new Error('Set up device access after signing in with your password.');
-    const verified = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock IndyzAI POS',
-      disableDeviceFallback: false,
-    });
-    if (!verified.success) throw new Error('Device authentication was not completed.');
+    await authenticateDeviceIfAvailable('Unlock IndyzAI POS');
     const result = await request<{ user: AuthUser; tokens: Tokens; deviceToken: string }>('/device/token', {
       deviceId,
       deviceToken,
@@ -352,17 +375,17 @@ export const authApi = {
       selectedTenant
         ? setSessionValue(selectedTenantKey, selectedTenant.id)
         : deleteSessionValue(selectedTenantKey),
-      SecureStore.setItemAsync(deviceTokenKey, result.deviceToken, deviceTokenOptions),
+      setDeviceToken(result.deviceToken),
     ]);
   },
   async changeDevicePin(pin: string): Promise<void> {
     if (Platform.OS === 'web') throw new Error('Device authentication is disabled on web.');
-    const verified = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Verify to change device PIN',
-      disableDeviceFallback: false,
-    });
-    if (!verified.success) throw new Error('Device authentication is required to change the PIN.');
+    await this.verifyDeviceAccess();
     await this.registerDevice(pin);
+  },
+  async verifyDeviceAccess(): Promise<void> {
+    if (Platform.OS === 'web') throw new Error('Device authentication is disabled on web.');
+    await authenticateDeviceIfAvailable('Verify device access');
   },
   async login({ email, password }: LoginCredentials) {
     const result = await request<CodeResponse>('/auth/login', {
@@ -381,6 +404,7 @@ export const authApi = {
     return saveSession(result);
   },
   async authorize(provider: 'google' | 'microsoft') {
+    const { authApiUrl: runtimeAuthApiUrl } = await getRuntimeApiUrls();
     const redirectUri = AuthSession.makeRedirectUri(
       Platform.OS === 'web' ? { path: 'auth/callback' } : { scheme: 'indyzai-pos', path: 'auth/callback' },
     );
@@ -402,7 +426,7 @@ export const authApi = {
       state,
       extraParams: { appName: authAppId, redirect: callback.toString() },
     });
-    const discovery = { authorizationEndpoint: `${authApiUrl}/auth/${provider}` };
+    const discovery = { authorizationEndpoint: `${runtimeAuthApiUrl}/auth/${provider}` };
     // PKCE values are generated when Expo prepares the authorization URL.
     // Prepare it explicitly so the verifier can be persisted before Android
     // leaves the app and potentially recreates the callback activity.

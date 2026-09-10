@@ -7,6 +7,7 @@ import { colors } from '../../../config/theme';
 import { useBottomNavigation } from '../../providers/BottomNavigationProvider';
 import { useAppTheme } from '../../providers/ThemeProvider';
 import { AppPressable } from '../ui/AppPressable';
+import { BOTTOM_NAVIGATION_HEIGHT } from '../../hooks/useBottomNavigationClearance';
 import {
   isNavigationItemActive,
   moreNavigationItems,
@@ -29,7 +30,7 @@ export function BottomNavigation() {
       style={[
         s.bar,
         {
-          height: 66 + insets.bottom,
+          height: BOTTOM_NAVIGATION_HEIGHT + insets.bottom,
           paddingBottom: insets.bottom,
           backgroundColor: c.surface,
           borderTopColor: c.outline,
@@ -82,7 +83,11 @@ export function BottomNavigation() {
           </View>
         </AppPressable>
       )}
-      <MoreMenu visible={moreOpen} onClose={() => setMoreOpen(false)} bottomOffset={66 + insets.bottom} />
+      <MoreMenu
+        visible={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        bottomOffset={BOTTOM_NAVIGATION_HEIGHT + insets.bottom}
+      />
     </View>
   );
 }

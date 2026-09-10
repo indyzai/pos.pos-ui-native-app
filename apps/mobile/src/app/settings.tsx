@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,7 @@ import { GeneralSettingsSection } from '../features/settings/GeneralSettingsSect
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 import { BottomNavigationProvider } from '../shared/providers/BottomNavigationProvider';
 import { useBottomNavigation } from '../shared/providers/BottomNavigationProvider';
+import { useBottomNavigationClearance } from '../shared/hooks/useBottomNavigationClearance';
 
 export default function SettingsRoute() {
   return (
@@ -33,8 +33,7 @@ export default function SettingsRoute() {
 }
 function SettingsContent() {
   const { themeColors: c } = useAppTheme();
-  const { width, height } = useWindowDimensions();
-  const bottomNavigationVisible = !(width >= 700 && width > height);
+  const bottomClearance = useBottomNavigationClearance();
   const { setCenterItem } = useBottomNavigation();
   const [section, setSection] = useState('general');
   const [tabsOpen, setTabsOpen] = useState(false);
@@ -69,71 +68,13 @@ function SettingsContent() {
     <SafeAreaView style={[s.screen, { backgroundColor: c.background }]} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={[s.scroll, { paddingBottom: bottomNavigationVisible ? 96 : 20 }]}
+          contentContainerStyle={[s.scroll, { paddingBottom: bottomClearance }]}
           keyboardShouldPersistTaps="handled"
         >
           <View style={[s.card, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
             <View style={s.titleRow}>
               <Text style={[s.title, { color: c.text }]}>Settings</Text>
             </View>
-            <View ref={tabsButtonRef} collapsable={false} style={s.tabsButtonAnchor}>
-              <AppPressable
-                accessibilityLabel={tabsOpen ? 'Close settings navigation' : 'Open settings navigation'}
-                onPress={toggleTabs}
-                style={[s.tabsButton, { backgroundColor: c.primary }]}
-              >
-                {tabsOpen ? <X size={19} color="#fff" /> : <ChevronLeft size={20} color="#fff" />}
-              </AppPressable>
-            </View>
-            {tabsOpen && (
-              <Modal
-                transparent
-                visible={tabsOpen}
-                animationType="fade"
-                onRequestClose={() => setTabsOpen(false)}
-              >
-                <View style={s.tabsOverlay}>
-                  <Pressable
-                    accessibilityLabel="Close settings navigation"
-                    style={StyleSheet.absoluteFill}
-                    onPress={() => setTabsOpen(false)}
-                  />
-                  <View
-                    style={[s.tabs, { top: tabsTop, backgroundColor: c.surface, borderColor: c.outline }]}
-                  >
-                    {[
-                      'General',
-                      'Appearance',
-                      'Billing',
-                      'Devices',
-                      'Users & access',
-                      'Notifications',
-                      'Integrations',
-                      'Data',
-                    ].map((tab) => (
-                      <AppPressable
-                        key={tab}
-                        onPress={() => {
-                          setSection(tab.toLowerCase().replace(' & access', ''));
-                          setTabsOpen(false);
-                        }}
-                        style={[
-                          s.tab,
-                          {
-                            backgroundColor:
-                              section === tab.toLowerCase().replace(' & access', '')
-                                ? c.primarySoft
-                                : 'transparent',
-                          },
-                        ]}
-                      >
-                        <Text style={[s.tabText, { color: c.text }]}>{tab}</Text>
-                      </AppPressable>
-                    ))}
-                  </View>
-                </View>
-              </Modal>
-            )}
             {section === 'general' && <GeneralSettingsSection />}
             {section === 'devices' && <DeviceSettingsSection registerSave={registerSave} />}
             {section === 'billing' && <BillingSettingsSection />}
@@ -148,6 +89,62 @@ function SettingsContent() {
             )}
           </View>
         </ScrollView>
+        <View ref={tabsButtonRef} collapsable={false} style={s.tabsButtonAnchor}>
+          <AppPressable
+            accessibilityLabel={tabsOpen ? 'Close settings navigation' : 'Open settings navigation'}
+            onPress={toggleTabs}
+            style={[s.tabsButton, { backgroundColor: c.primary }]}
+          >
+            {tabsOpen ? <X size={19} color="#fff" /> : <ChevronLeft size={20} color="#fff" />}
+          </AppPressable>
+        </View>
+        {tabsOpen && (
+          <Modal
+            transparent
+            visible={tabsOpen}
+            animationType="fade"
+            onRequestClose={() => setTabsOpen(false)}
+          >
+            <View style={s.tabsOverlay}>
+              <Pressable
+                accessibilityLabel="Close settings navigation"
+                style={StyleSheet.absoluteFill}
+                onPress={() => setTabsOpen(false)}
+              />
+              <View style={[s.tabs, { top: tabsTop, backgroundColor: c.surface, borderColor: c.outline }]}>
+                {[
+                  'General',
+                  'Appearance',
+                  'Billing',
+                  'Devices',
+                  'Users & access',
+                  'Notifications',
+                  'Integrations',
+                  'Data',
+                ].map((tab) => (
+                  <AppPressable
+                    key={tab}
+                    onPress={() => {
+                      setSection(tab.toLowerCase().replace(' & access', ''));
+                      setTabsOpen(false);
+                    }}
+                    style={[
+                      s.tab,
+                      {
+                        backgroundColor:
+                          section === tab.toLowerCase().replace(' & access', '')
+                            ? c.primarySoft
+                            : 'transparent',
+                      },
+                    ]}
+                  >
+                    <Text style={[s.tabText, { color: c.text }]}>{tab}</Text>
+                  </AppPressable>
+                ))}
+              </View>
+            </View>
+          </Modal>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

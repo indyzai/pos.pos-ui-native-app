@@ -169,3 +169,16 @@ export async function writeWebSyncJob(job: WebSyncJob): Promise<void> {
     transaction.objectStore(webStores.syncJobs).put(job);
   });
 }
+
+export async function clearWebLocalData(): Promise<void> {
+  const database = await openDatabase();
+  const stores = Object.values(webStores);
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(stores, 'readwrite');
+    transaction.onerror = () => reject(transaction.error ?? new Error('Unable to clear browser storage.'));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error('Clearing browser storage was aborted.'));
+    transaction.oncomplete = () => resolve();
+    for (const store of stores) transaction.objectStore(store).clear();
+  });
+}
