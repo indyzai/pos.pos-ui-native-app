@@ -407,12 +407,17 @@ export const authApi = {
       state,
       extraParams: { appName: appId, redirect: callback.toString() },
     });
+    const discovery = { authorizationEndpoint: `${baseUrl}/auth/${provider}` };
+    // PKCE values are generated when Expo prepares the authorization URL.
+    // Prepare it explicitly so the verifier can be persisted before Android
+    // leaves the app and potentially recreates the callback activity.
+    await request.makeAuthUrlAsync(discovery);
     if (!request.codeVerifier) throw new Error('Sign-in could not create a secure verification code.');
     await Promise.all([
       setSessionValue(oauthStateKey, state),
       setSessionValue(oauthVerifierKey, request.codeVerifier),
     ]);
-    const result = await request.promptAsync({ authorizationEndpoint: `${baseUrl}/auth/${provider}` });
+    const result = await request.promptAsync(discovery);
     if (result.type === 'cancel' || result.type === 'dismiss') {
       await Promise.all([deleteSessionValue(oauthStateKey), deleteSessionValue(oauthVerifierKey)]);
       return false;
