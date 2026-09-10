@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
-import { TabletNavigationPane } from '../../shared/components/navigation/TabletNavigationPane';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { OrderCart } from './components/OrderCart';
@@ -34,7 +33,6 @@ export function BillingScreen() {
   const [category, setCategory] = useState('All');
   const [payment, setPayment] = useState<PaymentMethod>('Cash');
   const [cartOpen, setCartOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const { width, height } = useWindowDimensions();
   const isTablet = width >= 700;
@@ -42,7 +40,7 @@ export function BillingScreen() {
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
-  const { requestCounterDialog, setMenuToggle, setFeatureRefresh } = useAppHeader();
+  const { requestCounterDialog, setFeatureRefresh } = useAppHeader();
   const cart = useBillingCart();
   const billing = useBillingData();
   const auth = useAuthSession();
@@ -52,10 +50,6 @@ export function BillingScreen() {
   const refreshRef = useRef(billing.refresh);
   refreshRef.current = billing.refresh;
   const saving = useRef(false);
-  useEffect(() => {
-    setMenuToggle(isWide ? () => setSidebarCollapsed((value) => !value) : undefined);
-    return () => setMenuToggle(undefined);
-  }, [isWide, setMenuToggle]);
   useEffect(() => {
     setFeatureRefresh(() => refreshRef.current(), billing.busy);
     return () => setFeatureRefresh(undefined);
@@ -149,12 +143,6 @@ export function BillingScreen() {
   return (
     <View style={[s.root, { backgroundColor: themeColors.background }]}>
       <View style={s.workspace}>
-        {isWide && (
-          <TabletNavigationPane
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed((value) => !value)}
-          />
-        )}
         <ScrollView
           showsVerticalScrollIndicator={false}
           stickyHeaderIndices={[0]}

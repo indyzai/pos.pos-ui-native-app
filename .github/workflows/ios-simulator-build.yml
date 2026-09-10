@@ -18,6 +18,8 @@ on:
       - ".bun-version"
   push:
     branches: [main, master]
+    tags:
+      - 'v*'
     paths:
       - ".github/workflows/ios-simulator-build.yml"
       - "apps/mobile/**"
@@ -63,6 +65,50 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Set app version
+        working-directory: apps/mobile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            # Tag build: use the tag itself (strip leading 'v').
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            # Main branch alpha build.
+            # 1. Try to resolve base version from the latest published GitHub Release.
+            LATEST_TAG=$(curl -fsSL \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
+              2>/dev/null | jq -r '.tag_name // empty' || true)
+
+            if [[ -n "$LATEST_TAG" ]]; then
+              BASE="${LATEST_TAG#v}"
+              echo "Base version from latest release: $BASE"
+            else
+              # No release yet — fall back to app.json (strip any previous alpha suffix).
+              BASE="$(jq -r '.expo.version' app.json | sed 's/-alpha\..*//')"
+              echo "No release found, base version from app.json: $BASE"
+            fi
+
+            VERSION="${BASE}-alpha.${GITHUB_RUN_NUMBER}"
+          fi
+
+          BUILD_NUMBER="$GITHUB_RUN_NUMBER"
+          echo "App version  : $VERSION"
+          echo "Build number : $BUILD_NUMBER"
+
+          jq \
+            --arg v  "$VERSION" \
+            --arg bn "$BUILD_NUMBER" \
+            --argjson vc "$GITHUB_RUN_NUMBER" \
+            '.expo.version = $v | .expo.ios.buildNumber = $bn | .expo.android.versionCode = $vc' \
+            app.json > _app.json && mv _app.json app.json
+
+          echo "Updated app.json:"
+          jq '{version: .expo.version, buildNumber: .expo.ios.buildNumber}' app.json
 
       - name: Generate iOS project
         working-directory: apps/mobile

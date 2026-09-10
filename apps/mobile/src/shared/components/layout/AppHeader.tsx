@@ -10,7 +10,18 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { LogOut, Menu, Moon, RefreshCw, Repeat2, Settings, Sun, UserRound } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Menu,
+  Moon,
+  RefreshCw,
+  Repeat2,
+  Settings,
+  Sun,
+  UserRound,
+} from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { colors } from '../../../config/theme';
 import { useAppTheme } from '../../providers/ThemeProvider';
@@ -23,10 +34,22 @@ import { useAppHeader } from '../../providers/AppHeaderProvider';
 import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
 import { CounterSessionSummaryDialog } from '../../../features/counter-session/components/CounterSessionSummaryDialog';
 
-type Props = { title?: string; subtitle?: string; initials?: string; onMenuToggle?: () => void };
+type Props = {
+  title?: string;
+  subtitle?: string;
+  initials?: string;
+  onMenuToggle?: () => void;
+  navigationCollapsed?: boolean;
+};
 
 /** Shared POS app header with store identity, user badge, and appearance controls. */
-export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initials, onMenuToggle }: Props) {
+export function AppHeader({
+  title = 'Indyz POS',
+  subtitle = 'Counter 01',
+  initials,
+  onMenuToggle,
+  navigationCollapsed = false,
+}: Props) {
   const { width } = useWindowDimensions();
   const isPhone = width < 600;
   const showActionLabels = width >= 768;
@@ -111,8 +134,19 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
     >
       <View style={s.brand}>
         {onMenuToggle && (
-          <AppPressable onPress={onMenuToggle} style={[s.burger, isPhone && s.phoneControl]}>
+          <AppPressable
+            accessibilityLabel={navigationCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+            onPress={onMenuToggle}
+            style={[s.burger, isPhone && s.phoneControl]}
+          >
             <Menu size={isPhone ? 19 : 21} color={themeColors.textSecondary} />
+            <View style={[s.navigationState, { backgroundColor: themeColors.primary }]}>
+              {navigationCollapsed ? (
+                <ChevronRight size={9} color="#fff" strokeWidth={3} />
+              ) : (
+                <ChevronLeft size={9} color="#fff" strokeWidth={3} />
+              )}
+            </View>
           </AppPressable>
         )}
         <PosLogo size={isPhone ? 29 : 34} />
@@ -342,6 +376,16 @@ const s = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   brandCopy: { minWidth: 0, maxWidth: 240, flexShrink: 1 },
   burger: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  navigationState: {
+    position: 'absolute',
+    right: 1,
+    bottom: 1,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: { fontSize: 16, fontWeight: '800' },
   phoneTitle: { fontSize: 13 },
   branchRow: { minWidth: 0, marginTop: 2, flexDirection: 'row', alignItems: 'center', gap: 6 },
