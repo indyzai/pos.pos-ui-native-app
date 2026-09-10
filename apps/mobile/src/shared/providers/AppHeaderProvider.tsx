@@ -6,6 +6,8 @@ type HeaderContextValue = {
   featureRefresh?: () => void | Promise<void>;
   featureRefreshing: boolean;
   setFeatureRefresh: (handler?: () => void | Promise<void>, refreshing?: boolean) => void;
+  counterDialogRequest: number;
+  requestCounterDialog: () => void;
 };
 
 const HeaderContext = createContext<HeaderContextValue | null>(null);
@@ -14,6 +16,7 @@ export function AppHeaderProvider({ children }: { children: ReactNode }) {
   const [menuToggle, setStoredMenuToggle] = useState<(() => void) | undefined>();
   const [featureRefresh, setStoredFeatureRefresh] = useState<(() => void | Promise<void>) | undefined>();
   const [featureRefreshing, setFeatureRefreshing] = useState(false);
+  const [counterDialogRequest, setCounterDialogRequest] = useState(0);
   const setMenuToggle = useCallback((handler?: () => void) => {
     setStoredMenuToggle(() => handler);
   }, []);
@@ -21,9 +24,26 @@ export function AppHeaderProvider({ children }: { children: ReactNode }) {
     setStoredFeatureRefresh(() => handler);
     setFeatureRefreshing(refreshing);
   }, []);
+  const requestCounterDialog = useCallback(() => setCounterDialogRequest((value) => value + 1), []);
   const value = useMemo(
-    () => ({ menuToggle, setMenuToggle, featureRefresh, featureRefreshing, setFeatureRefresh }),
-    [featureRefresh, featureRefreshing, menuToggle, setFeatureRefresh, setMenuToggle],
+    () => ({
+      menuToggle,
+      setMenuToggle,
+      featureRefresh,
+      featureRefreshing,
+      setFeatureRefresh,
+      counterDialogRequest,
+      requestCounterDialog,
+    }),
+    [
+      counterDialogRequest,
+      featureRefresh,
+      featureRefreshing,
+      menuToggle,
+      requestCounterDialog,
+      setFeatureRefresh,
+      setMenuToggle,
+    ],
   );
   return <HeaderContext.Provider value={value}>{children}</HeaderContext.Provider>;
 }

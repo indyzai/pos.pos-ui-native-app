@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { setUnauthorizedHandler } from '../../core/api/baseApi';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { loadOrganizationDetails, type OrganizationDetails } from '../organization/organizationApi';
 import { authApi, type AuthTenant, type AuthUser } from './authApi';
@@ -28,7 +29,31 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState('');
+  const generation = useRef(0);
+  useEffect(() => {
+    let pending: Promise<void> | undefined;
+    return setUnauthorizedHandler(async (token) => {
+      if (pending) return pending;
+      if ((await authApi.getAccessToken()) !== token) return;
+      pending = (async () => {
+        generation.current++;
+        activeSession = null;
+        setSession(null);
+        setUser(null);
+        setAuthenticated(false);
+        setInitializing(false);
+        setError('Session expired. Please sign in again.');
+        await authApi.logout();
+      })();
+      try {
+        await pending;
+      } finally {
+        pending = undefined;
+      }
+    });
+  }, []);
   const refreshSession = async () => {
+    const current = ++generation.current;
     setInitializing(true);
     activeSession = null;
     setSession(null);
@@ -36,11 +61,13 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
     setAuthenticated(false);
     try {
       const [profile, token] = await Promise.all([authApi.getSessionUser(), authApi.getAccessToken()]);
+      if (current !== generation.current) return;
       setUser(profile);
       setAuthenticated(Boolean(profile && token));
       // Resolve membership from the profile just returned by /users/me.
       // Storage supplies only the preferred ID, never a second user snapshot.
       const tenant = await authApi.getSelectedTenant(profile);
+      if (current !== generation.current) return;
       const next: AuthSession | null =
         profile && token && tenant ? { user: profile, token, tenant, organization: null } : null;
       activeSession = next;
@@ -48,16 +75,18 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       setError('');
       if (next) {
         const organization = await loadOrganizationDetails(next.token, String(next.tenant.id));
+        if (current !== generation.current) return;
         activeSession = { ...next, organization };
         setSession(activeSession);
       } else if (await authApi.getAccessToken()) {
         setError('Signed in, but no business profile is available. Retry workspace initialization.');
       }
     } catch (reason) {
+      if (current !== generation.current) return;
       // An organization request failure must not discard a valid signed-in identity.
       setError(reason instanceof Error ? reason.message : 'Unable to initialize your business.');
     } finally {
-      setInitializing(false);
+      if (current === generation.current) setInitializing(false);
     }
   };
   useEffect(() => {

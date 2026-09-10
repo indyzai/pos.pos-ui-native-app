@@ -12,7 +12,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { BillingHeader } from './components/BillingHeader';
 import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { TabletNavigationPane } from '../../shared/components/navigation/TabletNavigationPane';
@@ -26,6 +25,8 @@ import { useBillingData } from './hooks/useBillingData';
 import { useBillingCart } from './hooks/useBillingCart';
 import type { PaymentMethod } from './types/billing';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
+import { useAuthSession } from '../auth/AuthSessionContext';
+import { requiresOpenCounter } from '../organization/organizationApi';
 
 export function BillingScreen() {
   const { themeColors } = useAppTheme();
@@ -41,9 +42,12 @@ export function BillingScreen() {
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
-  const { setMenuToggle, setFeatureRefresh } = useAppHeader();
+  const { requestCounterDialog, setMenuToggle, setFeatureRefresh } = useAppHeader();
   const cart = useBillingCart();
   const billing = useBillingData();
+  const auth = useAuthSession();
+  const counterRequired = requiresOpenCounter(auth.session?.organization?.settings);
+  const billingAllowed = !counterRequired || !!auth.session?.organization?.activeSession;
   const products = billing.data?.cache.products || [];
   const refreshRef = useRef(billing.refresh);
   refreshRef.current = billing.refresh;
@@ -73,6 +77,10 @@ export function BillingScreen() {
   );
   const checkout = async () => {
     if (!cart.items.length || saving.current) return;
+    if (!billingAllowed) {
+      requestCounterDialog();
+      return;
+    }
     saving.current = true;
     try {
       if (!billing.data) throw new Error('Load billing before checkout.');
@@ -149,16 +157,9 @@ export function BillingScreen() {
         )}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          stickyHeaderIndices={[1]}
+          stickyHeaderIndices={[0]}
           contentContainerStyle={s.content}
         >
-          <BillingHeader
-            session={billing.data?.cache.session}
-            pendingSales={billing.data?.cache.queue.length || 0}
-            updated={billing.data?.cache.updated}
-            error={billing.error}
-            syncing={billing.busy}
-          />
           <CatalogToolbar
             categories={['All', ...new Set(products.map((p) => p.category))]}
             search={search}
@@ -185,6 +186,7 @@ export function BillingScreen() {
               onChange={cart.changeQuantity}
               onClear={cart.clearCart}
               onCheckout={checkout}
+              counterClosed={!billingAllowed}
               onClose={closeCart}
             />
           </View>
@@ -223,6 +225,7 @@ export function BillingScreen() {
               onChange={cart.changeQuantity}
               onClear={cart.clearCart}
               onCheckout={checkout}
+              counterClosed={!billingAllowed}
               onClose={closeCart}
             />
           </Animated.View>

@@ -2,7 +2,27 @@ import * as Crypto from 'expo-crypto';
 import type { QueuedMutation } from '../../sync/types';
 import type { CartItem, PaymentMethod } from '../billing/types/billing';
 
-export type CounterSession = { id: string; counterId: string; status: string };
+export type CounterSession = {
+  id: string;
+  counterId: string;
+  status: string;
+  branchId?: string;
+  counterName?: string;
+  branchName?: string;
+  sessionNumber?: string;
+  openedAt?: string;
+  openingBalance?: number;
+  expectedBalance?: number;
+  salesSummary?: {
+    cash: number;
+    card: number;
+    upi: number;
+    scrap: number;
+    miscIncome: number;
+    miscExpense: number;
+    totalSales: number;
+  };
+};
 export type SaleInput = Record<string, unknown>;
 export type PendingSale = QueuedMutation<SaleInput> & { input: SaleInput };
 
@@ -10,6 +30,7 @@ type CreateSaleParams = {
   items: CartItem[];
   payment: PaymentMethod;
   session: CounterSession | null;
+  requireOpenSession?: boolean;
 };
 
 type SaleRequest = <T>(query: string, variables?: Record<string, unknown>) => Promise<T>;
@@ -21,8 +42,13 @@ const createBillMutation = `
 `;
 
 /** Creates a durable, idempotent sale payload before any UI cart is cleared. */
-export function createPendingSale({ items, payment, session }: CreateSaleParams): PendingSale {
-  if (!session) throw new Error('Open a counter session in POS web, then refresh billing before selling.');
+export function createPendingSale({
+  items,
+  payment,
+  session,
+  requireOpenSession = true,
+}: CreateSaleParams): PendingSale {
+  if (!session && requireOpenSession) throw new Error('Open a counter session before creating a bill.');
   if (
     !items.length ||
     items.some(
@@ -53,8 +79,7 @@ export function createPendingSale({ items, payment, session }: CreateSaleParams)
     offlineId: id,
     items: lines,
     payments: [{ paymentMethod: payment.toUpperCase(), amountPaid: totalAmount }],
-    counterId: Number(session.counterId),
-    counterSessionId: Number(session.id),
+    ...(session ? { counterId: Number(session.counterId), counterSessionId: Number(session.id) } : {}),
     subtotal,
     taxAmount,
     discountAmount: 0,

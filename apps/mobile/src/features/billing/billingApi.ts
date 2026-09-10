@@ -11,6 +11,7 @@ import {
   type PendingSale,
 } from '../sales/salesOutbox';
 import type { CartItem, PaymentMethod, Product } from './types/billing';
+import { requiresOpenCounter } from '../organization/organizationApi';
 
 type Context = { key: string; tenant: string; token: string };
 export type BillingCache = {
@@ -61,7 +62,10 @@ export const billingApi = {
       const c = await context();
       if (c.key !== key) throw new Error('Business changed. Start a new cart.');
       const cache = await read(c);
-      const sale = createPendingSale({ items, payment, session: cache.session });
+      const auth = getActiveAuthSession();
+      const requireOpenSession = requiresOpenCounter(auth?.organization?.settings);
+      const currentSession = auth?.organization ? auth.organization.activeSession : cache.session;
+      const sale = createPendingSale({ items, payment, session: currentSession, requireOpenSession });
       cache.queue.push(sale);
       await write(c, cache); // Never clear the cart until this durable write succeeds.
       return sale.id;

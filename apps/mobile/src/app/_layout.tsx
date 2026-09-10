@@ -1,10 +1,11 @@
-import { Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../shared/query/queryClient';
 import { ThemeProvider, useAppTheme } from '../shared/providers/ThemeProvider';
-import { AuthSessionProvider } from '../features/auth/AuthSessionContext';
+import { AuthSessionProvider, useAuthSession } from '../features/auth/AuthSessionContext';
 import { DatabaseProvider } from '../db/DatabaseProvider';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,6 +34,13 @@ function RootNavigator() {
   const { isDark, themeColors } = useAppTheme();
   const { menuToggle } = useAppHeader();
   const pathname = usePathname();
+  const router = useRouter();
+  const { authenticated, initializing } = useAuthSession();
+  useEffect(() => {
+    if (!initializing && !authenticated && !['/', '/login', '/signup', '/auth/callback'].includes(pathname)) {
+      router.replace('/login');
+    }
+  }, [authenticated, initializing, pathname, router]);
   const headerHidden = ['/', '/login', '/signup', '/auth/callback'].includes(pathname);
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>

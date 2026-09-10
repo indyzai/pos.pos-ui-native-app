@@ -1,6 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { LogOut, Menu, Moon, RefreshCw, Repeat2, Settings, Sun, UserRound } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { colors } from '../../../config/theme';
@@ -11,18 +20,46 @@ import { authApi } from '../../../features/auth/authApi';
 import { useAuthSession } from '../../../features/auth/AuthSessionContext';
 import { useLocalDatabase } from '../../../db/DatabaseProvider';
 import { useAppHeader } from '../../providers/AppHeaderProvider';
+import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
+import { CounterSessionSummaryDialog } from '../../../features/counter-session/components/CounterSessionSummaryDialog';
 
 type Props = { title?: string; subtitle?: string; initials?: string; onMenuToggle?: () => void };
 
 /** Shared POS app header with store identity, user badge, and appearance controls. */
 export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initials, onMenuToggle }: Props) {
+  const { width } = useWindowDimensions();
+  const isPhone = width < 600;
+  const showActionLabels = width >= 768;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [counterOpen, setCounterOpen] = useState(false);
+  const [sessionSummaryOpen, setSessionSummaryOpen] = useState(false);
   const local = useLocalDatabase();
-  const { featureRefresh, featureRefreshing } = useAppHeader();
+  const { counterDialogRequest, featureRefresh, featureRefreshing } = useAppHeader();
   const router = useRouter();
   const { mode, setMode, themeColors } = useAppTheme();
   const { session, user, refreshSession } = useAuthSession();
   const selectedTenant = session?.tenant ?? null;
+  const organization = session?.organization;
+  const activeCounterSession = organization?.activeSession;
+  const fallbackBranch =
+    organization?.branches.find((branch) => branch.counters.length) ?? organization?.branches[0];
+  const fallbackCounter = fallbackBranch?.counters[0];
+  const activeBranch = organization?.branches.find(
+    (branch) =>
+      branch.id === activeCounterSession?.branchId ||
+      branch.counters.some((counter) => counter.id === activeCounterSession?.counterId),
+  );
+  const activeCounter = activeBranch?.counters.find(
+    (counter) => counter.id === activeCounterSession?.counterId,
+  );
+  const branchName =
+    activeCounterSession?.branchName || activeBranch?.name || fallbackBranch?.name || 'No branch';
+  const counterName =
+    activeCounterSession?.counterName || activeCounter?.name || fallbackCounter?.name || 'No counter';
+  const isCounterOpen = activeCounterSession?.status?.toUpperCase() === 'OPEN';
+  useEffect(() => {
+    if (counterDialogRequest && !isCounterOpen) setCounterOpen(true);
+  }, [counterDialogRequest, isCounterOpen]);
 
   const userInitials = useMemo(() => {
     if (initials) return initials;
@@ -65,19 +102,58 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
     ]);
   };
   return (
-    <View style={[s.header, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
+    <View
+      style={[
+        s.header,
+        isPhone && s.phoneHeader,
+        { backgroundColor: themeColors.surface, borderColor: themeColors.outline },
+      ]}
+    >
       <View style={s.brand}>
         {onMenuToggle && (
-          <AppPressable onPress={onMenuToggle} style={s.burger}>
-            <Menu size={21} color={themeColors.textSecondary} />
+          <AppPressable onPress={onMenuToggle} style={[s.burger, isPhone && s.phoneControl]}>
+            <Menu size={isPhone ? 19 : 21} color={themeColors.textSecondary} />
           </AppPressable>
         )}
-        <PosLogo size={36} />
-        <View>
-          <Text style={[s.title, { color: themeColors.text }]}>{title}</Text>
-          <Text style={[s.subtitle, { color: themeColors.textSecondary }]}>
-            {subtitle} <Text style={[s.online, { color: themeColors.success }]}>●</Text> Open
+        <PosLogo size={isPhone ? 29 : 34} />
+        <View style={s.brandCopy}>
+          <Text numberOfLines={1} style={[s.title, isPhone && s.phoneTitle, { color: themeColors.text }]}>
+            {title}
           </Text>
+          <View style={s.branchRow}>
+            <Text numberOfLines={1} style={[s.subtitle, { color: themeColors.textSecondary }]}>
+              {branchName}
+            </Text>
+            <AppPressable
+              accessibilityLabel={
+                isCounterOpen ? `View ${counterName} session` : `Open ${counterName} session`
+              }
+              onPress={() => (isCounterOpen ? setSessionSummaryOpen(true) : setCounterOpen(true))}
+              style={[
+                s.counterStatus,
+                isPhone && s.phoneCounterStatus,
+                {
+                  backgroundColor: isCounterOpen ? themeColors.success + '18' : themeColors.error + '18',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  s.statusDot,
+                  { backgroundColor: isCounterOpen ? themeColors.success : themeColors.error },
+                ]}
+              />
+              <Text
+                numberOfLines={1}
+                style={[
+                  s.counterStatusText,
+                  { color: isCounterOpen ? themeColors.success : themeColors.error },
+                ]}
+              >
+                {counterName}
+              </Text>
+            </AppPressable>
+          </View>
         </View>
       </View>
       <View style={s.headerActions}>
@@ -91,7 +167,11 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
           }
           disabled={local.status !== 'error' && (!featureRefresh || featureRefreshing)}
           onPress={() => void (local.status === 'error' ? local.retry() : featureRefresh?.())}
-          style={[s.themeToggle, { backgroundColor: themeColors.surfaceMuted }]}
+          style={[
+            s.themeToggle,
+            !showActionLabels && s.iconAction,
+            { backgroundColor: themeColors.surfaceMuted },
+          ]}
         >
           {featureRefreshing ? (
             <ActivityIndicator size="small" color={themeColors.primary} />
@@ -101,38 +181,46 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
               color={local.status === 'error' ? themeColors.error : themeColors.textSecondary}
             />
           )}
-          <Text
-            style={[
-              s.toggleText,
-              { color: local.status === 'error' ? themeColors.error : themeColors.textSecondary },
-            ]}
-          >
-            {local.status === 'ready'
-              ? featureRefresh
-                ? 'Storage ready'
-                : '● Storage ready'
-              : local.status === 'error'
-                ? '↻ Storage'
-                : '◌ Preparing'}
-          </Text>
+          {showActionLabels && (
+            <Text
+              style={[
+                s.toggleText,
+                { color: local.status === 'error' ? themeColors.error : themeColors.textSecondary },
+              ]}
+            >
+              {local.status === 'ready'
+                ? featureRefresh
+                  ? 'Storage ready'
+                  : '● Storage ready'
+                : local.status === 'error'
+                  ? '↻ Storage'
+                  : '◌ Preparing'}
+            </Text>
+          )}
         </AppPressable>
         <AppPressable
           onPress={() => setMode(mode === 'light' ? 'dark' : 'light')}
-          style={[s.themeToggle, { backgroundColor: themeColors.primarySoft }]}
+          style={[
+            s.themeToggle,
+            !showActionLabels && s.iconAction,
+            { backgroundColor: themeColors.primarySoft },
+          ]}
         >
           {mode === 'light' ? (
             <Sun size={14} color={themeColors.primary} />
           ) : (
             <Moon size={14} color={themeColors.primary} />
           )}
-          <Text style={[s.toggleText, { color: themeColors.primary }]}>
-            {mode === 'light' ? 'Light' : 'Dark'}
-          </Text>
+          {showActionLabels && (
+            <Text style={[s.toggleText, { color: themeColors.primary }]}>
+              {mode === 'light' ? 'Light' : 'Dark'}
+            </Text>
+          )}
         </AppPressable>
         <AppPressable
           accessibilityLabel="Open user menu"
           onPress={() => setMenuOpen((open) => !open)}
-          style={[s.avatar, { backgroundColor: themeColors.primarySoft }]}
+          style={[s.avatar, isPhone && s.phoneControl, { backgroundColor: themeColors.primarySoft }]}
         >
           <Text style={[s.avatarText, { color: themeColors.primary }]}>{userInitials}</Text>
         </AppPressable>
@@ -187,6 +275,32 @@ export function AppHeader({ title = 'Indyz POS', subtitle = 'Counter 01', initia
           </View>
         </Modal>
       )}
+      <OpenCounterSessionDialog
+        visible={counterOpen}
+        token={session?.token}
+        tenantId={session ? String(session.tenant.id) : undefined}
+        branchName={fallbackBranch?.name}
+        counterId={fallbackCounter?.id}
+        counterName={fallbackCounter?.name}
+        currencyCode={String(organization?.settings.currency ?? 'INR').toUpperCase()}
+        onClose={() => setCounterOpen(false)}
+        onOpened={async () => {
+          await refreshSession();
+          await featureRefresh?.();
+        }}
+      />
+      <CounterSessionSummaryDialog
+        visible={sessionSummaryOpen}
+        token={session?.token}
+        tenantId={session ? String(session.tenant.id) : undefined}
+        session={activeCounterSession}
+        currencyCode={String(organization?.settings.currency ?? 'INR').toUpperCase()}
+        onClose={() => setSessionSummaryOpen(false)}
+        onClosed={async () => {
+          await refreshSession();
+          await featureRefresh?.();
+        }}
+      />
     </View>
   );
 }
@@ -217,20 +331,35 @@ const s = StyleSheet.create({
     position: 'relative',
     zIndex: 30,
     elevation: 10,
-    height: 76,
+    height: 68,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
   },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  phoneHeader: { height: 58, paddingHorizontal: 10 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
+  brandCopy: { minWidth: 0, maxWidth: 240, flexShrink: 1 },
   burger: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 16, fontWeight: '800' },
-  subtitle: { fontSize: 11, marginTop: 2 },
+  phoneTitle: { fontSize: 13 },
+  branchRow: { minWidth: 0, marginTop: 2, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  subtitle: { minWidth: 0, flexShrink: 1, fontSize: 11 },
   online: { fontSize: 10 },
+  counterStatus: {
+    height: 22,
+    paddingHorizontal: 7,
+    borderRadius: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  phoneCounterStatus: { maxWidth: 88 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  counterStatusText: { fontSize: 10, fontWeight: '900' },
   avatar: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
   themeToggle: {
     height: 34,
     paddingHorizontal: 10,
@@ -240,12 +369,14 @@ const s = StyleSheet.create({
     gap: 5,
     justifyContent: 'center',
   },
+  iconAction: { width: 32, paddingHorizontal: 0 },
+  phoneControl: { width: 32, height: 32, borderRadius: 16 },
   toggleText: { fontSize: 11, fontWeight: '900' },
   avatarText: { fontSize: 12, fontWeight: '800' },
   themeMenu: {
     position: 'absolute',
     zIndex: 40,
-    top: 82,
+    top: 72,
     right: 16,
     width: 210,
     padding: 8,

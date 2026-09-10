@@ -18,6 +18,7 @@ type Props = {
   onChange: (id: string, amount: number) => void;
   onClear: () => void;
   onCheckout: () => void;
+  counterClosed?: boolean;
   onClose: () => void;
 };
 const money = (amount: number) => `₹${amount.toFixed(2)}`;
@@ -32,6 +33,7 @@ export function OrderCart({
   onChange,
   onClear,
   onCheckout,
+  counterClosed = false,
   onClose,
 }: Props) {
   const { themeColors: c } = useAppTheme();
@@ -147,9 +149,17 @@ export function OrderCart({
             </AppPressable>
           ))}
         </View>
-        <AppPressable onPress={onCheckout} style={[s.charge, !items.length && s.chargeOff]}>
+        <AppPressable
+          disabled={!items.length}
+          onPress={onCheckout}
+          style={[s.charge, !items.length && s.chargeOff]}
+        >
           <Text style={s.chargeText}>
-            {items.length ? `Charge ${money(total)}` : 'Add items to checkout'}
+            {counterClosed
+              ? 'Open counter to checkout'
+              : items.length
+                ? `Charge ${money(total)}`
+                : 'Add items to checkout'}
           </Text>
           <ArrowRight size={21} color="#FFFFFF" strokeWidth={2.7} />
         </AppPressable>

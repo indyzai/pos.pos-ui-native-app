@@ -1,7 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { useAuthSession } from '../auth/AuthSessionContext';
+import { requiresOpenCounter } from '../organization/organizationApi';
 export function BillingSettingsSection() {
   const { themeColors: c } = useAppTheme();
+  const { session } = useAuthSession();
+  const counterRequired = requiresOpenCounter(session?.organization?.settings);
   return (
     <View>
       <Text style={[s.title, { color: c.textSecondary }]}>Billing settings</Text>
@@ -11,6 +15,7 @@ export function BillingSettingsSection() {
       {[
         ['GST calculation', '5%'],
         ['Payment methods', 'Cash · UPI · Card'],
+        ['Require open counter', counterRequired ? 'Enabled' : 'Disabled'],
         ['Receipt settings', 'Coming soon'],
       ].map(([label, value]) => (
         <View key={label} style={[s.row, { borderColor: c.outlineMuted }]}>

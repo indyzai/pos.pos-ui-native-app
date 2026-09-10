@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScanBarcode } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors, radii } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
@@ -41,8 +42,7 @@ export function CatalogToolbar({ categories, search, category, onSearch, onCateg
           onPress={onScan}
           style={[s.scanButton, { backgroundColor: c.primarySoft }]}
         >
-          <Text style={[s.scanIcon, { color: c.primary }]}>▥</Text>
-          <Text style={[s.scanText, { color: c.primary }]}>Scan</Text>
+          <ScanBarcode size={22} color={c.primary} strokeWidth={2.25} />
         </AppPressable>
       </View>
       <ScrollView
@@ -98,15 +98,12 @@ const s = StyleSheet.create({
   clearText: { color: colors.textSecondary, fontSize: 19, lineHeight: 21 },
   scanButton: {
     height: 45,
-    minWidth: 54,
-    paddingHorizontal: 9,
+    width: 45,
     borderRadius: radii.medium,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primarySoft,
   },
-  scanIcon: { color: colors.primary, fontSize: 18, lineHeight: 19, fontWeight: '900' },
-  scanText: { color: colors.primary, fontSize: 9, fontWeight: '900', marginTop: 1 },
   categoryScroll: { height: 64 },
   tabs: { paddingHorizontal: 16, alignItems: 'center', gap: 8 },
   tab: {

@@ -1,3 +1,14 @@
+let onUnauthorized: ((token: string) => Promise<void>) | undefined;
+export function setUnauthorizedHandler(handler: (token: string) => Promise<void>) {
+  onUnauthorized = handler;
+  return () => {
+    if (onUnauthorized === handler) onUnauthorized = undefined;
+  };
+}
+async function invalidateSession(token?: string) {
+  if (token) await onUnauthorized?.(token);
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -49,6 +60,7 @@ export async function requestJson<T>(url: string, options: RequestOptions = {}):
       if (response.ok) throw new ApiError('API returned invalid JSON.', response.status);
     }
     if (!response.ok) {
+      if (response.status === 401) await invalidateSession(options.token);
       throw new ApiError(
         errorMessage(body) ||
           (response.status === 401
@@ -72,12 +84,30 @@ export async function requestGraphQL<T>(
   variables: Record<string, unknown> = {},
   options: Omit<RequestOptions, 'method' | 'body'> = {},
 ): Promise<T> {
-  const result = await requestJson<{ data?: T; errors?: { message: string }[] }>(url, {
+  const result = await requestJson<{
+    data?: T;
+    errors?: {
+      message: string;
+      extensions?: { code?: string; status?: number; originalError?: { statusCode?: number } };
+    }[];
+  }>(url, {
     ...options,
     method: 'POST',
     body: { query, variables },
   });
-  if (result?.errors?.length) throw new ApiError(result.errors.map((error) => error.message).join('; '));
+  if (result?.errors?.length) {
+    const unauthorized = result.errors.some(
+      (error) =>
+        error.extensions?.code === 'UNAUTHENTICATED' ||
+        error.extensions?.status === 401 ||
+        error.extensions?.originalError?.statusCode === 401,
+    );
+    if (unauthorized) await invalidateSession(options.token);
+    throw new ApiError(
+      result.errors.map((error) => error.message).join('; '),
+      unauthorized ? 401 : undefined,
+    );
+  }
   if (result?.data == null) throw new ApiError('API returned no data.');
   return result.data;
 }
