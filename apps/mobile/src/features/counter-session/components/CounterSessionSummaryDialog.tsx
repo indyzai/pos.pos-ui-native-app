@@ -10,11 +10,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Banknote, LockKeyhole, X } from 'lucide-react-native';
+import { Banknote, Calculator, ChevronDown, ChevronUp, LockKeyhole, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CounterSession } from '../../sales/salesOutbox';
 import { counterSessionApi } from '../counterSessionApi';
+import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';
+import type { CurrencyDenomination, DenominationCounts } from '../types';
 
 type Props = {
   visible: boolean;
@@ -31,6 +33,11 @@ export function CounterSessionSummaryDialog(props: Props) {
   const [closingCash, setClosingCash] = useState('');
   const [remarks, setRemarks] = useState('');
   const [closing, setClosing] = useState(false);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [denominations, setDenominations] = useState<CurrencyDenomination[]>([]);
+  const [counts, setCounts] = useState<DenominationCounts>({});
+  const [denominationsLoading, setDenominationsLoading] = useState(false);
+  const [denominationError, setDenominationError] = useState('');
   const summary = props.session?.salesSummary;
   const expectedCash = useMemo(
     () =>
@@ -47,7 +54,68 @@ export function CounterSessionSummaryDialog(props: Props) {
     if (!props.visible) return;
     setClosingCash('');
     setRemarks('');
-  }, [props.session?.id, props.visible]);
+    setCalculatorOpen(false);
+    if (!props.token || !props.tenantId || !props.session?.counterId) return;
+    let active = true;
+    setDenominationsLoading(true);
+    setDenominationError('');
+    void Promise.all([
+      counterSessionApi.getDenominations(props.token, props.tenantId, props.currencyCode),
+      loadDenominationCounts(props.tenantId, props.session.counterId, props.currencyCode, 'closing'),
+    ])
+      .then(([loaded, savedCounts]) => {
+        if (!active) return;
+        setDenominations(loaded);
+        setCounts(savedCounts);
+        const savedTotal = loaded.reduce(
+          (total, item) => total + item.value * (Number(savedCounts[item.id]) || 0),
+          0,
+        );
+        if (savedTotal) setClosingCash(String(savedTotal));
+        if (!loaded.length)
+          setDenominationError(`No denominations are configured for ${props.currencyCode}.`);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDenominations([]);
+        setDenominationError(error instanceof Error ? error.message : 'Could not load denominations.');
+      })
+      .finally(() => {
+        if (active) setDenominationsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    props.currencyCode,
+    props.session?.counterId,
+    props.session?.id,
+    props.tenantId,
+    props.token,
+    props.visible,
+  ]);
+
+  const updateCount = (item: CurrencyDenomination, value: string) => {
+    const sanitized = value.replace(/[^0-9]/g, '');
+    setCounts((current) => {
+      const next = { ...current, [item.id]: sanitized };
+      const total = denominations.reduce(
+        (sum, denomination) => sum + denomination.value * (Number(next[denomination.id]) || 0),
+        0,
+      );
+      setClosingCash(String(total));
+      if (props.tenantId && props.session?.counterId) {
+        void saveDenominationCounts(
+          props.tenantId,
+          props.session.counterId,
+          props.currencyCode,
+          next,
+          'closing',
+        );
+      }
+      return next;
+    });
+  };
 
   const closeSession = async () => {
     const amount = Number(closingCash);
@@ -58,6 +126,13 @@ export function CounterSessionSummaryDialog(props: Props) {
     }
     setClosing(true);
     try {
+      await saveDenominationCounts(
+        props.tenantId,
+        props.session.counterId,
+        props.currencyCode,
+        counts,
+        'closing',
+      );
       await counterSessionApi.close(props.token, props.tenantId, props.session.id, amount, remarks.trim());
       props.onClose();
       await props.onClosed();
@@ -125,6 +200,54 @@ export function CounterSessionSummaryDialog(props: Props) {
               placeholderTextColor={c.textSecondary}
               style={[s.input, { color: c.text, backgroundColor: c.background, borderColor: c.outline }]}
             />
+            <AppPressable
+              accessibilityLabel={
+                calculatorOpen ? 'Hide closing cash denominations' : 'Count closing cash denominations'
+              }
+              onPress={() => setCalculatorOpen((value) => !value)}
+              style={[s.denominationToggle, { backgroundColor: c.surfaceMuted }]}
+            >
+              <Calculator size={16} color={c.primary} />
+              <Text style={[s.denominationToggleText, { color: c.text }]}>Count denominations</Text>
+              <Text numberOfLines={1} style={[s.denominationTotal, { color: c.primary }]}>
+                {money(Number(closingCash) || 0, props.currencyCode)}
+              </Text>
+              {calculatorOpen ? (
+                <ChevronUp size={17} color={c.primary} />
+              ) : (
+                <ChevronDown size={17} color={c.textSecondary} />
+              )}
+            </AppPressable>
+            {calculatorOpen && (
+              <View style={[s.denominationPanel, { borderColor: c.outlineMuted }]}>
+                {denominationsLoading ? (
+                  <ActivityIndicator color={c.primary} />
+                ) : denominationError ? (
+                  <Text style={[s.emptyText, { color: c.textSecondary }]}>{denominationError}</Text>
+                ) : (
+                  denominations.map((item) => (
+                    <View key={item.id} style={s.denominationRow}>
+                      <Text style={[s.denomination, { color: c.text }]}>{item.label}</Text>
+                      <Text style={{ color: c.textSecondary }}>×</Text>
+                      <TextInput
+                        value={counts[item.id] ?? ''}
+                        onChangeText={(value) => updateCount(item, value)}
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        placeholderTextColor={c.textSecondary}
+                        style={[
+                          s.countInput,
+                          { color: c.text, backgroundColor: c.background, borderColor: c.outline },
+                        ]}
+                      />
+                      <Text style={[s.lineTotal, { color: c.textSecondary }]}>
+                        {money(item.value * (Number(counts[item.id]) || 0), props.currencyCode)}
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
             {difference !== undefined && Number.isFinite(difference) && (
               <Text style={[s.difference, { color: difference === 0 ? c.success : c.error }]}>
                 {difference === 0
@@ -206,6 +329,31 @@ const s = StyleSheet.create({
   expectedValue: { fontSize: 14, fontWeight: '900' },
   label: { marginBottom: 6, marginTop: 8, fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
   input: { height: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 14 },
+  denominationToggle: {
+    minHeight: 42,
+    marginTop: 8,
+    paddingHorizontal: 11,
+    borderRadius: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  denominationToggleText: { flex: 1, minWidth: 0, fontSize: 12, fontWeight: '800' },
+  denominationTotal: { maxWidth: 105, flexShrink: 1, fontSize: 11, fontWeight: '900' },
+  denominationPanel: { marginTop: 8, padding: 10, borderWidth: 1, borderRadius: 12, gap: 7 },
+  denominationRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  denomination: { width: 76, fontSize: 12, fontWeight: '900' },
+  countInput: {
+    width: 64,
+    height: 34,
+    paddingHorizontal: 7,
+    borderWidth: 1,
+    borderRadius: 8,
+    textAlign: 'center',
+    fontSize: 12,
+  },
+  lineTotal: { flex: 1, textAlign: 'right', fontSize: 11, fontWeight: '700' },
+  emptyText: { padding: 12, textAlign: 'center', fontSize: 12, fontWeight: '700' },
   note: { height: 68, paddingTop: 11, textAlignVertical: 'top' },
   difference: { marginTop: 6, fontSize: 11, fontWeight: '900', textAlign: 'right' },
   closeSession: {

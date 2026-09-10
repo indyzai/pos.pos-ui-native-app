@@ -9,7 +9,19 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { AlertTriangle, Boxes, IndianRupee, Package, PackageX, Plus, Search, X } from 'lucide-react-native';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Boxes,
+  CheckCircle2,
+  Clock3,
+  IndianRupee,
+  Package,
+  PackageX,
+  Plus,
+  Search,
+  X,
+} from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { InventoryCard } from './components/InventoryCard';
@@ -99,6 +111,7 @@ export function InventoryScreen() {
           </View>
         </View>
         {data.error ? <Text style={[styles.error, { color: c.error }]}>{data.error}</Text> : null}
+        {data.jobs[0] ? <SyncJobStatus job={data.jobs[0]} /> : null}
         <View style={styles.stats}>
           <Stat icon={Package} label="Products" value={String(summary.total)} color={c.primary} />
           <Stat icon={AlertTriangle} label="Low stock" value={String(summary.low)} color="#D97706" />
@@ -164,9 +177,9 @@ export function InventoryScreen() {
         onClose={() => setSelected(null)}
         onSave={async (input) => {
           try {
-            await data.reconcile(input);
+            const job = await data.reconcile(input);
             setSelected(null);
-            Alert.alert('Stock reconciled', 'The counted quantity was saved.');
+            Alert.alert('Stock reconciled', `Queue ${shortId(job.id)} completed.`);
           } catch (error) {
             Alert.alert('Reconciliation failed', error instanceof Error ? error.message : 'Try again.');
           }
@@ -178,14 +191,41 @@ export function InventoryScreen() {
         onClose={() => setAddOpen(false)}
         onSave={async (input) => {
           try {
-            await data.create(input);
+            const job = await data.create(input);
             setAddOpen(false);
-            Alert.alert('Item added', `${input.name} was added to inventory.`);
+            Alert.alert('Item added', `${input.name} was added. Queue ${shortId(job.id)} completed.`);
           } catch (error) {
             Alert.alert('Could not add item', error instanceof Error ? error.message : 'Try again.');
           }
         }}
       />
+    </View>
+  );
+}
+
+function shortId(id: string) {
+  return id.slice(0, 8).toUpperCase();
+}
+
+function SyncJobStatus({ job }: { job: ReturnType<typeof useInventory>['jobs'][number] }) {
+  const { themeColors: c } = useAppTheme();
+  const failed = job.status === 'FAILED';
+  const complete = job.status === 'COMPLETED';
+  const color = failed ? c.error : complete ? '#16A34A' : '#D97706';
+  const Icon = failed ? AlertCircle : complete ? CheckCircle2 : Clock3;
+  const operation = job.operation === 'CREATE_PRODUCT' ? 'Add item' : 'Update stock';
+  return (
+    <View style={[styles.job, { backgroundColor: `${color}12`, borderColor: `${color}45` }]}>
+      <Icon size={18} color={color} />
+      <View style={styles.jobCopy}>
+        <Text style={[styles.jobTitle, { color }]}>
+          {operation} · {job.status.toLowerCase()}
+        </Text>
+        <Text style={[styles.jobId, { color: c.textSecondary }]}>Queue ID {job.id}</Text>
+        {job.errorMessage ? (
+          <Text style={[styles.jobError, { color: c.error }]}>{job.errorMessage}</Text>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -246,6 +286,19 @@ const styles = StyleSheet.create({
   title: { fontSize: 25, fontWeight: '900' },
   subtitle: { marginTop: 4, fontSize: 13 },
   error: { marginBottom: 12, fontSize: 12, fontWeight: '700' },
+  job: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 11,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 9,
+  },
+  jobCopy: { flex: 1 },
+  jobTitle: { fontSize: 12, fontWeight: '900', textTransform: 'capitalize' },
+  jobId: { marginTop: 2, fontSize: 10, fontWeight: '700' },
+  jobError: { marginTop: 4, fontSize: 11 },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
   stat: {
     minWidth: 145,

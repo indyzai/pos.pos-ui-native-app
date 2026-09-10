@@ -3,6 +3,7 @@ import { getActiveAuthSession } from '../auth/AuthSessionContext';
 import { billingApi } from '../billing/billingApi';
 import { createReconciliationVariables } from './reconciliation';
 import type { CreateInventoryItemInput, StockReconciliationInput } from './types';
+import { createSyncJob, listSyncJobs, updateSyncJob, type SyncJob } from '../../sync/syncJobRepository';
 
 const reconciliationMutation = `
   mutation RecordInventoryReconciliation($input: InventoryReconciliationInput!) {
@@ -17,7 +18,7 @@ const reconciliationMutation = `
 
 const createProductMutation = `
   mutation CreateProduct($newProductData: NewProductInput!) {
-    newProduct(newProductData: $newProductData) { product { id } }
+    newProduct(newProductData: $newProductData) { success message errors product { id } }
   }
 `;
 
@@ -27,31 +28,70 @@ function context() {
   return session;
 }
 
+const scope = () => {
+  const session = context();
+  return `indyz.billing.v1:${session.user.id}:${session.tenant.id}`;
+};
+
+async function runTracked(
+  operation: SyncJob['operation'],
+  request: () => Promise<string | undefined>,
+): Promise<SyncJob> {
+  let job = await createSyncJob(scope(), operation);
+  job = await updateSyncJob(job, 'RUNNING');
+  try {
+    const entityId = await request();
+    return await updateSyncJob(job, 'COMPLETED', { entityId });
+  } catch (reason) {
+    const errorMessage = reason instanceof Error ? reason.message : 'The operation failed.';
+    await updateSyncJob(job, 'FAILED', { errorMessage });
+    throw reason;
+  }
+}
+
 export const inventoryApi = {
   load: billingApi.load,
+  listJobs: () => listSyncJobs(scope()),
   refresh: billingApi.refresh,
-  async create(input: CreateInventoryItemInput): Promise<void> {
+  async create(input: CreateInventoryItemInput): Promise<SyncJob> {
     const session = context();
-    await requestPos(session.token, String(session.tenant.id), createProductMutation, {
-      newProductData: {
-        name: input.name,
-        price: input.price,
-        quantity: input.stock,
-        barcode: input.barcode || undefined,
-        category: input.category || undefined,
-        status: 'ACTIVE',
-      },
+    const job = await runTracked('CREATE_PRODUCT', async () => {
+      const data = await requestPos<{ newProduct: { product?: { id: string }; message?: string } }>(
+        session.token,
+        String(session.tenant.id),
+        createProductMutation,
+        {
+          newProductData: {
+            name: input.name,
+            price: input.price,
+            quantity: input.stock,
+            barcode: input.barcode || undefined,
+            category: input.category || undefined,
+            status: 'ACTIVE',
+          },
+        },
+      );
+      if (!data.newProduct?.product?.id)
+        throw new Error(data.newProduct?.message || 'Server did not acknowledge the product.');
+      return String(data.newProduct.product.id);
     });
     await billingApi.refresh();
+    return job;
   },
-  async reconcile(input: StockReconciliationInput): Promise<void> {
+  async reconcile(input: StockReconciliationInput): Promise<SyncJob> {
     const session = context();
-    await requestPos(
-      session.token,
-      String(session.tenant.id),
-      reconciliationMutation,
-      createReconciliationVariables(input),
-    );
+    const job = await runTracked('UPDATE_STOCK', async () => {
+      const data = await requestPos<{ recordInventoryReconciliation?: { id: string } }>(
+        session.token,
+        String(session.tenant.id),
+        reconciliationMutation,
+        createReconciliationVariables(input),
+      );
+      if (!data.recordInventoryReconciliation?.id)
+        throw new Error('Server did not acknowledge the stock update.');
+      return String(data.recordInventoryReconciliation.id);
+    });
     await billingApi.refresh();
+    return job;
   },
 };

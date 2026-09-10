@@ -1,13 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Cpu, Database, KeyRound, ShieldCheck, type LucideIcon } from 'lucide-react-native';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  Cpu,
+  Database,
+  KeyRound,
+  RefreshCw,
+  ShieldCheck,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { useLocalDatabase } from '../../db/DatabaseProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { authApi, type DeviceRegistrationDetails } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
+import { listSyncJobs, type SyncJob } from '../../sync/syncJobRepository';
 
-export function DeviceSettingsSection() {
+export function DeviceSettingsSection({
+  registerSave,
+}: {
+  registerSave?: (handler: (() => Promise<void>) | null) => void;
+}) {
   const { themeColors: c } = useAppTheme();
   const localDatabase = useLocalDatabase();
   const { session } = useAuthSession();
@@ -15,12 +30,36 @@ export function DeviceSettingsSection() {
   const [pin, setPin] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
+  const [jobs, setJobs] = useState<SyncJob[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState('');
+
+  const loadJobs = async () => {
+    if (!session || localDatabase.status !== 'ready') return;
+    setJobsLoading(true);
+    try {
+      const scope = `indyz.billing.v1:${session.user.id}:${session.tenant.id}`;
+      setJobs(await listSyncJobs(scope));
+      setJobsError('');
+    } catch (error) {
+      setJobsError(error instanceof Error ? error.message : 'Unable to read sync jobs.');
+    } finally {
+      setJobsLoading(false);
+    }
+  };
 
   useEffect(() => {
     void authApi.getDeviceRegistrationDetails().then(setDetails);
   }, []);
 
-  const save = async () => {
+  useEffect(() => {
+    void loadJobs();
+    // Reload when the active business or local database readiness changes.
+  }, [session?.user.id, session?.tenant.id, localDatabase.status]);
+
+  const save = useCallback(async () => {
+    if (busy) return;
+    if (!pin) return Alert.alert('Device PIN', 'Enter a new PIN before saving.');
     if (pin !== confirm) return Alert.alert('Device PIN', 'PIN entries do not match.');
     setBusy(true);
     try {
@@ -34,7 +73,12 @@ export function DeviceSettingsSection() {
     } finally {
       setBusy(false);
     }
-  };
+  }, [busy, confirm, pin]);
+
+  useEffect(() => {
+    registerSave?.(Platform.OS === 'web' ? null : save);
+    return () => registerSave?.(null);
+  }, [registerSave, save]);
 
   return (
     <View style={s.container}>
@@ -99,8 +143,29 @@ export function DeviceSettingsSection() {
           label="Database error"
           value={localDatabase.error || 'None'}
           valueColor={localDatabase.error ? c.error : undefined}
-          last
         />
+        <View style={s.jobsHeader}>
+          <View>
+            <Text style={[s.jobsTitle, { color: c.text }]}>Sync jobs</Text>
+            <Text style={[s.jobsCount, { color: c.textSecondary }]}>Last {jobs.length} local records</Text>
+          </View>
+          <AppPressable
+            accessibilityLabel="Refresh sync job status"
+            disabled={jobsLoading || localDatabase.status !== 'ready'}
+            onPress={() => void loadJobs()}
+            style={[s.refreshButton, { backgroundColor: c.surfaceMuted }]}
+          >
+            <RefreshCw size={15} color={c.primary} />
+            <Text style={[s.refreshText, { color: c.primary }]}>{jobsLoading ? 'Reading…' : 'Refresh'}</Text>
+          </AppPressable>
+        </View>
+        {jobsError ? <Text style={[s.jobsError, { color: c.error }]}>{jobsError}</Text> : null}
+        {!jobsLoading && !jobs.length ? (
+          <Text style={[s.emptyJobs, { color: c.textSecondary }]}>No item sync jobs stored yet.</Text>
+        ) : null}
+        {jobs.map((job, index) => (
+          <SyncJobRow key={job.id} job={job} last={index === jobs.length - 1} />
+        ))}
       </View>
 
       {Platform.OS !== 'web' && (
@@ -136,6 +201,37 @@ export function DeviceSettingsSection() {
           </AppPressable>
         </>
       )}
+    </View>
+  );
+}
+
+function SyncJobRow({ job, last }: { job: SyncJob; last: boolean }) {
+  const { themeColors: c } = useAppTheme();
+  const failed = job.status === 'FAILED';
+  const completed = job.status === 'COMPLETED';
+  const color = failed ? c.error : completed ? c.success : '#D97706';
+  const Icon = failed ? AlertCircle : completed ? CheckCircle2 : Clock3;
+  return (
+    <View
+      style={[s.jobRow, { borderTopColor: c.outlineMuted }, !last && { borderBottomColor: c.outlineMuted }]}
+    >
+      <Icon size={17} color={color} />
+      <View style={s.jobBody}>
+        <View style={s.jobTopLine}>
+          <Text style={[s.jobAction, { color: c.text }]}>
+            {job.operation === 'CREATE_PRODUCT' ? 'Add item' : 'Update stock'}
+          </Text>
+          <Text style={[s.jobStatus, { color }]}>{job.status}</Text>
+        </View>
+        <Text selectable style={[s.jobId, { color: c.textSecondary }]}>
+          {job.id}
+        </Text>
+        <Text style={[s.jobTime, { color: c.textSecondary }]}>
+          {new Date(job.updatedAt).toLocaleString()}
+          {job.entityId ? ` · Server ID ${job.entityId}` : ''}
+        </Text>
+        {job.errorMessage ? <Text style={[s.jobError, { color: c.error }]}>{job.errorMessage}</Text> : null}
+      </View>
     </View>
   );
 }
@@ -208,4 +304,41 @@ const s = StyleSheet.create({
   },
   button: { height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   buttonText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  jobsHeader: {
+    minHeight: 58,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  jobsTitle: { fontSize: 12, fontWeight: '900' },
+  jobsCount: { marginTop: 2, fontSize: 10 },
+  refreshButton: {
+    minHeight: 34,
+    paddingHorizontal: 11,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  refreshText: { fontSize: 11, fontWeight: '900' },
+  jobsError: { paddingBottom: 10, fontSize: 11 },
+  emptyJobs: { paddingVertical: 14, textAlign: 'center', fontSize: 11 },
+  jobRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 9,
+  },
+  jobBody: { flex: 1 },
+  jobTopLine: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  jobAction: { fontSize: 12, fontWeight: '800' },
+  jobStatus: { fontSize: 10, fontWeight: '900' },
+  jobId: { marginTop: 3, fontSize: 10 },
+  jobTime: { marginTop: 3, fontSize: 10 },
+  jobError: { marginTop: 4, fontSize: 10 },
 });

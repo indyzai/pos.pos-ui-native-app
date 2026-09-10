@@ -36,6 +36,17 @@ export function initializeDatabase(): void {
       updated TEXT
     );
     CREATE INDEX IF NOT EXISTS billing_metadata_scope_idx ON billing_metadata (scope);
+    CREATE TABLE IF NOT EXISTS sync_jobs (
+      id TEXT PRIMARY KEY NOT NULL,
+      scope TEXT NOT NULL,
+      operation TEXT NOT NULL,
+      entity_id TEXT,
+      status TEXT NOT NULL,
+      error_message TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS sync_jobs_scope_updated_idx ON sync_jobs (scope, updated_at);
   `);
   initialized = true;
 }

@@ -20,25 +20,43 @@ export function useInventory() {
     refetchOnWindowFocus: false,
     retry: false,
   });
+  const jobs = useQuery({
+    queryKey: ['inventory-sync-jobs', auth.session?.user.id, auth.session?.tenant.id],
+    queryFn: inventoryApi.listJobs,
+    enabled: ready,
+    networkMode: 'always',
+    refetchInterval: (result) =>
+      result.state.data?.some((job) => job.status === 'PENDING' || job.status === 'RUNNING') ? 1000 : false,
+  });
   const refresh = useMutation({
     mutationFn: inventoryApi.refresh,
     retry: false,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['billing-cache'] }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
+      void queryClient.invalidateQueries({ queryKey: ['inventory-sync-jobs'] });
+    },
   });
   const reconcile = useMutation({
     mutationFn: (input: StockReconciliationInput) => inventoryApi.reconcile(input),
     retry: false,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['billing-cache'] }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
+      void queryClient.invalidateQueries({ queryKey: ['inventory-sync-jobs'] });
+    },
   });
   const create = useMutation({
     mutationFn: (input: CreateInventoryItemInput) => inventoryApi.create(input),
     retry: false,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['billing-cache'] }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
+      void queryClient.invalidateQueries({ queryKey: ['inventory-sync-jobs'] });
+    },
   });
   const error = refresh.error ?? reconcile.error ?? create.error ?? query.error;
   return useMemo(
     () => ({
       products: query.data?.cache.products ?? [],
+      jobs: jobs.data ?? [],
       updated: query.data?.cache.updated,
       loading: query.isLoading,
       refreshing: refresh.isPending,
@@ -49,6 +67,6 @@ export function useInventory() {
       reconcile: (input: StockReconciliationInput) => reconcile.mutateAsync(input),
       create: (input: CreateInventoryItemInput) => create.mutateAsync(input),
     }),
-    [auth.error, create, error, local.error, query.data, query.isLoading, reconcile, refresh],
+    [auth.error, create, error, jobs.data, local.error, query.data, query.isLoading, reconcile, refresh],
   );
 }
