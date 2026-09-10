@@ -35,9 +35,14 @@ async function read(c: Context): Promise<BillingCache> {
   return readBillingSnapshot(c.key);
 }
 const write = (c: Context, value: BillingCache) => writeBillingSnapshot(c.key, value);
-async function request<T>(c: Context, query: string, variables: Record<string, unknown> = {}): Promise<T> {
+async function request<T>(
+  c: Context,
+  query: string,
+  variables: Record<string, unknown> = {},
+  signal?: AbortSignal,
+): Promise<T> {
   if ((await context()).key !== c.key) throw new Error('Business changed. Please retry.');
-  return requestPos<T>(c.token, c.tenant, query, variables);
+  return requestPos<T>(c.token, c.tenant, query, variables, signal);
 }
 
 export const billingApi = {
@@ -46,12 +51,12 @@ export const billingApi = {
       const c = await context();
       return { key: c.key, cache: await read(c) };
     }),
-  refresh: () =>
+  refresh: (signal?: AbortSignal) =>
     syncQueue.run(async () => {
       const c = await context();
       const cache = await read(c);
-      const products = await fetchCatalog((query, variables) => request(c, query, variables));
-      const organization = await loadOrganizationDetails(c.token, c.tenant);
+      const products = await fetchCatalog((query, variables) => request(c, query, variables, signal));
+      const organization = await loadOrganizationDetails(c.token, c.tenant, signal);
       cache.products = products;
       cache.session = organization?.activeSession ?? null;
       cache.updated = new Date().toISOString();
@@ -70,13 +75,13 @@ export const billingApi = {
       await write(c, cache); // Never clear the cart until this durable write succeeds.
       return sale.id;
     }),
-  sync: () =>
+  sync: (signal?: AbortSignal) =>
     syncQueue.run(async () => {
       const c = await context();
       const cache = await read(c);
       await syncPendingSales(
         cache.queue,
-        (query, variables) => request(c, query, variables),
+        (query, variables) => request(c, query, variables, signal),
         () => write(c, cache),
       );
     }),

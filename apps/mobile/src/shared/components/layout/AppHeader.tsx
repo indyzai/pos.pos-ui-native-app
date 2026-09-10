@@ -13,6 +13,7 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
+  Database,
   LogOut,
   Menu,
   Moon,
@@ -21,6 +22,7 @@ import {
   Settings,
   Sun,
   UserRound,
+  X,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { colors } from '../../../config/theme';
@@ -57,7 +59,7 @@ export function AppHeader({
   const [counterOpen, setCounterOpen] = useState(false);
   const [sessionSummaryOpen, setSessionSummaryOpen] = useState(false);
   const local = useLocalDatabase();
-  const { counterDialogRequest, featureRefresh, featureRefreshing } = useAppHeader();
+  const { counterDialogRequest, featureRefresh, refreshJob } = useAppHeader();
   const router = useRouter();
   const { isDark, mode, setMode, themeColors } = useAppTheme();
   const { session, user, refreshSession } = useAuthSession();
@@ -199,27 +201,28 @@ export function AppHeader({
       <View style={s.headerActions}>
         <AppPressable
           accessibilityLabel={
-            local.status === 'error'
-              ? local.error || 'Retry local storage'
-              : featureRefresh
-                ? 'Refresh current feature'
-                : 'Local storage ' + local.status
+            refreshJob
+              ? `Cancel ${refreshJob.text}, job ${refreshJob.id}`
+              : local.status === 'error'
+                ? local.error || 'Retry local storage'
+                : featureRefresh
+                  ? 'Pull down to refresh'
+                  : 'Local storage ' + local.status
           }
-          disabled={local.status !== 'error' && (!featureRefresh || featureRefreshing)}
-          onPress={() => void (local.status === 'error' ? local.retry() : featureRefresh?.())}
+          disabled={!refreshJob && local.status !== 'error'}
+          onPress={() => void (refreshJob ? refreshJob.cancel() : local.retry())}
           style={[
             s.themeToggle,
             !showActionLabels && s.iconAction,
             { backgroundColor: themeColors.surfaceMuted },
           ]}
         >
-          {featureRefreshing ? (
+          {refreshJob ? (
             <ActivityIndicator size="small" color={themeColors.primary} />
+          ) : local.status === 'error' ? (
+            <RefreshCw size={14} color={themeColors.error} />
           ) : (
-            <RefreshCw
-              size={14}
-              color={local.status === 'error' ? themeColors.error : themeColors.textSecondary}
-            />
+            <Database size={14} color={themeColors.textSecondary} />
           )}
           {showActionLabels && (
             <Text
@@ -228,15 +231,18 @@ export function AppHeader({
                 { color: local.status === 'error' ? themeColors.error : themeColors.textSecondary },
               ]}
             >
-              {local.status === 'ready'
-                ? featureRefresh
-                  ? 'Storage ready'
-                  : '● Storage ready'
-                : local.status === 'error'
-                  ? '↻ Storage'
-                  : '◌ Preparing'}
+              {refreshJob
+                ? `${refreshJob.text} · ${refreshJob.id.slice(-6).toUpperCase()}`
+                : local.status === 'ready'
+                  ? featureRefresh
+                    ? 'Pull to refresh'
+                    : 'Storage ready'
+                  : local.status === 'error'
+                    ? '↻ Storage'
+                    : '◌ Preparing'}
             </Text>
           )}
+          {refreshJob && <X size={13} color={themeColors.textSecondary} />}
         </AppPressable>
         <AppPressable
           onPress={() => setMode(mode === 'light' ? 'dark' : 'light')}

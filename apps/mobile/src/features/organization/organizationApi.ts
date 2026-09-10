@@ -13,7 +13,11 @@ export type OrganizationCounter = { id: string; name: string; status?: string };
 export type OrganizationBranch = { id: string; name: string; counters: OrganizationCounter[] };
 
 /** Loads the shared business settings and current counter session in one request. */
-export async function loadOrganizationDetails(token: string, tenantId: string): Promise<OrganizationDetails> {
+export async function loadOrganizationDetails(
+  token: string,
+  tenantId: string,
+  signal?: AbortSignal,
+): Promise<OrganizationDetails> {
   const data = await requestPos<{
     organization: {
       id: string;
@@ -41,6 +45,7 @@ export async function loadOrganizationDetails(token: string, tenantId: string): 
     }
   }`,
     { id: tenantId },
+    signal,
   );
   const organization = data.organization;
   if (!organization?.id) throw new Error('Organization details were not returned.');

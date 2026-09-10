@@ -29,7 +29,7 @@ export function useInventory() {
       result.state.data?.some((job) => job.status === 'PENDING' || job.status === 'RUNNING') ? 1000 : false,
   });
   const refresh = useMutation({
-    mutationFn: inventoryApi.refresh,
+    mutationFn: (signal?: AbortSignal) => inventoryApi.refresh(signal),
     retry: false,
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
@@ -63,7 +63,7 @@ export function useInventory() {
       reconciling: reconcile.isPending,
       creating: create.isPending,
       error: local.error || auth.error || (error instanceof Error ? error.message : ''),
-      refresh: () => refresh.mutateAsync(),
+      refresh: (signal?: AbortSignal) => refresh.mutateAsync(signal),
       reconcile: (input: StockReconciliationInput) => reconcile.mutateAsync(input),
       create: (input: CreateInventoryItemInput) => create.mutateAsync(input),
     }),

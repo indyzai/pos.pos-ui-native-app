@@ -52,7 +52,7 @@ async function runTracked(
 export const inventoryApi = {
   load: billingApi.load,
   listJobs: () => listSyncJobs(scope()),
-  refresh: billingApi.refresh,
+  refresh: (signal?: AbortSignal) => billingApi.refresh(signal),
   async create(input: CreateInventoryItemInput): Promise<SyncJob> {
     const session = context();
     const job = await runTracked('CREATE_PRODUCT', async () => {

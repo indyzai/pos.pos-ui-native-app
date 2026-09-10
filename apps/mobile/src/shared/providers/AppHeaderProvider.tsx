@@ -6,6 +6,8 @@ type HeaderContextValue = {
   featureRefresh?: () => void | Promise<void>;
   featureRefreshing: boolean;
   setFeatureRefresh: (handler?: () => void | Promise<void>, refreshing?: boolean) => void;
+  refreshJob?: { id: string; text: string; cancel: () => void };
+  setRefreshJob: (job?: { id: string; text: string; cancel: () => void }) => void;
   counterDialogRequest: number;
   requestCounterDialog: () => void;
 };
@@ -16,6 +18,7 @@ export function AppHeaderProvider({ children }: { children: ReactNode }) {
   const [menuToggle, setStoredMenuToggle] = useState<(() => void) | undefined>();
   const [featureRefresh, setStoredFeatureRefresh] = useState<(() => void | Promise<void>) | undefined>();
   const [featureRefreshing, setFeatureRefreshing] = useState(false);
+  const [refreshJob, setRefreshJob] = useState<HeaderContextValue['refreshJob']>();
   const [counterDialogRequest, setCounterDialogRequest] = useState(0);
   const setMenuToggle = useCallback((handler?: () => void) => {
     setStoredMenuToggle(() => handler);
@@ -32,6 +35,8 @@ export function AppHeaderProvider({ children }: { children: ReactNode }) {
       featureRefresh,
       featureRefreshing,
       setFeatureRefresh,
+      refreshJob,
+      setRefreshJob,
       counterDialogRequest,
       requestCounterDialog,
     }),
@@ -40,6 +45,7 @@ export function AppHeaderProvider({ children }: { children: ReactNode }) {
       featureRefresh,
       featureRefreshing,
       menuToggle,
+      refreshJob,
       requestCounterDialog,
       setFeatureRefresh,
       setMenuToggle,

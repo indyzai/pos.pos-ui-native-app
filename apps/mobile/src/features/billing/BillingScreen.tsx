@@ -6,6 +6,7 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -40,7 +41,7 @@ export function BillingScreen() {
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
-  const { requestCounterDialog, setFeatureRefresh } = useAppHeader();
+  const { requestCounterDialog, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const cart = useBillingCart();
   const billing = useBillingData();
   const auth = useAuthSession();
@@ -50,10 +51,19 @@ export function BillingScreen() {
   const refreshRef = useRef(billing.refresh);
   refreshRef.current = billing.refresh;
   const saving = useRef(false);
+  const refreshController = useRef<AbortController | undefined>(undefined);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
   useEffect(() => {
-    setFeatureRefresh(() => refreshRef.current(), billing.busy);
+    setFeatureRefresh(() => refreshRef.current());
     return () => setFeatureRefresh(undefined);
-  }, [billing.busy, setFeatureRefresh]);
+  }, [setFeatureRefresh]);
+  useEffect(
+    () => () => {
+      refreshController.current?.abort();
+      setRefreshJob(undefined);
+    },
+    [setRefreshJob],
+  );
   useEffect(() => {
     cart.clearCart();
     setCategory('All');
@@ -120,6 +130,31 @@ export function BillingScreen() {
     setCartOpen(false);
     sheetTranslateY.setValue(0);
   };
+  const pullToRefresh = async () => {
+    if (pullRefreshing) return;
+    const controller = new AbortController();
+    const jobId = `catalog-${Date.now().toString(36)}`;
+    refreshController.current = controller;
+    setPullRefreshing(true);
+    setRefreshJob({
+      id: jobId,
+      text: 'Refreshing catalog',
+      cancel: () => controller.abort(),
+    });
+    try {
+      await billing.refresh(controller.signal);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        Alert.alert('Billing refresh failed', error instanceof Error ? error.message : 'Try again.');
+      }
+    } finally {
+      if (refreshController.current === controller) {
+        refreshController.current = undefined;
+        setPullRefreshing(false);
+        setRefreshJob(undefined);
+      }
+    }
+  };
   const sheetPanResponder = useMemo(
     () =>
       PanResponder.create({
@@ -147,6 +182,17 @@ export function BillingScreen() {
           showsVerticalScrollIndicator={false}
           stickyHeaderIndices={[0]}
           contentContainerStyle={s.content}
+          alwaysBounceVertical
+          refreshControl={
+            <RefreshControl
+              refreshing={pullRefreshing}
+              onRefresh={() => void pullToRefresh()}
+              tintColor={themeColors.primary}
+              colors={[themeColors.primary]}
+              title={pullRefreshing ? 'Refreshing catalog…' : 'Pull down to refresh'}
+              titleColor={themeColors.textSecondary}
+            />
+          }
         >
           <CatalogToolbar
             categories={['All', ...new Set(products.map((p) => p.category))]}

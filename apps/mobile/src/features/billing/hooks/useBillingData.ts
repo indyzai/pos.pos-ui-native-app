@@ -24,9 +24,9 @@ export function useBillingData() {
   const syncMutation = useMutation({
     networkMode: 'always',
     retry: false,
-    mutationFn: async () => {
-      await billingApi.sync();
-      await billingApi.refresh();
+    mutationFn: async (signal?: AbortSignal) => {
+      await billingApi.sync(signal);
+      await billingApi.refresh(signal);
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
@@ -35,7 +35,7 @@ export function useBillingData() {
   const reload = async () => {
     await query.refetch();
   };
-  const refresh = async () => {
+  const refresh = async (signal?: AbortSignal) => {
     if (!auth.initializing && !auth.session) {
       await auth.refreshSession();
       return;
@@ -43,7 +43,7 @@ export function useBillingData() {
     if (!ready || running.current) return;
     running.current = true;
     try {
-      await syncMutation.mutateAsync();
+      await syncMutation.mutateAsync(signal);
     } catch {
       // TanStack Query retains the mutation error for the billing status UI.
     } finally {

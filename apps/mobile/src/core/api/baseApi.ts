@@ -26,6 +26,7 @@ type RequestOptions = {
   tenantId?: string;
   headers?: Record<string, string>;
   timeoutMs?: number;
+  signal?: AbortSignal;
 };
 
 function errorMessage(body: unknown): string | undefined {
@@ -38,6 +39,8 @@ function errorMessage(body: unknown): string | undefined {
 /** Shared JSON transport. No automatic retries, especially for writes. */
 export async function requestJson<T>(url: string, options: RequestOptions = {}): Promise<T> {
   const controller = new AbortController();
+  const cancel = () => controller.abort();
+  options.signal?.addEventListener('abort', cancel, { once: true });
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 15_000);
   try {
     const response = await fetch(url, {
@@ -71,10 +74,12 @@ export async function requestJson<T>(url: string, options: RequestOptions = {}):
     }
     return body as T;
   } catch (error) {
+    if (options.signal?.aborted) throw new ApiError('Refresh cancelled.');
     if (controller.signal.aborted) throw new ApiError('Request timed out. Please try again.');
     throw error;
   } finally {
     clearTimeout(timer);
+    options.signal?.removeEventListener('abort', cancel);
   }
 }
 

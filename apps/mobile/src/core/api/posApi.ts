@@ -6,8 +6,9 @@ export function requestPos<T>(
   tenantId: string,
   query: string,
   variables: Record<string, unknown> = {},
+  signal?: AbortSignal,
 ) {
   return getRuntimeApiUrls().then(({ posApiUrl }) =>
-    requestGraphQL<T>(posApiUrl, query, variables, { token, tenantId }),
+    requestGraphQL<T>(posApiUrl, query, variables, { token, tenantId, signal }),
   );
 }

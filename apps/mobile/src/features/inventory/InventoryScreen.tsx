@@ -38,7 +38,7 @@ export function InventoryScreen() {
   const { width } = useWindowDimensions();
   const bottomClearance = useBottomNavigationClearance();
   const data = useInventory();
-  const { setFeatureRefresh } = useAppHeader();
+  const { setFeatureRefresh, setRefreshJob } = useAppHeader();
   const { setCenterItem } = useBottomNavigation();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -46,11 +46,19 @@ export function InventoryScreen() {
   const [selected, setSelected] = useState<InventoryProduct | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const refreshRef = useRef(data.refresh);
+  const refreshController = useRef<AbortController | undefined>(undefined);
   refreshRef.current = data.refresh;
   useEffect(() => {
-    setFeatureRefresh(() => refreshRef.current(), data.refreshing);
+    setFeatureRefresh(() => refreshRef.current());
     return () => setFeatureRefresh(undefined);
-  }, [data.refreshing, setFeatureRefresh]);
+  }, [setFeatureRefresh]);
+  useEffect(
+    () => () => {
+      refreshController.current?.abort();
+      setRefreshJob(undefined);
+    },
+    [setRefreshJob],
+  );
   useEffect(() => {
     setCenterItem({ label: 'Add item', icon: Plus, onPress: () => setAddOpen(true) });
     return () => setCenterItem(null);
@@ -85,10 +93,26 @@ export function InventoryScreen() {
     [data.products],
   );
   const refresh = async () => {
+    if (refreshController.current) return;
+    const controller = new AbortController();
+    const jobId = `inventory-${Date.now().toString(36)}`;
+    refreshController.current = controller;
+    setRefreshJob({
+      id: jobId,
+      text: 'Refreshing inventory',
+      cancel: () => controller.abort(),
+    });
     try {
-      await data.refresh();
+      await data.refresh(controller.signal);
     } catch (error) {
-      Alert.alert('Inventory refresh failed', error instanceof Error ? error.message : 'Try again.');
+      if (!controller.signal.aborted) {
+        Alert.alert('Inventory refresh failed', error instanceof Error ? error.message : 'Try again.');
+      }
+    } finally {
+      if (refreshController.current === controller) {
+        refreshController.current = undefined;
+        setRefreshJob(undefined);
+      }
     }
   };
   return (
@@ -99,6 +123,9 @@ export function InventoryScreen() {
             refreshing={data.refreshing}
             onRefresh={() => void refresh()}
             tintColor={c.primary}
+            colors={[c.primary]}
+            title={data.refreshing ? 'Refreshing inventory…' : 'Pull down to refresh'}
+            titleColor={c.textSecondary}
           />
         }
         contentContainerStyle={[styles.content, { paddingBottom: bottomClearance }]}
