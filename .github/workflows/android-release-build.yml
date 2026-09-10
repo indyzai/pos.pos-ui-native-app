@@ -70,15 +70,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-ccache-${{ github.ref }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-ccache-main
+            ${{ runner.os }}-ccache-
+          max-size: 2G
+          create-symlink: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -130,7 +130,23 @@ jobs:
 
       - name: Generate Android project
         working-directory: apps/mobile
-        run: bunx expo prebuild --clean --platform android --non-interactive --no-install
+        run: |
+          bunx expo prebuild --clean --platform android --non-interactive --no-install
+          # Tune Gradle settings for CI runner (allocate 6GB heap, enable build caching & parallel execution)
+          python3 -c "
+          with open('android/gradle.properties', 'r') as f:
+              content = f.read()
+          content = content.replace('-Xmx2048m -XX:MaxMetaspaceSize=512m', '-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -XX:+ParallelRefProcEnabled')
+          if 'org.gradle.caching=true' not in content:
+              content += '\norg.gradle.caching=true\norg.gradle.parallel=true\norg.gradle.vfs.watch=false\n'
+          with open('android/gradle.properties', 'w') as f:
+              f.write(content)
+          "
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       # ─────────────────────────────────────────────────────────────────────────
       # Upload key signing
@@ -171,12 +187,20 @@ jobs:
         working-directory: apps/mobile/android
         env:
           ARCHS: ${{ inputs.archs || 'arm64-v8a,armeabi-v7a' }}
+          CCACHE_DIR: ${{ runner.temp }}/.ccache
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          GRADLE_OPTS: >-
+            -Dorg.gradle.jvmargs="-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -XX:+ParallelRefProcEnabled"
+            -Dorg.gradle.parallel=true
+            -Dorg.gradle.caching=true
+            -Dorg.gradle.vfs.watch=false
         run: |
           # assembleRelease / bundleRelease → non-debuggable, release-signed.
           # SIGNING_FLAGS is empty when HAS_UPLOAD_KEY is false (unsigned release).
           ./gradlew app:assembleRelease app:bundleRelease \
-            --no-daemon \
-            --no-configuration-cache \
+            --build-cache \
+            --parallel \
             -PreactNativeArchitectures="$ARCHS" \
             $SIGNING_FLAGS
 
