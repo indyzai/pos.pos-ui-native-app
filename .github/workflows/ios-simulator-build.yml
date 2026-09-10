@@ -109,6 +109,7 @@ jobs:
 
           echo "Updated app.json:"
           jq '{version: .expo.version, buildNumber: .expo.ios.buildNumber}' app.json
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Generate iOS project
         working-directory: apps/mobile
@@ -234,7 +235,7 @@ jobs:
       - name: Upload iOS Simulator app
         uses: actions/upload-artifact@v4
         with:
-          name: indyz-pos-ios-simulator-${{ github.sha }}
+          name: indyz-pos-ios-simulator-${{ env.APP_VERSION }}-${{ github.sha }}
           path: /tmp/indyz-pos-simulator.zip
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days || 14 }}
