@@ -89,11 +89,11 @@ jobs:
               echo "Base version from latest release: $BASE"
             else
               # No release yet — fall back to app.json (strip any previous alpha suffix).
-              BASE="$(jq -r '.expo.version' app.json | sed 's/\.[0-9]*-alpha$//; s/-alpha\..*//')"
+              BASE="$(jq -r '.expo.version' app.json | sed 's/\.[0-9]*$//; s/\.[0-9]*-alpha$//; s/-alpha\..*//')"
               echo "No release found, base version from app.json: $BASE"
             fi
 
-            VERSION="${BASE}.${GITHUB_RUN_NUMBER}-alpha"
+            VERSION="${BASE}.${GITHUB_RUN_NUMBER}"
           fi
 
           BUILD_NUMBER="$GITHUB_RUN_NUMBER"
