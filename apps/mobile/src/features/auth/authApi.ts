@@ -35,8 +35,11 @@ const userKey = 'indyzai.user';
 const selectedTenantKey = 'indyzai.selected-tenant';
 const deviceIdKey = 'indyzai.device-id';
 const deviceTokenKey = 'indyzai.device-token';
+const oauthStateKey = 'indyzai.oauth-state';
+const oauthVerifierKey = 'indyzai.oauth-verifier';
 const sessionFallback = new Map<string, string>();
 let sessionUserPromise: Promise<AuthUser | null> | undefined;
+let authorizationCompletion: Promise<void> | undefined;
 const deviceTokenOptions =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient
     ? undefined
@@ -52,6 +55,18 @@ export type AuthUser = {
   avatarUrl?: string | null;
   role?: string;
   tenants?: AuthTenant[];
+};
+export type DeviceRegistrationDetails = {
+  registered: boolean;
+  deviceId?: string;
+  deviceIdentifier?: string;
+  deviceName: string;
+  platform: string;
+  platformVersion: string;
+  applicationId: string;
+  applicationVersion: string;
+  buildVersion: string;
+  executionEnvironment: string;
 };
 type AuthResponse = Tokens & { tokens?: Tokens; user?: AuthUser };
 type CodeResponse = AuthResponse & { code?: string; applicationCode?: string };
@@ -189,6 +204,30 @@ async function exchangeCode(code: string, applicationCode = false, codeVerifier?
   await saveSession(result);
 }
 
+async function completeAuthorizationCode(code: string, returnedState?: string): Promise<void> {
+  if (authorizationCompletion) return authorizationCompletion;
+  authorizationCompletion = (async () => {
+    const [expectedState, codeVerifier] = await Promise.all([
+      getSessionValue(oauthStateKey),
+      getSessionValue(oauthVerifierKey),
+    ]);
+    if (expectedState && returnedState !== expectedState) {
+      throw new Error('The sign-in response could not be verified. Please try again.');
+    }
+    if (!codeVerifier) {
+      if (await getSessionValue(accessTokenKey)) return;
+      throw new Error('The sign-in request expired. Please start again.');
+    }
+    await exchangeCode(code, true, codeVerifier);
+  })();
+  try {
+    await authorizationCompletion;
+  } finally {
+    await Promise.all([deleteSessionValue(oauthStateKey), deleteSessionValue(oauthVerifierKey)]);
+    authorizationCompletion = undefined;
+  }
+}
+
 export type LoginCredentials = { email: string; password: string };
 export type RegistrationPayload = {
   fullName: string;
@@ -202,14 +241,35 @@ export type RegistrationPayload = {
 
 export const authApi = {
   getAccessToken: () => getSessionValue(accessTokenKey),
+  completeAuthorizationCode,
+  async getDeviceRegistrationDetails(): Promise<DeviceRegistrationDetails> {
+    const deviceId = await getSessionValue(deviceIdKey);
+    let deviceIdentifier: string | undefined;
+    if (Platform.OS !== 'web') {
+      try {
+        deviceIdentifier = await getDeviceIdentifier();
+      } catch {
+        deviceIdentifier = undefined;
+      }
+    }
+    return {
+      registered: Boolean(deviceId),
+      deviceId: deviceId || undefined,
+      deviceIdentifier,
+      deviceName: Constants.deviceName || (Platform.OS === 'web' ? 'Web browser' : 'Indyz POS device'),
+      platform: Platform.OS,
+      platformVersion: String(Platform.Version),
+      applicationId: Application.applicationId || (Platform.OS === 'web' ? appId : 'Unavailable'),
+      applicationVersion:
+        Application.nativeApplicationVersion || Constants.expoConfig?.version || 'Unavailable',
+      buildVersion: Application.nativeBuildVersion || 'Development',
+      executionEnvironment: String(Constants.executionEnvironment || 'standalone'),
+    };
+  },
   async hasRegisteredDevice(): Promise<boolean> {
     if (Platform.OS === 'web') return false;
     try {
-      const [deviceId, deviceToken] = await Promise.all([
-        getSessionValue(deviceIdKey),
-        SecureStore.getItemAsync(deviceTokenKey, deviceTokenOptions),
-      ]);
-      return Boolean(deviceId && deviceToken);
+      return Boolean(await getSessionValue(deviceIdKey));
     } catch {
       return false;
     }
@@ -347,14 +407,21 @@ export const authApi = {
       state,
       extraParams: { appName: appId, redirect: callback.toString() },
     });
+    if (!request.codeVerifier) throw new Error('Sign-in could not create a secure verification code.');
+    await Promise.all([
+      setSessionValue(oauthStateKey, state),
+      setSessionValue(oauthVerifierKey, request.codeVerifier),
+    ]);
     const result = await request.promptAsync({ authorizationEndpoint: `${baseUrl}/auth/${provider}` });
-    if (result.type === 'cancel' || result.type === 'dismiss') return false;
+    if (result.type === 'cancel' || result.type === 'dismiss') {
+      await Promise.all([deleteSessionValue(oauthStateKey), deleteSessionValue(oauthVerifierKey)]);
+      return false;
+    }
     if (result.type !== 'success')
       throw new Error(`${provider === 'google' ? 'Google' : 'Microsoft'} sign-in did not complete.`);
     const code = new URL(result.url).searchParams.get('code');
     if (!code) throw new Error('The authentication callback did not include a code.');
-    if (!request.codeVerifier) throw new Error('Sign-in could not verify the OAuth response.');
-    await exchangeCode(code, true, request.codeVerifier);
+    await completeAuthorizationCode(code, new URL(result.url).searchParams.get('state') || undefined);
     return true;
   },
 };

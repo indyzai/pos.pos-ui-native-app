@@ -1,25 +1,15 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { ChevronLeft, Save } from 'lucide-react-native';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useState } from 'react';
+import { ChevronLeft } from 'lucide-react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
-import { authApi } from '../features/auth/authApi';
 import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
 import { BillingSettingsSection } from '../features/settings/BillingSettingsSection';
 import { DeviceSettingsSection } from '../features/settings/DeviceSettingsSection';
+import { GeneralSettingsSection } from '../features/settings/GeneralSettingsSection';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
-import { BottomNavigationProvider, useBottomNavigation } from '../shared/providers/BottomNavigationProvider';
+import { BottomNavigationProvider } from '../shared/providers/BottomNavigationProvider';
 
 export default function SettingsRoute() {
   return (
@@ -30,32 +20,9 @@ export default function SettingsRoute() {
   );
 }
 function SettingsContent() {
-  const router = useRouter();
   const { themeColors: c } = useAppTheme();
-  const [pin, setPin] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [section, setSection] = useState('devices');
+  const [section, setSection] = useState('general');
   const [tabsOpen, setTabsOpen] = useState(false);
-  const { setCenterItem } = useBottomNavigation();
-  const change = async () => {
-    if (pin !== confirm) return Alert.alert('Device PIN', 'PIN entries do not match.');
-    setBusy(true);
-    try {
-      await authApi.changeDevicePin(pin);
-      Alert.alert('PIN changed', 'Your device PIN has been updated.', [
-        { text: 'Done', onPress: () => router.back() },
-      ]);
-    } catch (e) {
-      Alert.alert('PIN change failed', e instanceof Error ? e.message : 'Try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
-  useEffect(() => {
-    setCenterItem({ label: 'Save', icon: Save, onPress: () => void change() });
-    return () => setCenterItem(null);
-  }, [section, pin, confirm]);
   return (
     <SafeAreaView style={[s.screen, { backgroundColor: c.background }]} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -108,9 +75,10 @@ function SettingsContent() {
                 ))}
               </View>
             )}
+            {section === 'general' && <GeneralSettingsSection />}
             {section === 'devices' && <DeviceSettingsSection />}
             {section === 'billing' && <BillingSettingsSection />}
-            {!['devices', 'billing'].includes(section) && (
+            {!['general', 'devices', 'billing'].includes(section) && (
               <ComingSoonSettings
                 title={
                   section === 'users'
