@@ -18,6 +18,7 @@ import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
 import { BillingSettingsSection } from '../features/settings/BillingSettingsSection';
 import { DeviceSettingsSection } from '../features/settings/DeviceSettingsSection';
 import { GeneralSettingsSection } from '../features/settings/GeneralSettingsSection';
+import { DataSettingsSection } from '../features/settings/DataSettingsSection';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 import { BottomNavigationProvider } from '../shared/providers/BottomNavigationProvider';
 import { useBottomNavigation } from '../shared/providers/BottomNavigationProvider';
@@ -78,7 +79,8 @@ function SettingsContent() {
             {section === 'general' && <GeneralSettingsSection />}
             {section === 'devices' && <DeviceSettingsSection registerSave={registerSave} />}
             {section === 'billing' && <BillingSettingsSection />}
-            {!['general', 'devices', 'billing'].includes(section) && (
+            {section === 'data' && <DataSettingsSection />}
+            {!['general', 'devices', 'billing', 'data'].includes(section) && (
               <ComingSoonSettings
                 title={
                   section === 'users'
@@ -120,19 +122,19 @@ function SettingsContent() {
                   'Users & access',
                   'Notifications',
                   'Integrations',
-                  'Data',
+                  'Data & sync',
                 ].map((tab) => (
                   <AppPressable
                     key={tab}
                     onPress={() => {
-                      setSection(tab.toLowerCase().replace(' & access', ''));
+                      setSection(tab.toLowerCase().replace(' & access', '').replace(' & sync', ''));
                       setTabsOpen(false);
                     }}
                     style={[
                       s.tab,
                       {
                         backgroundColor:
-                          section === tab.toLowerCase().replace(' & access', '')
+                          section === tab.toLowerCase().replace(' & access', '').replace(' & sync', '')
                             ? c.primarySoft
                             : 'transparent',
                       },
@@ -154,9 +156,21 @@ const s = StyleSheet.create({
   flex: { flex: 1 },
   // The navigation bar is absolutely positioned; its space is added responsively above.
   scroll: { flexGrow: 1, padding: 0 },
-  card: { flexGrow: 1, borderWidth: 0, borderRadius: 0, padding: 20 },
+  card: {
+    flexGrow: 1,
+    borderWidth: 0,
+    borderRadius: 0,
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 28,
+  },
   title: { fontSize: 21, fontWeight: '900' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleRow: {
+    marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   copy: { fontSize: 16, fontWeight: '800', marginTop: 20 },
   tabsButtonAnchor: {
     position: 'absolute',

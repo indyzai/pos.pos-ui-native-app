@@ -17,14 +17,28 @@ const metadataId = (scope: string) => `${scope}:billing`;
 const productId = (scope: string, remoteId: string) => `${scope}:product:${remoteId}`;
 const saleId = (scope: string, offlineId: string) => `${scope}:sale:${offlineId}`;
 
+function parseProductDetails(value: string | null): Product['details'] {
+  if (!value) return undefined;
+  try {
+    return JSON.parse(value) as Product['details'];
+  } catch {
+    return undefined;
+  }
+}
+
 const productFromRow = (product: typeof products.$inferSelect): Product => ({
   id: product.remoteId,
   name: product.name,
   category: product.category,
+  categoryType: (product.categoryType as Product['categoryType']) ?? undefined,
   price: product.price,
   stock: product.stock,
   barcode: product.barcode ?? undefined,
+  sku: product.sku ?? undefined,
+  imageUrl: product.imageUrl ?? undefined,
+  quick: product.quick,
   taxRate: product.taxRate,
+  details: parseProductDetails(product.details),
   emoji: '📦',
   color: '#E7EDFF',
 });
@@ -38,6 +52,9 @@ function pendingSaleFromRow(sale: typeof sales.$inferSelect): PendingSale | null
       payload: input,
       input,
       createdAt: sale.createdAt,
+      receiptNumber:
+        String((input.details as Record<string, unknown> | undefined)?.provisionalReceiptNumber || '') ||
+        sale.offlineId,
       error: sale.errorMessage ?? undefined,
     };
   } catch {
@@ -113,20 +130,30 @@ export async function writeBillingSnapshot(scope: string, snapshot: BillingSnaps
           remoteId: product.id,
           name: product.name,
           category: product.category,
+          categoryType: product.categoryType ?? null,
           price: product.price,
           stock: product.stock,
           barcode: product.barcode ?? null,
+          sku: product.sku ?? null,
+          imageUrl: product.imageUrl ?? null,
+          quick: product.quick ?? false,
           taxRate: product.taxRate ?? 0,
+          details: product.details ? JSON.stringify(product.details) : null,
         })
         .onConflictDoUpdate({
           target: products.id,
           set: {
             name: product.name,
             category: product.category,
+            categoryType: product.categoryType ?? null,
             price: product.price,
             stock: product.stock,
             barcode: product.barcode ?? null,
+            sku: product.sku ?? null,
+            imageUrl: product.imageUrl ?? null,
+            quick: product.quick ?? false,
             taxRate: product.taxRate ?? 0,
+            details: product.details ? JSON.stringify(product.details) : null,
           },
         })
         .run();

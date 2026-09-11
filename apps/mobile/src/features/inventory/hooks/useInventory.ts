@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocalDatabase } from '../../../db/DatabaseProvider';
 import { useAuthSession } from '../../auth/AuthSessionContext';
 import { inventoryApi } from '../inventoryApi';
 import type { CreateInventoryItemInput, StockReconciliationInput } from '../types';
+import { payloadsFromRecords, replaceLocalPayloads, useLocalProducts } from '../../../db';
+import type { LocalRecord } from '../../../db';
+import type { Product } from '../../billing/types/billing';
 
 export function useInventory() {
   const auth = useAuthSession();
   const local = useLocalDatabase();
+  const [projectionError, setProjectionError] = useState('');
   const queryClient = useQueryClient();
   const ready = !auth.initializing && !!auth.session && local.status === 'ready';
   const queryKey = ['billing-cache', auth.session?.user.id, auth.session?.tenant.id];
@@ -20,6 +24,15 @@ export function useInventory() {
     refetchOnWindowFocus: false,
     retry: false,
   });
+  const localProducts = useLocalProducts<LocalRecord<Product>>();
+  useEffect(() => {
+    if (!local.database || !query.data) return;
+    void replaceLocalPayloads(local.database, 'products', query.data.cache.products).then(
+      () => setProjectionError(''),
+      (reason) =>
+        setProjectionError(reason instanceof Error ? reason.message : 'Unable to update local stock.'),
+    );
+  }, [local.database, query.data]);
   const jobs = useQuery({
     queryKey: ['inventory-sync-jobs', auth.session?.user.id, auth.session?.tenant.id],
     queryFn: inventoryApi.listJobs,
@@ -55,18 +68,30 @@ export function useInventory() {
   const error = refresh.error ?? reconcile.error ?? create.error ?? query.error;
   return useMemo(
     () => ({
-      products: query.data?.cache.products ?? [],
+      products: payloadsFromRecords(localProducts.records),
       jobs: jobs.data ?? [],
       updated: query.data?.cache.updated,
       loading: query.isLoading,
       refreshing: refresh.isPending,
       reconciling: reconcile.isPending,
       creating: create.isPending,
-      error: local.error || auth.error || (error instanceof Error ? error.message : ''),
+      error: local.error || auth.error || projectionError || (error instanceof Error ? error.message : ''),
       refresh: (signal?: AbortSignal) => refresh.mutateAsync(signal),
       reconcile: (input: StockReconciliationInput) => reconcile.mutateAsync(input),
       create: (input: CreateInventoryItemInput) => create.mutateAsync(input),
     }),
-    [auth.error, create, error, jobs.data, local.error, query.data, query.isLoading, reconcile, refresh],
+    [
+      auth.error,
+      create,
+      error,
+      jobs.data,
+      local.error,
+      localProducts.records,
+      projectionError,
+      query.data,
+      query.isLoading,
+      reconcile,
+      refresh,
+    ],
   );
 }

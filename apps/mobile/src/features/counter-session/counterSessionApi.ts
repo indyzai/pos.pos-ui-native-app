@@ -11,6 +11,25 @@ const denominationQuery = `
 `;
 
 export const counterSessionApi = {
+  async recordPettyCash(
+    token: string,
+    tenantId: string,
+    input: {
+      type: 'INCOME' | 'EXPENSE';
+      amount: number;
+      description?: string;
+      counterSessionId: string;
+      branchId?: string;
+    },
+  ) {
+    const data = await requestPos<{ recordMiscellaneousTransaction: boolean }>(
+      token,
+      tenantId,
+      `mutation RecordCounterPettyCash($input: MiscellaneousTransactionInput!) { recordMiscellaneousTransaction(input: $input) }`,
+      { input },
+    );
+    if (!data.recordMiscellaneousTransaction) throw new Error('Server did not acknowledge the cash entry.');
+  },
   async getDenominations(token: string, tenantId: string, currencyCode: string) {
     const data = await requestPos<{ currencyDenominations?: CurrencyDenomination[] }>(
       token,

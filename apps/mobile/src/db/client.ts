@@ -10,7 +10,7 @@ let database: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
 export function getSQLiteClient(): SQLite.SQLiteDatabase {
   if (!hasNativeDatabase) throw new Error('SQLite is only available in the native application.');
-  return (sqlite ??= SQLite.openDatabaseSync('indyz-pos.db'));
+  return (sqlite ??= SQLite.openDatabaseSync('indyz-pos.db', { enableChangeListener: true }));
 }
 
 export function getDatabase(): ReturnType<typeof drizzle<typeof schema>> {

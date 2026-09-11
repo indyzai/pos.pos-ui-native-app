@@ -1,7 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
-import { Camera, X } from 'lucide-react-native';
+import { Camera, Flashlight, FlashlightOff, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 
 type Props = {
@@ -14,9 +14,13 @@ type Props = {
 export function BarcodeScannerModal({ visible, onClose, onScan }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [torch, setTorch] = useState(false);
 
   useEffect(() => {
-    if (visible) setScanned(false);
+    if (visible) {
+      setScanned(false);
+      setTorch(false);
+    }
   }, [visible]);
 
   const handleScan = ({ data }: { data: string }) => {
@@ -33,9 +37,24 @@ export function BarcodeScannerModal({ visible, onClose, onScan }: Props) {
             <Text style={s.title}>Scan product</Text>
             <Text style={s.subtitle}>Point the camera at a barcode or QR code</Text>
           </View>
-          <AppPressable accessibilityLabel="Close scanner" onPress={onClose} style={s.closeButton}>
-            <X size={22} color="#FFFFFF" />
-          </AppPressable>
+          <View style={s.actions}>
+            {permission?.granted && (
+              <AppPressable
+                accessibilityLabel={torch ? 'Turn flashlight off' : 'Turn flashlight on'}
+                onPress={() => setTorch((value) => !value)}
+                style={s.closeButton}
+              >
+                {torch ? (
+                  <FlashlightOff size={21} color="#FFFFFF" />
+                ) : (
+                  <Flashlight size={21} color="#FFFFFF" />
+                )}
+              </AppPressable>
+            )}
+            <AppPressable accessibilityLabel="Close scanner" onPress={onClose} style={s.closeButton}>
+              <X size={22} color="#FFFFFF" />
+            </AppPressable>
+          </View>
         </View>
 
         {!permission ? (
@@ -56,6 +75,7 @@ export function BarcodeScannerModal({ visible, onClose, onScan }: Props) {
             <CameraView
               style={StyleSheet.absoluteFill}
               facing="back"
+              enableTorch={torch}
               barcodeScannerSettings={{
                 barcodeTypes: ['qr', 'ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
               }}
@@ -93,6 +113,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.14)',
   },
+  actions: { flexDirection: 'row', gap: 9 },
   cameraWrap: { flex: 1, overflow: 'hidden' },
   guide: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   scanFrame: { width: 250, height: 190, borderRadius: 24, borderWidth: 3, borderColor: '#8BA4FF' },

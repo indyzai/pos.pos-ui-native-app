@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ScanBarcode, Search, X } from 'lucide-react-native';
+import { BarChart3, Plus, ScanBarcode, Search, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors, radii } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
@@ -11,9 +11,26 @@ type Props = {
   onSearch: (value: string) => void;
   onCategory: (value: string) => void;
   onScan: () => void;
+  scanEnabled?: boolean;
+  onAddProduct: () => void;
+  statsVisible: boolean;
+  onToggleStats: () => void;
+  searchPlaceholder?: string;
 };
 
-export function CatalogToolbar({ categories, search, category, onSearch, onCategory, onScan }: Props) {
+export function CatalogToolbar({
+  categories,
+  search,
+  category,
+  onSearch,
+  onCategory,
+  onScan,
+  scanEnabled = true,
+  onAddProduct,
+  statsVisible,
+  onToggleStats,
+  searchPlaceholder = 'Search products',
+}: Props) {
   const { themeColors: c } = useAppTheme();
   return (
     <View style={[s.toolbar, { backgroundColor: c.background }]}>
@@ -23,7 +40,7 @@ export function CatalogToolbar({ categories, search, category, onSearch, onCateg
           <TextInput
             value={search}
             onChangeText={onSearch}
-            placeholder="Search products"
+            placeholder={searchPlaceholder}
             placeholderTextColor={c.textSecondary}
             style={[s.searchInput, { color: c.text }]}
           />
@@ -37,12 +54,28 @@ export function CatalogToolbar({ categories, search, category, onSearch, onCateg
             </AppPressable>
           )}
         </View>
+        {scanEnabled && (
+          <AppPressable
+            accessibilityLabel="Scan barcode or QR code"
+            onPress={onScan}
+            style={[s.scanButton, { backgroundColor: c.primarySoft }]}
+          >
+            <ScanBarcode size={22} color={c.primary} strokeWidth={2.25} />
+          </AppPressable>
+        )}
         <AppPressable
-          accessibilityLabel="Scan barcode or QR code"
-          onPress={onScan}
+          accessibilityLabel="Add a new product"
+          onPress={onAddProduct}
           style={[s.scanButton, { backgroundColor: c.primarySoft }]}
         >
-          <ScanBarcode size={22} color={c.primary} strokeWidth={2.25} />
+          <Plus size={22} color={c.primary} strokeWidth={2.5} />
+        </AppPressable>
+        <AppPressable
+          accessibilityLabel={statsVisible ? 'Hide session statistics' : 'Show session statistics'}
+          onPress={onToggleStats}
+          style={[s.scanButton, { backgroundColor: statsVisible ? c.primary : c.primarySoft }]}
+        >
+          <BarChart3 size={21} color={statsVisible ? '#FFFFFF' : c.primary} strokeWidth={2.4} />
         </AppPressable>
       </View>
       <ScrollView

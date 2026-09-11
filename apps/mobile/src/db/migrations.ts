@@ -1,52 +1,29 @@
+import { initialSchemaSql } from './initialSchema.generated';
 import { getSQLiteClient, hasNativeDatabase } from './client';
 
+export const localSchemaVersion = 1;
 let initialized = false;
 
-/** Runs the checked-in schema migration before repositories access the native database. */
+/** Creates the new-app schema once. Future schema changes must use forward-only migrations. */
 export function initializeDatabase(): void {
   if (initialized || !hasNativeDatabase) return;
-  getSQLiteClient().execSync(`
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE IF NOT EXISTS products (
-      id TEXT PRIMARY KEY NOT NULL,
-      scope TEXT NOT NULL,
-      remote_id TEXT NOT NULL,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      price INTEGER NOT NULL,
-      stock INTEGER NOT NULL,
-      barcode TEXT,
-      tax_rate INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS products_scope_idx ON products (scope);
-    CREATE TABLE IF NOT EXISTS sales (
-      id TEXT PRIMARY KEY NOT NULL,
-      scope TEXT NOT NULL,
-      offline_id TEXT NOT NULL,
-      payload TEXT NOT NULL,
-      status TEXT NOT NULL,
-      error_message TEXT,
-      created_at TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS sales_scope_status_idx ON sales (scope, status);
-    CREATE TABLE IF NOT EXISTS billing_metadata (
-      id TEXT PRIMARY KEY NOT NULL,
-      scope TEXT NOT NULL,
-      session TEXT NOT NULL,
-      updated TEXT
-    );
-    CREATE INDEX IF NOT EXISTS billing_metadata_scope_idx ON billing_metadata (scope);
-    CREATE TABLE IF NOT EXISTS sync_jobs (
-      id TEXT PRIMARY KEY NOT NULL,
-      scope TEXT NOT NULL,
-      operation TEXT NOT NULL,
-      entity_id TEXT,
-      status TEXT NOT NULL,
-      error_message TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS sync_jobs_scope_updated_idx ON sync_jobs (scope, updated_at);
-  `);
+  const sqlite = getSQLiteClient();
+  sqlite.execSync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+  const version = sqlite.getFirstSync<{ user_version: number }>('PRAGMA user_version')?.user_version ?? 0;
+  if (version > localSchemaVersion) {
+    throw new Error(`Local database version ${version} is newer than this app supports.`);
+  }
+  if (version === 0) {
+    sqlite.withTransactionSync(() => {
+      sqlite.execSync(initialSchemaSql);
+      sqlite.execSync(`PRAGMA user_version = ${localSchemaVersion}`);
+      sqlite.runSync(
+        `INSERT OR REPLACE INTO schema_metadata (key, value, updated_at) VALUES (?, ?, ?)`,
+        'schemaVersion',
+        String(localSchemaVersion),
+        Date.now(),
+      );
+    });
+  }
   initialized = true;
 }

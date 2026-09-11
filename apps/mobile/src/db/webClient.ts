@@ -7,6 +7,19 @@ export const webStores = {
   sales: 'sales',
   metadata: 'billing-metadata',
   syncJobs: 'sync-jobs',
+  heldOrders: 'held-orders',
+  customers: 'customers',
+  paymentMethods: 'payment-methods',
+  printJobs: 'print-jobs',
+  printers: 'printers',
+  restaurantTables: 'restaurant-tables',
+  serviceUsers: 'service-users',
+  waybillJobs: 'waybill-jobs',
+  orders: 'orders',
+  refunds: 'refunds',
+  productBatches: 'product-batches',
+  scrapPurchaseJobs: 'scrap-purchase-jobs',
+  taxRates: 'tax-rates',
 } as const;
 
 export type WebSyncJob = {
@@ -33,7 +46,7 @@ function addScopeIndex(store: IDBObjectStore) {
 export function openDatabase(): Promise<IDBDatabase> {
   if (!databasePromise) {
     databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 13);
       request.onerror = () => reject(request.error ?? new Error('Unable to open browser storage.'));
       request.onblocked = () => reject(new Error('Close other POS tabs and retry local storage.'));
       request.onupgradeneeded = () => {
@@ -167,6 +180,107 @@ export async function writeWebSyncJob(job: WebSyncJob): Promise<void> {
     transaction.onerror = () => reject(transaction.error ?? new Error('Unable to save sync job.'));
     transaction.oncomplete = () => resolve();
     transaction.objectStore(webStores.syncJobs).put(job);
+  });
+}
+
+export async function readWebHeldOrders<T>(scope: string): Promise<T[]> {
+  const database = await openDatabase();
+  const transaction = database.transaction(webStores.heldOrders, 'readonly');
+  return readByScope<T>(transaction.objectStore(webStores.heldOrders), scope);
+}
+
+export async function writeWebHeldOrder<T extends { id: string }>(scope: string, order: T): Promise<void> {
+  const database = await openDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(webStores.heldOrders, 'readwrite');
+    transaction.onerror = () => reject(transaction.error ?? new Error('Unable to save held order.'));
+    transaction.oncomplete = () => resolve();
+    transaction.objectStore(webStores.heldOrders).put({
+      ...order,
+      scope,
+      storageId: `${scope}:held-order:${order.id}`,
+    });
+  });
+}
+
+export async function deleteWebHeldOrder(scope: string, id: string): Promise<void> {
+  const database = await openDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(webStores.heldOrders, 'readwrite');
+    transaction.onerror = () => reject(transaction.error ?? new Error('Unable to delete held order.'));
+    transaction.oncomplete = () => resolve();
+    transaction.objectStore(webStores.heldOrders).delete(`${scope}:held-order:${id}`);
+  });
+}
+
+export async function readWebScopedRecords<T>(
+  name:
+    | typeof webStores.customers
+    | typeof webStores.paymentMethods
+    | typeof webStores.printers
+    | typeof webStores.restaurantTables
+    | typeof webStores.serviceUsers
+    | typeof webStores.waybillJobs
+    | typeof webStores.orders
+    | typeof webStores.refunds
+    | typeof webStores.productBatches
+    | typeof webStores.scrapPurchaseJobs
+    | typeof webStores.taxRates,
+  scope: string,
+): Promise<T[]> {
+  const database = await openDatabase();
+  const transaction = database.transaction(name, 'readonly');
+  return readByScope<T>(transaction.objectStore(name), scope);
+}
+
+export async function replaceWebScopedRecords<T extends { id: string }>(
+  name:
+    | typeof webStores.customers
+    | typeof webStores.paymentMethods
+    | typeof webStores.printers
+    | typeof webStores.restaurantTables
+    | typeof webStores.serviceUsers
+    | typeof webStores.waybillJobs
+    | typeof webStores.orders
+    | typeof webStores.refunds
+    | typeof webStores.productBatches
+    | typeof webStores.scrapPurchaseJobs
+    | typeof webStores.taxRates,
+  scope: string,
+  records: T[],
+): Promise<void> {
+  const database = await openDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(name, 'readwrite');
+    transaction.onerror = () => reject(transaction.error ?? new Error('Unable to save reference data.'));
+    transaction.oncomplete = () => resolve();
+    const store = transaction.objectStore(name);
+    const keys = store.index('scope').getAllKeys(scope);
+    keys.onsuccess = () => {
+      for (const key of keys.result) store.delete(key);
+      for (const record of records)
+        store.put({ ...record, scope, storageId: `${scope}:${name}:${record.id}` });
+    };
+  });
+}
+
+export async function readWebPrintJobs<T>(scope: string): Promise<T[]> {
+  const database = await openDatabase();
+  return readByScope<T>(
+    database.transaction(webStores.printJobs, 'readonly').objectStore(webStores.printJobs),
+    scope,
+  );
+}
+
+export async function writeWebPrintJob<T extends { id: string }>(scope: string, job: T): Promise<void> {
+  const database = await openDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(webStores.printJobs, 'readwrite');
+    transaction.onerror = () => reject(transaction.error ?? new Error('Unable to save print job.'));
+    transaction.oncomplete = () => resolve();
+    transaction
+      .objectStore(webStores.printJobs)
+      .put({ ...job, scope, storageId: `${scope}:print-job:${job.id}` });
   });
 }
 

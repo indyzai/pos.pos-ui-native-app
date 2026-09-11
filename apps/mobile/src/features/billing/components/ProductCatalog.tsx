@@ -1,15 +1,31 @@
-import { PackageSearch, Plus } from 'lucide-react-native';
+import { AlertTriangle, PackageSearch, Pill, Plus } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { useBottomNavigationClearance } from '../../../shared/hooks/useBottomNavigationClearance';
 import type { Product } from '../types/billing';
+import { pharmacyProductStatus } from '../domain/pharmacyProduct';
+import { formatCurrency } from '../../../shared/utils/currency';
 
-type Props = { category: string; products: Product[]; onAdd: (product: Product) => void };
+type Props = {
+  category: string;
+  products: Product[];
+  onAdd: (product: Product) => void;
+  defaultTitle?: string;
+  pharmacyMode?: boolean;
+  currencyCode?: string;
+};
 
-export function ProductCatalog({ category, products, onAdd }: Props) {
+export function ProductCatalog({
+  category,
+  products,
+  onAdd,
+  defaultTitle = 'Popular products',
+  pharmacyMode = false,
+  currencyCode = 'INR',
+}: Props) {
   const { width } = useWindowDimensions();
   const { isDark, themeColors: c } = useAppTheme();
   const isTablet = width >= 700;
@@ -29,56 +45,102 @@ export function ProductCatalog({ category, products, onAdd }: Props) {
         },
       ]}
     >
-      <Text style={[s.title, { color: c.text }]}>{category === 'All' ? 'Popular products' : category}</Text>
+      <Text style={[s.title, { color: c.text }]}>{category === 'All' ? defaultTitle : category}</Text>
       <View style={[s.grid, { gap }]}>
-        {products.map((product) => (
-          <AppPressable
-            key={product.id}
-            onPress={() => onAdd(product)}
-            style={[
-              s.card,
-              {
-                width: cardWidth,
-                backgroundColor: c.surface,
-                borderColor: c.outlineMuted,
-                boxShadow: isDark
-                  ? '0px 3px 12px rgba(0, 0, 0, 0.24)'
-                  : '0px 3px 10px rgba(48, 58, 122, 0.05)',
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={isDark ? ['#2B374A', '#202938'] : [product.color, product.color]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[s.image, { height: isTablet ? 112 : 76 }]}
+        {products.map((product) => {
+          const pharmacyStatus = pharmacyProductStatus(product);
+          const disabled = product.stock <= 0 || (pharmacyMode && pharmacyStatus.expired);
+          return (
+            <AppPressable
+              key={product.id}
+              accessibilityLabel={
+                product.stock <= 0
+                  ? `${product.name} is out of stock`
+                  : pharmacyMode && pharmacyStatus.expired
+                    ? `${product.name} is expired`
+                    : `Add ${product.name} to cart`
+              }
+              disabled={disabled}
+              onPress={() => onAdd(product)}
+              style={[
+                s.card,
+                {
+                  width: cardWidth,
+                  backgroundColor: c.surface,
+                  borderColor: c.outlineMuted,
+                  boxShadow: isDark
+                    ? '0px 3px 12px rgba(0, 0, 0, 0.24)'
+                    : '0px 3px 10px rgba(48, 58, 122, 0.05)',
+                  opacity: disabled ? 0.55 : 1,
+                },
+              ]}
             >
-              <Text style={s.emoji}>{product.emoji}</Text>
-              <AppPressable
-                accessibilityLabel={`Add ${product.name} to cart`}
-                onPress={() => onAdd(product)}
-                style={[s.add, { backgroundColor: c.primarySoft, borderColor: c.primary }]}
+              <LinearGradient
+                colors={isDark ? ['#2B374A', '#202938'] : [product.color, product.color]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[s.image, { height: isTablet ? 112 : 76 }]}
               >
-                <Plus size={18} color={c.primary} strokeWidth={2.8} />
-              </AppPressable>
-            </LinearGradient>
-            <Text numberOfLines={1} style={[s.name, { color: c.text }]}>
-              {product.name}
-            </Text>
-            <View style={s.footer}>
-              <Text style={[s.price, { color: c.primary }]}>₹{product.price.toFixed(2)}</Text>
-              <Text
-                style={[
-                  s.stock,
-                  { color: c.textSecondary, backgroundColor: c.surfaceMuted },
-                  product.stock < 10 && { color: c.error, backgroundColor: c.errorSoft },
-                ]}
-              >
-                {product.stock} left
+                {product.imageUrl ? (
+                  <Image source={{ uri: product.imageUrl }} resizeMode="contain" style={s.productImage} />
+                ) : (
+                  <Text style={s.emoji}>{product.emoji}</Text>
+                )}
+                <AppPressable
+                  accessibilityLabel={`Add ${product.name} to cart`}
+                  disabled={disabled}
+                  onPress={() => onAdd(product)}
+                  style={[s.add, { backgroundColor: c.primarySoft, borderColor: c.primary }]}
+                >
+                  <Plus size={18} color={c.primary} strokeWidth={2.8} />
+                </AppPressable>
+              </LinearGradient>
+              <Text numberOfLines={1} style={[s.name, { color: c.text }]}>
+                {product.name}
               </Text>
-            </View>
-          </AppPressable>
-        ))}
+              {product.sku ? (
+                <Text numberOfLines={1} style={[s.sku, { color: c.textSecondary }]}>
+                  SKU · {product.sku}
+                </Text>
+              ) : null}
+              {pharmacyMode && (product.details?.batchNumber || product.details?.expiryDate) ? (
+                <View style={s.pharmacyMeta}>
+                  <Pill size={10} color={c.textSecondary} />
+                  <Text numberOfLines={1} style={[s.metaText, { color: c.textSecondary }]}>
+                    {[
+                      product.details?.batchNumber && `Batch ${product.details.batchNumber}`,
+                      product.details?.expiryDate,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                  {(pharmacyStatus.expired || pharmacyStatus.expiringSoon) && (
+                    <AlertTriangle size={10} color={c.error} />
+                  )}
+                </View>
+              ) : null}
+              {pharmacyMode && (product.details?.schedule || product.details?.scheduledDrug) ? (
+                <Text style={[s.schedule, { color: c.error, backgroundColor: c.errorSoft }]}>
+                  {product.details.schedule || 'Scheduled'}
+                </Text>
+              ) : null}
+              <View style={s.footer}>
+                <Text style={[s.price, { color: c.primary }]}>
+                  {formatCurrency(product.price, currencyCode)}
+                </Text>
+                <Text
+                  style={[
+                    s.stock,
+                    { color: c.textSecondary, backgroundColor: c.surfaceMuted },
+                    product.stock < 10 && { color: c.error, backgroundColor: c.errorSoft },
+                  ]}
+                >
+                  {product.stock} left
+                </Text>
+              </View>
+            </AppPressable>
+          );
+        })}
       </View>
       {!products.length && (
         <View style={s.empty}>
@@ -103,6 +165,7 @@ const s = StyleSheet.create({
   },
   image: { height: 76, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   emoji: { fontSize: 38 },
+  productImage: { width: '76%', height: '76%' },
   add: {
     position: 'absolute',
     right: 6,
@@ -116,6 +179,18 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   name: { fontSize: 12, fontWeight: '800', color: '#30344B', marginTop: 9 },
+  sku: { fontSize: 8, fontWeight: '700', marginTop: 3 },
+  pharmacyMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
+  metaText: { flex: 1, fontSize: 8, fontWeight: '700' },
+  schedule: {
+    alignSelf: 'flex-start',
+    fontSize: 8,
+    fontWeight: '900',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
+    marginTop: 4,
+  },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 },
   price: { fontSize: 13, fontWeight: '900', color: colors.primary },
   stock: {

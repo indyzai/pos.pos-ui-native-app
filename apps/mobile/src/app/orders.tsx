@@ -1,6 +1,12 @@
-import { ReceiptText } from 'lucide-react-native';
-import { ModulePlaceholder } from '../shared/components/layout/ModulePlaceholder';
+import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
+import { BottomNavigationProvider } from '../shared/providers/BottomNavigationProvider';
+import { OrdersScreen } from '../features/orders/OrdersScreen';
 
 export default function OrdersRoute() {
-  return <ModulePlaceholder title="Orders" icon={ReceiptText} />;
+  return (
+    <BottomNavigationProvider>
+      <OrdersScreen />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

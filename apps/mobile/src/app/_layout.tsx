@@ -18,13 +18,13 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <DatabaseProvider>
-            <AuthSessionProvider>
+          <AuthSessionProvider>
+            <DatabaseProvider>
               <AppHeaderProvider>
                 <RootNavigator />
               </AppHeaderProvider>
-            </AuthSessionProvider>
-          </DatabaseProvider>
+            </DatabaseProvider>
+          </AuthSessionProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
