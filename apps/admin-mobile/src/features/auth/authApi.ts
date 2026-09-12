@@ -25,7 +25,7 @@ export type {
 
 WebBrowser.maybeCompleteAuthSession();
 
-const authAppId = env.authAppId ?? (Platform.OS === 'web' ? 'pos' : 'pos-app');
+const authAppId = env.authAppId ?? (Platform.OS === 'web' ? 'pos' : 'pos-admin-app');
 const accessTokenKey = 'indyzai.access-token';
 const refreshTokenKey = 'indyzai.refresh-token';
 const userKey = 'indyzai.user';
