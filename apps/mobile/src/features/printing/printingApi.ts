@@ -1,5 +1,5 @@
 import { requestPos } from '../../core/api/posApi';
-import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import type { CounterPrinter, PrintJob } from './types';
 import type { LocalPrintJob } from './types';

@@ -12,8 +12,8 @@ import {
 import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
-import { authApi, type DeviceRegistrationDetails } from '../auth/authApi';
-import { useAuthSession } from '../auth/AuthSessionContext';
+import { authApi, type DeviceRegistrationDetails } from '../../auth/authApi';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 import { development, env } from '../../config/env';
 import { getRuntimeApiUrls, setApiEnvironment, type ApiEnvironment } from '../../config/runtimeEnvironment';
 

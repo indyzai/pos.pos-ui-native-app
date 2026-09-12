@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
-import { SignupScreen } from '../features/auth/SignupScreen';
-import { authApi } from '../features/auth/authApi';
-import { useAuthSession } from '../features/auth/AuthSessionContext';
+import { SignupScreen } from '../auth/ui';
+import { authApi } from '../auth/authApi';
+import { useAuthSession } from '../auth/AuthSessionContext';
 
 export default function SignupRoute() {
     const router = useRouter();

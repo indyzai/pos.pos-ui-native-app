@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import { requestPos } from '../../core/api/posApi';
 import { SerialQueue } from '../../sync/serialQueue';
-import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { ordersRepository } from './ordersRepository';
 import type { RefundRecord, SalesOrder } from './types';

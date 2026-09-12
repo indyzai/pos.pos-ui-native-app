@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
-import { authApi } from '../../features/auth/authApi';
-import { useAuthSession } from '../../features/auth/AuthSessionContext';
+import { authApi } from '../../auth/authApi';
+import { useAuthSession } from '../../auth/AuthSessionContext';
 
 WebBrowser.maybeCompleteAuthSession();
 

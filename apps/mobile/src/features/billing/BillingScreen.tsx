@@ -26,7 +26,7 @@ import { useBillingData } from './hooks/useBillingData';
 import { useBillingCart } from './hooks/useBillingCart';
 import type { CheckoutPayment, Customer, PaymentMethod, Product } from './types/billing';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
-import { useAuthSession } from '../auth/AuthSessionContext';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useFeatureToggles } from '../organization/useFeatureToggles';
 import { billingPolicy } from './domain/billingTotals';
 import { useHeldOrders } from './hooks/useHeldOrders';

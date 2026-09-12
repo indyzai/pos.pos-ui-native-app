@@ -103,6 +103,14 @@
       "name": "@indyzai/pos-auth",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/pos-backend": "workspace:*",
+        "@indyzai/pos-ui": "workspace:*",
+        "expo-application": "~57.0.2",
+        "expo-auth-session": "~57.0.11",
+        "expo-constants": "~57.0.17",
+        "expo-linear-gradient": "~57.0.1",
+        "expo-local-authentication": "~57.0.2",
+        "expo-secure-store": "~57.0.3",
         "lucide-react-native": "^1.41.0",
       },
       "peerDependencies": {

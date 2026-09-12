@@ -1,5 +1,5 @@
 import { requestPos } from '../../core/api/posApi';
-import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { readRestaurantTables, replaceRestaurantTables } from './restaurantTableRepository';
 import type { RestaurantTable } from './types';

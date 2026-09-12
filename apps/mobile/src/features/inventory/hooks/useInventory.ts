@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
-import { useAuthSession } from '../../auth/AuthSessionContext';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 import { inventoryApi } from '../inventoryApi';
 import type { CreateInventoryItemInput, StockReconciliationInput } from '../types';
 import { payloadsFromRecords, replaceLocalPayloads, useLocalProducts } from '@indyzai/pos-database';

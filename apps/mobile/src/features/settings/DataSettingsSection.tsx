@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Trash2 } from '
 import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
-import { useAuthSession } from '../auth/AuthSessionContext';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { clearLocalUiData } from '@indyzai/pos-database/maintenance';
 import { useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';

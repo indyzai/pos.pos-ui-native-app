@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
-import { LoginScreen } from '../features/auth/LoginScreen';
-import { authApi } from '../features/auth/authApi';
-import { useAuthSession } from '../features/auth/AuthSessionContext';
+import { LoginScreen } from '../auth/ui';
+import { authApi } from '../auth/authApi';
+import { useAuthSession } from '../auth/AuthSessionContext';
 
 export default function LoginRoute() {
   const router = useRouter();

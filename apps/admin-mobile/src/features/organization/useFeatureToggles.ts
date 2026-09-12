@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuthSession } from '../auth/AuthSessionContext';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 import { featureToggleLabels, resolveFeatureToggles, type FeatureToggleKey } from './featureToggles';
 
 export { featureToggleLabels } from './featureToggles';

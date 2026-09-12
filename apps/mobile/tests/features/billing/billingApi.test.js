@@ -49,7 +49,7 @@ mock.module('../../../src/features/scrap/scrapPurchaseRepository', () => ({
 }));
 mock.module('expo-crypto', () => ({ randomUUID: () => crypto.randomUUID() }));
 
-mock.module('../../../src/features/auth/AuthSessionContext', () => ({
+mock.module('@indyzai/pos-auth/session', () => ({
   getActiveAuthSession: () => ({
     user: { id: 'user' },
     tenant: { id: tenant, role: 'owner' },

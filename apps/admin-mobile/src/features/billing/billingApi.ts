@@ -1,7 +1,7 @@
 import { requestPos } from '../../core/api/posApi';
 import { SerialQueue } from '../../sync/serialQueue';
 import { readBillingSnapshot, writeBillingSnapshot } from './data/billingRepository';
-import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { loadOrganizationDetails } from '../organization/organizationApi';
 import { fetchCatalog } from '../products/catalogApi';

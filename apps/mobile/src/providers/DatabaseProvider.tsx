@@ -5,8 +5,8 @@ import {
   useRequiredLocalDatabase,
   type DatabaseState,
 } from '@indyzai/pos-database/react';
-import { authApi } from '../features/auth/authApi';
-import { useAuthSession } from '../features/auth/AuthSessionContext';
+import { authApi } from '../auth/authApi';
+import { useAuthSession } from '../auth/AuthSessionContext';
 import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
 import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
 

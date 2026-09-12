@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
-import { authApi, type AuthTenant, type AuthUser } from '../features/auth/authApi';
+import { authApi, type AuthTenant, type AuthUser } from '../auth/authApi';
 
 export default function ProfileRoute() {
     const router = useRouter();

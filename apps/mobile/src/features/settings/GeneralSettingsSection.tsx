@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { StyleSheet, Text, View } from 'react-native';
 import { Building2, CircleUserRound, Globe2, Store } from 'lucide-react-native';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
-import { useAuthSession } from '../auth/AuthSessionContext';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 
 export function GeneralSettingsSection() {
   const { themeColors: c } = useAppTheme();

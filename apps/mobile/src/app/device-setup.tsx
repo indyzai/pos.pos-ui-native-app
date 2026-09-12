@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
 import { showSnackbar } from '../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
-import { authApi } from '../features/auth/authApi';
-import { useAuthSession } from '../features/auth/AuthSessionContext';
+import { authApi } from '../auth/authApi';
+import { useAuthSession } from '../auth/AuthSessionContext';
 
 export default function DeviceSetup() {
   const router = useRouter();

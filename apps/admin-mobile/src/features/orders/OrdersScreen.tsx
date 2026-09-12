@@ -6,7 +6,7 @@ import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
-import { useAuthSession } from '../auth/AuthSessionContext';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 import { formatCurrency } from '../../shared/utils/currency';
 import { RefundDialog } from './components/RefundDialog';
 import { useOrders } from './useOrders';

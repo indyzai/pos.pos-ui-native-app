@@ -15,7 +15,7 @@ mock.module('expo-secure-store', () => ({
     deleteItemAsync: nativeCall,
 }));
 mock.module('expo-local-authentication', () => ({ authenticateAsync: nativeCall }));
-const { authApi } = await import('../../../src/features/auth/authApi');
+const { authApi } = await import('../../../src/auth/authApi');
 
 test('tenant resolution uses the hydrated profile even when the stored user is stale', async () => {
     const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
