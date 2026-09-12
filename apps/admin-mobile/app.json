@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "IndyzAI POS Admin",
+    "slug": "indyz-pos-admin",
+    "version": "1.0.0",
+    "scheme": "indyzai-pos-admin",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow IndyzAI POS Admin to use your camera to scan barcodes and QR codes."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow IndyzAI POS Admin to use Face ID to unlock your admin session."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F8FAFF",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#111318",
+            "image": "./assets/splash-icon.png"
+          }
+        }
+      ]
+    ],
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.indyzai.pos.admin.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.indyzai.pos.admin.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#27378F",
+        "foregroundImage": "./assets/android-icon-foreground-safe.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

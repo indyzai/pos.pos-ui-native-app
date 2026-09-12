@@ -33,6 +33,7 @@ export type CreateInventoryItemInput = {
   taxId?: number;
   notes?: string;
   iconKey: ProductIconKey;
+  status?: 'ACTIVE' | 'INCOMPLETE';
 };
 
 export type ProductReferenceData = {

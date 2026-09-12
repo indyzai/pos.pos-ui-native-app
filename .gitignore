@@ -51,6 +51,11 @@ apps/mobile/.expo-shared/
 .expo/
 apps/mobile/android/
 apps/mobile/ios/
+apps/mobile-admin/.expo/
+apps/mobile-admin/.expo-shared/
+apps/mobile-admin/android/
+apps/mobile-admin/ios/
+apps/mobile-admin/build
 apps/mobile/build
 *.apk
 *.aab

@@ -107,7 +107,7 @@ export const inventoryApi = {
             unitId: input.unitId,
             taxId: input.taxId,
             details: { iconKey: input.iconKey },
-            status: 'ACTIVE',
+            status: input.status || 'ACTIVE',
           },
         },
       );

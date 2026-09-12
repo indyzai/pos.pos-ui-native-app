@@ -1,0 +1,17 @@
+{
+  "name": "@indyzai/pos-ui",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./pressable": "./src/AppPressable.tsx",
+    "./currency": "./src/currency.ts"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}

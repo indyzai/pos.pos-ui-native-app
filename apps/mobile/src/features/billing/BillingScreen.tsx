@@ -2,10 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingCart } from 'lucide-react-native';
 import {
   Animated,
-  Modal,
   PanResponder,
   Platform,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -16,6 +14,7 @@ import {
 import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { AppBottomSheetShell } from '../../shared/components/ui/AppBottomSheetShell';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { OrderCart } from './components/OrderCart';
 import { ProductCatalog } from './components/ProductCatalog';
@@ -228,6 +227,9 @@ export function BillingScreen() {
   };
   const closeCartPage = (closeWideDialog: () => void) =>
     isWide ? closeWideDialog() : replaceCartPage('cart');
+  const openQuickAdd = () => {
+    setQuickAddOpen(true);
+  };
   const openScrap = async () => {
     openCartPage('scrap', () => setScrapOpen(true));
     if (!scrapProducts.length && !loadingScrapProducts) {
@@ -239,6 +241,22 @@ export function BillingScreen() {
       } finally {
         setLoadingScrapProducts(false);
       }
+    }
+  };
+  const createQuickProduct = async (input: Parameters<typeof inventoryApi.create>[0]) => {
+    setCreatingProduct(true);
+    try {
+      const job = await inventoryApi.create(input);
+      await billing.reload();
+      setQuickAddOpen(false);
+      const refreshed = await billingApi.load();
+      const created = refreshed.cache.products.find((item) => item.id === job.entityId);
+      if (created) cart.addItem(created);
+      showSnackbar('Product created', `${input.name} was added to this order as an incomplete product.`);
+    } catch (error) {
+      showSnackbar('Could not create product', error instanceof Error ? error.message : 'Try again.');
+    } finally {
+      setCreatingProduct(false);
     }
   };
   const cartPagePanResponder = useMemo(
@@ -596,7 +614,7 @@ export function BillingScreen() {
               setScannerOpen(true);
             }}
             scanEnabled={isEnabled('enableBarcodeScanning') && mode.scanByDefault}
-            onAddProduct={isEnabled('inventory') ? () => setQuickAddOpen(true) : undefined}
+            onAddProduct={isEnabled('inventory') ? openQuickAdd : undefined}
             statsVisible={statsVisible}
             onToggleStats={
               isEnabled('advancedReporting') ? () => setStatsVisible((value) => !value) : undefined
@@ -714,129 +732,114 @@ export function BillingScreen() {
           </Text>
         </AppPressable>
       )}
-      <Modal
-        transparent
+      <AppBottomSheetShell
         visible={!isWide && cartOpen}
-        animationType="slide"
-        onRequestClose={() => (cartPage === 'cart' ? closeCart() : replaceCartPage('cart'))}
+        onClose={() => (cartPage === 'cart' ? closeCart() : replaceCartPage('cart'))}
+        dragHandlers={sheetPanResponder.panHandlers}
+        animatedStyle={{ transform: [{ translateY: sheetTranslateY }] }}
       >
-        <View style={s.modal}>
-          <Pressable style={s.backdrop} onPress={closeCart} />
-          <Animated.View
-            style={[
-              s.sheet,
-              { backgroundColor: themeColors.surface },
-              isTablet && s.tabletSheet,
-              { transform: [{ translateY: sheetTranslateY }] },
-            ]}
-          >
-            <View {...sheetPanResponder.panHandlers} style={s.dragArea}>
-              <View style={[s.handle, { backgroundColor: themeColors.outline }]} />
-            </View>
-            <OrderCart
-              items={cart.items}
-              subtotal={cart.subtotal}
-              discount={cart.discount}
-              tax={cart.tax}
-              total={cart.total}
-              itemCount={cart.itemCount}
-              payment={payment}
-              onPayment={setPayment}
-              paymentMethods={paymentMethods}
-              taxRates={taxRates}
-              customer={customer}
-              onSelectCustomer={isEnabled('customers') ? () => replaceCartPage('customer') : undefined}
-              onChange={cart.changeQuantity}
-              onItemDiscount={cart.setItemDiscount}
-              onItemTaxRate={cart.setItemTaxRate}
-              orderDiscount={cart.orderDiscount}
-              onOrderDiscount={cart.setOrderDiscount}
-              allowItemDiscounts={isEnabled('allowItemDiscounts')}
-              allowOrderDiscounts={isEnabled('allowOrderDiscounts')}
-              heldOrderCount={heldOrders.orders.length}
-              onShowHeldOrders={() => replaceCartPage('held-orders')}
-              onHold={holdCurrentOrder}
-              onPettyCash={
-                isEnabled('finance')
-                  ? () => (billingAllowed ? replaceCartPage('petty-cash') : requestCounterDialog())
-                  : undefined
-              }
-              onClear={() => {
-                cart.clearCart();
-                setScrapExchange(undefined);
-              }}
-              onCheckout={checkout}
-              counterClosed={!billingAllowed}
-              onClose={closeCart}
-              currencyCode={currencyCode}
-              scrapValue={scrapExchange?.total}
-              onScrap={
-                isEnabled('scrap') && canManageScrap(auth.session?.tenant.role)
-                  ? () => void openScrap()
-                  : undefined
-              }
-              innerContent={
-                cartPage === 'cart' ? undefined : (
-                  <Animated.View
-                    {...cartPagePanResponder.panHandlers}
-                    style={[s.cartInnerPage, { transform: [{ translateX: cartContentTranslateX }] }]}
-                  >
-                    <CustomerPickerDialog
-                      embedded
-                      visible={cartPage === 'customer'}
-                      customers={customers}
-                      selected={customer}
-                      onSelect={setCustomer}
-                      onCreate={createCustomer}
-                      onClose={() => replaceCartPage('cart')}
-                    />
-                    <HeldOrdersDialog
-                      embedded
-                      visible={cartPage === 'held-orders'}
-                      orders={heldOrders.orders}
-                      currencyCode={currencyCode}
-                      onClose={() => replaceCartPage('cart')}
-                      onDelete={(id) => void heldOrders.remove(id)}
-                      onResume={(order) => void resumeHeldOrder(order)}
-                    />
-                    <PettyCashDialog
-                      embedded
-                      visible={cartPage === 'petty-cash'}
-                      busy={recordingPettyCash}
-                      onClose={() => !recordingPettyCash && replaceCartPage('cart')}
-                      onSave={savePettyCash}
-                    />
-                    <ScrapExchangeDialog
-                      embedded
-                      visible={cartPage === 'scrap'}
-                      products={scrapProducts}
-                      loading={loadingScrapProducts}
-                      value={scrapExchange}
-                      currencyCode={currencyCode}
-                      onChange={setScrapExchange}
-                      onClose={() => replaceCartPage('cart')}
-                    />
-                    <CheckoutDialog
-                      embedded
-                      visible={cartPage === 'checkout'}
-                      total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
-                      itemCount={cart.itemCount}
-                      initialMethod={payment}
-                      paymentMethods={paymentMethods}
-                      currencyCode={currencyCode}
-                      submitting={submitting}
-                      onClose={() => !submitting && replaceCartPage('cart')}
-                      onConfirm={(checkoutPayment) => void completeCheckout(checkoutPayment)}
-                    />
-                  </Animated.View>
-                )
-              }
-              innerTitle={cartPageTitles[cartPage]}
-              onInnerBack={() => replaceCartPage('cart')}
-            />
-          </Animated.View>
-        </View>
-      </Modal>
+        <OrderCart
+          items={cart.items}
+          subtotal={cart.subtotal}
+          discount={cart.discount}
+          tax={cart.tax}
+          total={cart.total}
+          itemCount={cart.itemCount}
+          payment={payment}
+          onPayment={setPayment}
+          paymentMethods={paymentMethods}
+          taxRates={taxRates}
+          customer={customer}
+          onSelectCustomer={isEnabled('customers') ? () => replaceCartPage('customer') : undefined}
+          onChange={cart.changeQuantity}
+          onItemDiscount={cart.setItemDiscount}
+          onItemTaxRate={cart.setItemTaxRate}
+          orderDiscount={cart.orderDiscount}
+          onOrderDiscount={cart.setOrderDiscount}
+          allowItemDiscounts={isEnabled('allowItemDiscounts')}
+          allowOrderDiscounts={isEnabled('allowOrderDiscounts')}
+          heldOrderCount={heldOrders.orders.length}
+          onShowHeldOrders={() => replaceCartPage('held-orders')}
+          onHold={holdCurrentOrder}
+          onPettyCash={
+            isEnabled('finance')
+              ? () => (billingAllowed ? replaceCartPage('petty-cash') : requestCounterDialog())
+              : undefined
+          }
+          onClear={() => {
+            cart.clearCart();
+            setScrapExchange(undefined);
+          }}
+          onCheckout={checkout}
+          counterClosed={!billingAllowed}
+          onClose={closeCart}
+          currencyCode={currencyCode}
+          scrapValue={scrapExchange?.total}
+          onScrap={
+            isEnabled('scrap') && canManageScrap(auth.session?.tenant.role)
+              ? () => void openScrap()
+              : undefined
+          }
+          innerContent={
+            cartPage === 'cart' ? undefined : (
+              <Animated.View
+                {...cartPagePanResponder.panHandlers}
+                style={[s.cartInnerPage, { transform: [{ translateX: cartContentTranslateX }] }]}
+              >
+                <CustomerPickerDialog
+                  embedded
+                  visible={cartPage === 'customer'}
+                  customers={customers}
+                  selected={customer}
+                  onSelect={setCustomer}
+                  onCreate={createCustomer}
+                  onClose={() => replaceCartPage('cart')}
+                />
+                <HeldOrdersDialog
+                  embedded
+                  visible={cartPage === 'held-orders'}
+                  orders={heldOrders.orders}
+                  currencyCode={currencyCode}
+                  onClose={() => replaceCartPage('cart')}
+                  onDelete={(id) => void heldOrders.remove(id)}
+                  onResume={(order) => void resumeHeldOrder(order)}
+                />
+                <PettyCashDialog
+                  embedded
+                  visible={cartPage === 'petty-cash'}
+                  busy={recordingPettyCash}
+                  onClose={() => !recordingPettyCash && replaceCartPage('cart')}
+                  onSave={savePettyCash}
+                />
+                <ScrapExchangeDialog
+                  embedded
+                  visible={cartPage === 'scrap'}
+                  products={scrapProducts}
+                  loading={loadingScrapProducts}
+                  value={scrapExchange}
+                  currencyCode={currencyCode}
+                  onChange={setScrapExchange}
+                  onClose={() => replaceCartPage('cart')}
+                />
+                <CheckoutDialog
+                  embedded
+                  visible={cartPage === 'checkout'}
+                  total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
+                  itemCount={cart.itemCount}
+                  initialMethod={payment}
+                  paymentMethods={paymentMethods}
+                  currencyCode={currencyCode}
+                  submitting={submitting}
+                  onClose={() => !submitting && replaceCartPage('cart')}
+                  onConfirm={(checkoutPayment) => void completeCheckout(checkoutPayment)}
+                />
+              </Animated.View>
+            )
+          }
+          innerTitle={cartPageTitles[cartPage]}
+          onInnerBack={() => replaceCartPage('cart')}
+        />
+      </AppBottomSheetShell>
       <BarcodeScannerModal
         visible={scannerOpen}
         onClose={() => setScannerOpen(false)}
@@ -877,27 +880,21 @@ export function BillingScreen() {
         onClose={() => setPharmacyProduct(undefined)}
         onAdd={(product, customization) => cart.addItem(product, 1, customization)}
       />
-      <AddInventoryItemModal
+      <AppBottomSheetShell
         visible={quickAddOpen}
-        busy={creatingProduct}
         onClose={() => !creatingProduct && setQuickAddOpen(false)}
-        onSave={async (input) => {
-          setCreatingProduct(true);
-          try {
-            const job = await inventoryApi.create(input);
-            await billing.reload();
-            setQuickAddOpen(false);
-            const refreshed = await billingApi.load();
-            const created = refreshed.cache.products.find((item) => item.id === job.entityId);
-            if (created) cart.addItem(created);
-            showSnackbar('Product created', `${input.name} is available in billing.`);
-          } catch (error) {
-            showSnackbar('Could not create product', error instanceof Error ? error.message : 'Try again.');
-          } finally {
-            setCreatingProduct(false);
-          }
-        }}
-      />
+        title="Quick add product"
+        subtitle="Add the essentials now. Complete this product later from Inventory."
+      >
+        <AddInventoryItemModal
+          embedded
+          quickAdd
+          visible={quickAddOpen}
+          busy={creatingProduct}
+          onClose={() => !creatingProduct && setQuickAddOpen(false)}
+          onSave={createQuickProduct}
+        />
+      </AppBottomSheetShell>
       <PettyCashDialog
         visible={isWide && pettyCashOpen}
         busy={recordingPettyCash}

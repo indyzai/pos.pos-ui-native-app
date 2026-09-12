@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { loadOrganizationDetails, type OrganizationDetails } from '../organization/organizationApi';
 import { authApi, type AuthTenant, type AuthUser } from './authApi';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { canAccessApp } from '../../config/appAccess';
 
 export type AuthSession = {
   user: AuthUser;
@@ -69,6 +70,13 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       // Storage supplies only the preferred ID, never a second user snapshot.
       const tenant = await authApi.getSelectedTenant(profile);
       if (current !== generation.current) return;
+      if (tenant && !canAccessApp(tenant.role)) {
+        setUser(null);
+        setAuthenticated(false);
+        setError('This app is available only to cashier and manager accounts.');
+        setInitializing(false);
+        return;
+      }
       const next: AuthSession | null =
         profile && token && tenant ? { user: profile, token, tenant, organization: null } : null;
       activeSession = next;

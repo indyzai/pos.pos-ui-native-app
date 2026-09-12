@@ -14,11 +14,15 @@ import type { CreateInventoryItemInput, ProductReferenceData } from '../types';
 export function AddInventoryItemModal({
   visible,
   busy,
+  quickAdd = false,
+  embedded = false,
   onClose,
   onSave,
 }: {
   visible: boolean;
   busy: boolean;
+  quickAdd?: boolean;
+  embedded?: boolean;
   onClose: () => void;
   onSave: (input: CreateInventoryItemInput) => Promise<void>;
 }) {
@@ -88,10 +92,11 @@ export function AddInventoryItemModal({
       selling < 0 ||
       !Number.isFinite(opening) ||
       opening < 0 ||
+      !categoryId ||
       (cost !== undefined && (!Number.isFinite(cost) || cost < 0)) ||
       (minimum !== undefined && (!Number.isFinite(minimum) || minimum < 0))
     ) {
-      showSnackbar('Invalid item', 'Enter valid non-negative prices and stock quantities.');
+      showSnackbar('Invalid item', 'Enter valid prices and stock quantities, then select a category.');
       return;
     }
     await onSave({
@@ -107,17 +112,27 @@ export function AddInventoryItemModal({
       unitId,
       taxId,
       iconKey,
+      status: quickAdd ? 'INCOMPLETE' : 'ACTIVE',
     });
   };
 
-  return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
-      <AppPaperProvider>
-        <AppKeyboardSafeView style={s.overlay}>
-          <AppPressable style={s.backdrop} onPress={busy ? undefined : onClose} />
-          <View style={[s.sheet, { backgroundColor: c.surface }]}>
+  const content = (
+    <AppPaperProvider>
+      <AppKeyboardSafeView style={[s.overlay, embedded && s.embeddedOverlay]}>
+        {!embedded ? <AppPressable style={s.backdrop} onPress={busy ? undefined : onClose} /> : null}
+        <View style={[s.sheet, embedded && s.embeddedSheet, { backgroundColor: c.surface }]}>
+          {!embedded ? (
             <View style={s.header}>
-              <Text style={[s.title, { color: c.text }]}>Add inventory item</Text>
+              <View style={s.heading}>
+                <Text style={[s.title, { color: c.text }]}>
+                  {quickAdd ? 'Quick add product' : 'Add inventory item'}
+                </Text>
+                {quickAdd ? (
+                  <Text style={[s.subtitle, { color: c.textSecondary }]}>
+                    Add the essentials now. Complete this product later from Inventory.
+                  </Text>
+                ) : null}
+              </View>
               <AppPressable
                 disabled={busy}
                 onPress={onClose}
@@ -126,22 +141,24 @@ export function AddInventoryItemModal({
                 <X size={20} color={c.text} />
               </AppPressable>
             </View>
-            <ScrollView
-              automaticallyAdjustKeyboardInsets
-              keyboardDismissMode="interactive"
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={s.form}
-            >
-              <Field label="Product name" value={name} onChangeText={setName} />
-              <View style={s.row}>
-                <View style={s.flex}>
-                  <Field
-                    label="Selling price"
-                    value={price}
-                    onChangeText={setPrice}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
+          ) : null}
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={s.form}
+          >
+            <Field label="Product name" value={name} onChangeText={setName} />
+            <View style={s.row}>
+              <View style={s.flex}>
+                <Field
+                  label="Selling price"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              {!quickAdd ? (
                 <View style={s.flex}>
                   <Field
                     label="Cost price"
@@ -150,16 +167,18 @@ export function AddInventoryItemModal({
                     keyboardType="decimal-pad"
                   />
                 </View>
+              ) : null}
+            </View>
+            <View style={s.row}>
+              <View style={s.flex}>
+                <Field
+                  label="Opening stock"
+                  value={stock}
+                  onChangeText={setStock}
+                  keyboardType="decimal-pad"
+                />
               </View>
-              <View style={s.row}>
-                <View style={s.flex}>
-                  <Field
-                    label="Opening stock"
-                    value={stock}
-                    onChangeText={setStock}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
+              {!quickAdd ? (
                 <View style={s.flex}>
                   <Field
                     label="Minimum stock"
@@ -168,14 +187,16 @@ export function AddInventoryItemModal({
                     keyboardType="decimal-pad"
                   />
                 </View>
-              </View>
-              <AppDropdown
-                label="Category"
-                value={categoryId}
-                options={references.categories.map((x) => ({ value: x.id, label: x.name }))}
-                loading={loading}
-                onChange={(value) => setCategoryId(value ?? undefined)}
-              />
+              ) : null}
+            </View>
+            <AppDropdown
+              label="Category"
+              value={categoryId}
+              options={references.categories.map((x) => ({ value: x.id, label: x.name }))}
+              loading={loading}
+              onChange={(value) => setCategoryId(value ?? undefined)}
+            />
+            {!quickAdd ? (
               <View style={s.row}>
                 <View style={s.flex}>
                   <AppDropdown
@@ -201,54 +222,64 @@ export function AddInventoryItemModal({
                   />
                 </View>
               </View>
-              <Text style={[s.label, { color: c.textSecondary }]}>Product icon</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.icons}>
-                {productIconOptions.map(([key, option]) => (
-                  <AppPressable
-                    key={key}
-                    onPress={() => setIconKey(key)}
-                    style={[
-                      s.icon,
-                      {
-                        backgroundColor: iconKey === key ? c.primarySoft : c.background,
-                        borderColor: iconKey === key ? c.primary : c.outline,
-                      },
-                    ]}
-                  >
-                    <ProductIcon iconKey={key} size={23} />
-                    <Text style={[s.iconLabel, { color: iconKey === key ? c.primary : c.textSecondary }]}>
-                      {option.label}
-                    </Text>
-                  </AppPressable>
-                ))}
-              </ScrollView>
-              <View style={s.row}>
-                <View style={s.flex}>
-                  <Field label="SKU (optional)" value={skuCode} onChangeText={setSkuCode} />
+            ) : null}
+            {!quickAdd ? (
+              <>
+                <Text style={[s.label, { color: c.textSecondary }]}>Product icon</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.icons}>
+                  {productIconOptions.map(([key, option]) => (
+                    <AppPressable
+                      key={key}
+                      onPress={() => setIconKey(key)}
+                      style={[
+                        s.icon,
+                        {
+                          backgroundColor: iconKey === key ? c.primarySoft : c.background,
+                          borderColor: iconKey === key ? c.primary : c.outline,
+                        },
+                      ]}
+                    >
+                      <ProductIcon iconKey={key} size={23} />
+                      <Text style={[s.iconLabel, { color: iconKey === key ? c.primary : c.textSecondary }]}>
+                        {option.label}
+                      </Text>
+                    </AppPressable>
+                  ))}
+                </ScrollView>
+                <View style={s.row}>
+                  <View style={s.flex}>
+                    <Field label="SKU (optional)" value={skuCode} onChangeText={setSkuCode} />
+                  </View>
+                  <View style={s.flex}>
+                    <Field label="Barcode (optional)" value={barcode} onChangeText={setBarcode} />
+                  </View>
                 </View>
-                <View style={s.flex}>
-                  <Field label="Barcode (optional)" value={barcode} onChangeText={setBarcode} />
-                </View>
-              </View>
-              <Field
-                label="Notes (optional)"
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                inputStyle={s.notes}
-              />
-              <AppPressable
-                disabled={busy || loading}
-                onPress={() => void save()}
-                style={[s.save, { backgroundColor: c.primary, opacity: busy || loading ? 0.6 : 1 }]}
-              >
-                <Plus size={18} color="#fff" />
-                <Text style={s.saveText}>{busy ? 'Adding…' : 'Add item'}</Text>
-              </AppPressable>
-            </ScrollView>
-          </View>
-        </AppKeyboardSafeView>
-      </AppPaperProvider>
+                <Field
+                  label="Notes (optional)"
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  inputStyle={s.notes}
+                />
+              </>
+            ) : null}
+            <AppPressable
+              disabled={busy || loading}
+              onPress={() => void save()}
+              style={[s.save, { backgroundColor: c.primary, opacity: busy || loading ? 0.6 : 1 }]}
+            >
+              <Plus size={18} color="#fff" />
+              <Text style={s.saveText}>{busy ? 'Adding…' : quickAdd ? 'Quick add product' : 'Add item'}</Text>
+            </AppPressable>
+          </ScrollView>
+        </View>
+      </AppKeyboardSafeView>
+    </AppPaperProvider>
+  );
+  if (embedded) return visible ? content : null;
+  return (
+    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+      {content}
     </Modal>
   );
 }
@@ -277,10 +308,20 @@ function Field({
 
 const s = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
+  embeddedOverlay: { justifyContent: 'flex-start' },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(12,14,19,.4)' },
   sheet: { maxHeight: '92%', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20 },
+  embeddedSheet: {
+    flex: 1,
+    maxHeight: '100%',
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    paddingTop: 14,
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   title: { fontSize: 21, fontWeight: '900' },
+  heading: { flex: 1, paddingRight: 12 },
+  subtitle: { fontSize: 11, lineHeight: 16, marginTop: 3 },
   close: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   form: { paddingBottom: 20 },
   row: { flexDirection: 'row', gap: 10 },

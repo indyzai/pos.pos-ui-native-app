@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@indyzai/pos-database": "workspace:*",
+    "@indyzai/pos-ui": "workspace:*",
     "@tanstack/react-query": "^5.102.8",
     "dexie": "^4.4.6",
     "dexie-react-hooks": "^4.4.0",

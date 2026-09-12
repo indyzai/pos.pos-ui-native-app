@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import { Check, ChevronDown } from 'lucide-react-native';
 import { Menu } from 'react-native-paper';
 import { AppPressable } from './AppPressable';
@@ -43,49 +43,71 @@ export function AppDropdown<T extends DropdownValue>({
     setOpen(false);
   };
 
+  const anchor = (
+    <AppPressable
+      accessibilityRole="button"
+      accessibilityLabel={label ? `${label}: ${displayValue}` : displayValue}
+      accessibilityState={{ disabled: unavailable, expanded: open }}
+      disabled={unavailable}
+      onPress={() => setOpen((current) => !current)}
+      style={[
+        s.control,
+        { backgroundColor: c.background, borderColor: open ? c.primary : c.outline },
+        unavailable && s.disabled,
+      ]}
+    >
+      {loading ? <ActivityIndicator size="small" color={c.primary} /> : null}
+      <Text numberOfLines={1} style={[s.value, { color: selected ? c.text : c.textSecondary }]}>
+        {displayValue}
+      </Text>
+      {!loading ? <ChevronDown size={17} color={open ? c.primary : c.textSecondary} /> : null}
+    </AppPressable>
+  );
+
+  const menuOptions = (
+    <>
+      {allowEmpty ? (
+        <DropdownMenuOption label={placeholder} selected={value == null} onPress={() => select(null)} />
+      ) : null}
+      {options.map((option) => (
+        <DropdownMenuOption
+          key={String(option.value)}
+          label={option.label}
+          selected={option.value === value}
+          disabled={option.disabled}
+          onPress={() => select(option.value)}
+        />
+      ))}
+    </>
+  );
+
   return (
     <View style={s.field}>
       {label ? <Text style={[s.label, { color: c.textSecondary }]}>{label}</Text> : null}
-      <Menu
-        visible={open}
-        onDismiss={() => setOpen(false)}
-        anchorPosition="bottom"
-        keyboardShouldPersistTaps="handled"
-        contentStyle={[s.menu, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}
-        anchor={
-          <AppPressable
-            accessibilityRole="button"
-            accessibilityLabel={label ? `${label}: ${displayValue}` : displayValue}
-            accessibilityState={{ disabled: unavailable, expanded: open }}
-            disabled={unavailable}
-            onPress={() => setOpen(true)}
-            style={[
-              s.control,
-              { backgroundColor: c.background, borderColor: open ? c.primary : c.outline },
-              unavailable && s.disabled,
-            ]}
-          >
-            {loading ? <ActivityIndicator size="small" color={c.primary} /> : null}
-            <Text numberOfLines={1} style={[s.value, { color: selected ? c.text : c.textSecondary }]}>
-              {displayValue}
-            </Text>
-            {!loading ? <ChevronDown size={17} color={open ? c.primary : c.textSecondary} /> : null}
-          </AppPressable>
-        }
-      >
-        {allowEmpty ? (
-          <DropdownMenuOption label={placeholder} selected={value == null} onPress={() => select(null)} />
-        ) : null}
-        {options.map((option) => (
-          <DropdownMenuOption
-            key={String(option.value)}
-            label={option.label}
-            selected={option.value === value}
-            disabled={option.disabled}
-            onPress={() => select(option.value)}
-          />
-        ))}
-      </Menu>
+      {Platform.OS === 'web' ? (
+        <View style={s.webAnchor}>
+          {anchor}
+          {open ? (
+            <View
+              accessibilityRole="menu"
+              style={[s.menu, s.webMenu, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}
+            >
+              {menuOptions}
+            </View>
+          ) : null}
+        </View>
+      ) : (
+        <Menu
+          visible={open}
+          onDismiss={() => setOpen(false)}
+          anchorPosition="bottom"
+          keyboardShouldPersistTaps="handled"
+          contentStyle={[s.menu, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}
+          anchor={anchor}
+        >
+          {menuOptions}
+        </Menu>
+      )}
     </View>
   );
 }
@@ -138,6 +160,15 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 14,
     paddingVertical: 5,
+  },
+  webAnchor: { position: 'relative', zIndex: 20 },
+  webMenu: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    zIndex: 21,
+    boxShadow: '0px 8px 24px rgba(8, 12, 22, 0.2)',
   },
   option: {
     minHeight: 44,
