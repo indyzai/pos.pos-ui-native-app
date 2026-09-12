@@ -15,7 +15,7 @@ function context() {
     const session = getActiveAuthSession();
     if (!session) throw new Error('Your workspace is still initializing.');
     return {
-        scope: `indyz.orders.v1:${session.user.id}:${session.tenant.id}`,
+        scope: `indyz.admin.orders.v1:${session.user.id}:${session.tenant.id}`,
         token: session.token,
         tenant: String(session.tenant.id),
     };

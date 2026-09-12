@@ -2,7 +2,7 @@ import { development, env, productionApiUrls } from './env';
 import { kvStore } from '../storage/kvStore';
 
 export type ApiEnvironment = 'local' | 'production';
-const storageKey = 'indyz.api-environment.v1';
+const storageKey = 'indyz.admin.api-environment.v1';
 let cachedEnvironment: ApiEnvironment | undefined;
 let loading: Promise<ApiEnvironment> | undefined;
 

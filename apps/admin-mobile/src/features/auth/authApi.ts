@@ -26,14 +26,14 @@ export type {
 WebBrowser.maybeCompleteAuthSession();
 
 const authAppId = env.authAppId ?? (Platform.OS === 'web' ? 'pos' : 'pos-admin-app');
-const accessTokenKey = 'indyzai.access-token';
-const refreshTokenKey = 'indyzai.refresh-token';
-const userKey = 'indyzai.user';
-const selectedTenantKey = 'indyzai.selected-tenant';
-const deviceIdKey = 'indyzai.device-id';
-const deviceTokenKey = 'indyzai.device-token';
-const oauthStateKey = 'indyzai.oauth-state';
-const oauthVerifierKey = 'indyzai.oauth-verifier';
+const accessTokenKey = 'indyzai.admin.access-token';
+const refreshTokenKey = 'indyzai.admin.refresh-token';
+const userKey = 'indyzai.admin.user';
+const selectedTenantKey = 'indyzai.admin.selected-tenant';
+const deviceIdKey = 'indyzai.admin.device-id';
+const deviceTokenKey = 'indyzai.admin.device-token';
+const oauthStateKey = 'indyzai.admin.oauth-state';
+const oauthVerifierKey = 'indyzai.admin.oauth-verifier';
 const sessionFallback = new Map<string, string>();
 let sessionUserPromise: Promise<AuthUser | null> | undefined;
 let authorizationCompletion: Promise<void> | undefined;

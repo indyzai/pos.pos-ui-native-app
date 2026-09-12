@@ -79,7 +79,7 @@ async function context(): Promise<Context> {
     const session = getActiveAuthSession();
     if (!session) throw new Error('Your workspace is still initializing. Please try again.');
     return {
-        key: `indyz.billing.v1:${session.user.id}:${session.tenant.id}`,
+        key: `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`,
         tenant: String(session.tenant.id),
         token: session.token,
     };

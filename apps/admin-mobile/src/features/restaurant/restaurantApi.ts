@@ -9,7 +9,7 @@ const context = () => {
 };
 const scope = () => {
     const session = context();
-    return `indyz.billing.v1:${session.user.id}:${session.tenant.id}`;
+    return `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`;
 };
 export const restaurantApi = {
     load: () => readRestaurantTables(scope()),

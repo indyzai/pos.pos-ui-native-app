@@ -69,7 +69,7 @@ export function DataSettingsSection() {
 
     const loadCompatibilityJobs = async () => {
         if (!session || local.status !== 'ready') return;
-        const scope = `indyz.billing.v1:${session.user.id}:${session.tenant.id}`;
+        const scope = `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`;
         const [jobs, logistics] = await Promise.all([listSyncJobs(scope), waybillRepository.read(scope)]);
         setLegacyJobs(jobs);
         setWaybillJobs(logistics);

@@ -4,7 +4,7 @@ import type { DenominationCounts } from './types';
 export type DenominationCountScope = 'opening' | 'closing';
 
 const key = (tenantId: string, counterId: string, currencyCode: string, scope: DenominationCountScope) =>
-    `indyz.counter-denominations.v1:${tenantId}:${counterId}:${currencyCode}${scope === 'opening' ? '' : `:${scope}`}`;
+    `indyz.admin.counter-denominations.v1:${tenantId}:${counterId}:${currencyCode}${scope === 'opening' ? '' : `:${scope}`}`;
 
 export async function loadDenominationCounts(
     tenantId: string,

@@ -57,7 +57,7 @@ mock.module('../../../src/features/auth/AuthSessionContext', () => ({
     }),
 }));
 const { billingApi } = await import('../../../src/features/billing/billingApi');
-const key = 'indyz.billing.v1:user:1';
+const key = 'indyz.admin.billing.v1:user:1';
 const items = [{ id: '42', price: 10, quantity: 2, taxRate: 5 }];
 beforeEach(() => {
     storage.clear();
