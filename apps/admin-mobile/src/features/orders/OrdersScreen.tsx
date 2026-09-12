@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AlertCircle, CheckCircle2, Clock3, ReceiptText, RotateCcw, Search } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
-import { showSnackbar } from '../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';

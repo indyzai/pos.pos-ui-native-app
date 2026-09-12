@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
-import { showSnackbar } from '../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { updateOrganizationFeatures } from '../organization/organizationApi';

@@ -8,10 +8,16 @@
   "exports": {
     ".": "./src/index.ts",
     "./pressable": "./src/AppPressable.tsx",
-    "./currency": "./src/currency.ts"
+    "./currency": "./src/currency.ts",
+    "./snackbar": "./src/Snackbar.tsx"
+  },
+  "dependencies": {
+    "lucide-react-native": "^1.41.0"
   },
   "peerDependencies": {
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "^15.15.5"
   }
 }

@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
-import { showSnackbar } from '../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { authApi, type DeviceRegistrationDetails } from '../../auth/authApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';

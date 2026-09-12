@@ -1,5 +1,5 @@
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';
 import { AppHeaderProvider } from '../shared/providers/AppHeaderProvider';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
-import { SnackbarProvider } from '../shared/providers/SnackbarProvider';
+import { SnackbarProvider } from '@indyzai/pos-ui/snackbar';
 import { AppPaperProvider } from '../shared/providers/AppPaperProvider';
 
 export default function RootLayout() {
@@ -21,7 +21,7 @@ export default function RootLayout() {
             <QueryClientProvider client={queryClient}>
                 <ThemeProvider>
                     <AppPaperProvider>
-                        <SnackbarProvider>
+                        <ThemedSnackbarProvider>
                             <AuthSessionProvider>
                                 <DatabaseProvider>
                                     <AppHeaderProvider>
@@ -29,12 +29,17 @@ export default function RootLayout() {
                                     </AppHeaderProvider>
                                 </DatabaseProvider>
                             </AuthSessionProvider>
-                        </SnackbarProvider>
+                        </ThemedSnackbarProvider>
                     </AppPaperProvider>
                 </ThemeProvider>
             </QueryClientProvider>
         </SafeAreaProvider>
     );
+}
+
+function ThemedSnackbarProvider({ children }: { children: ReactNode }) {
+    const { themeColors } = useAppTheme();
+    return <SnackbarProvider colors={themeColors}>{children}</SnackbarProvider>;
 }
 
 function RootNavigator() {

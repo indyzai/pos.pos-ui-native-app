@@ -4,7 +4,7 @@ import { Plus, X } from 'lucide-react-native';
 import { AppDropdown } from '../../../shared/components/ui/AppDropdown';
 import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { AppPaperProvider } from '../../../shared/providers/AppPaperProvider';
 import { ProductIcon, productIconOptions, type ProductIconKey } from '../../billing/components/productIcons';

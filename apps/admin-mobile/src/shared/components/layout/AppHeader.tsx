@@ -9,7 +9,7 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import { showSnackbar } from '../../providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import {
     ChevronLeft,
     ChevronRight,

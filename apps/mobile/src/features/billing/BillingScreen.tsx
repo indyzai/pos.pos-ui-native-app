@@ -57,7 +57,7 @@ import { PharmacyBatchDialog } from './components/PharmacyBatchDialog';
 import { ScrapExchangeDialog } from './components/ScrapExchangeDialog';
 import type { ScrapExchange } from './types/billing';
 import { canManageScrap } from '../scrap/permissions';
-import { showSnackbar } from '../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 
 type CartPage = 'cart' | 'customer' | 'held-orders' | 'petty-cash' | 'scrap' | 'checkout';
 const useNativeAnimationDriver = Platform.OS !== 'web';

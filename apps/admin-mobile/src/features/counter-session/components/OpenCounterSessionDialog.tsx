@@ -12,7 +12,7 @@ import {
 import { Calculator, ChevronDown, ChevronUp, Play, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
-import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';

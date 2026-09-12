@@ -3,7 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
-import { showSnackbar } from '../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';

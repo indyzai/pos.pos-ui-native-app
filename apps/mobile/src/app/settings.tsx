@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
-import { showSnackbar } from '../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
 import { BillingSettingsSection } from '../features/settings/BillingSettingsSection';

@@ -3,7 +3,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Trash2 } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
-import { showSnackbar } from '../../shared/providers/SnackbarProvider';
+import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
