@@ -15,9 +15,11 @@ type CatalogRow = {
 
 export type ProductRequest = <T>(query: string, variables?: Record<string, unknown>) => Promise<T>;
 
-const catalogQuery = `
+type CatalogCategoryType = NonNullable<Product['categoryType']>;
+
+const catalogQuery = (categoryType: CatalogCategoryType) => `
   query Catalog($skip: Int!, $take: Int!) {
-    products(categoryType: INVENTORY, skip: $skip, take: $take) {
+    products(categoryType: ${categoryType}, skip: $skip, take: $take) {
       id name skuCode imageUrl price quantity barcode details category { name type } tax { percentage rate }
     }
   }
@@ -44,12 +46,15 @@ function toProduct(row: CatalogRow): Product {
 }
 
 /** Fetches every product page from the POS GraphQL catalog. */
-export async function fetchCatalog(request: ProductRequest): Promise<Product[]> {
+export async function fetchCatalog(
+  request: ProductRequest,
+  categoryType: CatalogCategoryType = 'INVENTORY',
+): Promise<Product[]> {
   const rows: CatalogRow[] = [];
   for (let skip = 0; ; skip += 100) {
-    const data = await request<{ products: CatalogRow[] }>(catalogQuery, { skip, take: 100 });
+    const data = await request<{ products: CatalogRow[] }>(catalogQuery(categoryType), { skip, take: 100 });
     rows.push(...data.products);
     if (data.products.length < 100)
-      return rows.filter((row) => row.category?.type === 'INVENTORY').map(toProduct);
+      return rows.filter((row) => row.category?.type === categoryType).map(toProduct);
   }
 }

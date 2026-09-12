@@ -78,7 +78,7 @@ function SettingsContent() {
             </View>
             {section === 'general' && <GeneralSettingsSection />}
             {section === 'devices' && <DeviceSettingsSection registerSave={registerSave} />}
-            {section === 'billing' && <BillingSettingsSection />}
+            {section === 'billing' && <BillingSettingsSection registerSave={registerSave} />}
             {section === 'data' && <DataSettingsSection />}
             {!['general', 'devices', 'billing', 'data'].includes(section) && (
               <ComingSoonSettings

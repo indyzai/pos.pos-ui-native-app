@@ -118,6 +118,8 @@ export function InventoryScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         refreshControl={
           <RefreshControl
             refreshing={data.refreshing}

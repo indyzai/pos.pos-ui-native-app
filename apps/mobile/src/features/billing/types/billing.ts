@@ -1,4 +1,5 @@
 export type ProductBusinessDetails = {
+  iconKey?: string;
   batchNumber?: string;
   expiryDate?: string;
   manufacturer?: string;

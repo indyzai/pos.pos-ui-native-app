@@ -136,6 +136,10 @@ export const billingApi = {
       const c = await context();
       return { key: c.key, cache: await read(c) };
     }),
+  loadScrapProducts: async (signal?: AbortSignal) => {
+    const c = await context();
+    return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
+  },
   refresh: (signal?: AbortSignal) =>
     syncQueue.run(async () => {
       const c = await context();

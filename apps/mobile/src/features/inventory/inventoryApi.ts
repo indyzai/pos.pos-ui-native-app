@@ -2,7 +2,7 @@ import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '../auth/AuthSessionContext';
 import { billingApi } from '../billing/billingApi';
 import { createReconciliationVariables } from './reconciliation';
-import type { CreateInventoryItemInput, StockReconciliationInput } from './types';
+import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
 import { createSyncJob, listSyncJobs, updateSyncJob, type SyncJob } from '../../sync/syncJobRepository';
 
 const reconciliationMutation = `
@@ -21,6 +21,16 @@ const createProductMutation = `
     newProduct(newProductData: $newProductData) { success message errors product { id } }
   }
 `;
+
+const productReferencesQuery = `
+  query InventoryProductReferences {
+    categories(type: "INVENTORY", skip: 0, take: 200) { id name isActive }
+    units { id name code }
+    taxes { id name percentage isActive }
+  }
+`;
+
+const referenceCache = new Map<string, ProductReferenceData>();
 
 function context() {
   const session = getActiveAuthSession();
@@ -53,6 +63,28 @@ export const inventoryApi = {
   load: billingApi.load,
   listJobs: () => listSyncJobs(scope()),
   refresh: (signal?: AbortSignal) => billingApi.refresh(signal),
+  async loadProductReferences(): Promise<ProductReferenceData> {
+    const session = context();
+    const tenantId = String(session.tenant.id);
+    const cached = referenceCache.get(tenantId);
+    if (cached) return cached;
+    const data = await requestPos<{
+      categories: Array<{ id: string | number; name: string; isActive?: boolean }>;
+      units: Array<{ id: string | number; name: string; code: string }>;
+      taxes: Array<{ id: string | number; name: string; percentage: number; isActive?: boolean }>;
+    }>(session.token, tenantId, productReferencesQuery);
+    const references: ProductReferenceData = {
+      categories: data.categories
+        .filter((item) => item.isActive !== false)
+        .map((item) => ({ id: Number(item.id), name: item.name })),
+      units: data.units.map((item) => ({ id: Number(item.id), name: item.name, code: item.code })),
+      taxes: data.taxes
+        .filter((item) => item.isActive !== false)
+        .map((item) => ({ id: Number(item.id), name: item.name, percentage: Number(item.percentage) })),
+    };
+    referenceCache.set(tenantId, references);
+    return references;
+  },
   async create(input: CreateInventoryItemInput): Promise<SyncJob> {
     const session = context();
     const job = await runTracked('CREATE_PRODUCT', async () => {
@@ -64,9 +96,17 @@ export const inventoryApi = {
           newProductData: {
             name: input.name,
             price: input.price,
+            costPrice: input.costPrice,
             quantity: input.stock,
+            minStock: input.minStock,
             barcode: input.barcode || undefined,
+            skuCode: input.skuCode || undefined,
+            notes: input.notes || undefined,
+            categoryId: input.categoryId,
             category: input.category || undefined,
+            unitId: input.unitId,
+            taxId: input.taxId,
+            details: { iconKey: input.iconKey },
             status: 'ACTIVE',
           },
         },

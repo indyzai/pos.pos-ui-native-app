@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Wallet, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 
 type Input = { type: 'INCOME' | 'EXPENSE'; amount: number; description?: string };
@@ -56,6 +57,8 @@ export function PettyCashDialog({
         </View>
       )}
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={embedded ? s.embeddedContent : undefined}
       >
@@ -114,10 +117,10 @@ export function PettyCashDialog({
   if (embedded) return visible ? panel : null;
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <Pressable style={s.backdrop} onPress={busy ? undefined : onClose} />
         {panel}
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

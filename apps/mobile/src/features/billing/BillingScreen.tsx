@@ -28,7 +28,7 @@ import { useBillingCart } from './hooks/useBillingCart';
 import type { CheckoutPayment, Customer, PaymentMethod, Product } from './types/billing';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
 import { useAuthSession } from '../auth/AuthSessionContext';
-import { requiresOpenCounter } from '../organization/organizationApi';
+import { useFeatureToggles } from '../organization/useFeatureToggles';
 import { billingPolicy } from './domain/billingTotals';
 import { useHeldOrders } from './hooks/useHeldOrders';
 import { HeldOrdersDialog } from './components/HeldOrdersDialog';
@@ -94,6 +94,8 @@ export function BillingScreen() {
   const [electronicsProduct, setElectronicsProduct] = useState<Product>();
   const [pharmacyProduct, setPharmacyProduct] = useState<Product>();
   const [scrapOpen, setScrapOpen] = useState(false);
+  const [scrapProducts, setScrapProducts] = useState<Product[]>([]);
+  const [loadingScrapProducts, setLoadingScrapProducts] = useState(false);
   const [scrapExchange, setScrapExchange] = useState<ScrapExchange>();
   const [cartOpen, setCartOpen] = useState(false);
   const [cartPage, setCartPage] = useState<CartPage>('cart');
@@ -118,8 +120,9 @@ export function BillingScreen() {
   );
   const cart = useBillingCart(policy);
   const billing = useBillingData();
+  const { isEnabled } = useFeatureToggles();
   const heldOrders = useHeldOrders(billing.data?.key);
-  const counterRequired = requiresOpenCounter(auth.session?.organization?.settings);
+  const counterRequired = isEnabled('requireOpenCounterForBilling');
   const billingAllowed = !counterRequired || !!auth.session?.organization?.activeSession;
   const products = billing.data?.cache.products || [];
   const customers = billing.data?.cache.customers || [];
@@ -162,6 +165,7 @@ export function BillingScreen() {
     setDoctorName('');
     setPrescriptionReference('');
     setScrapExchange(undefined);
+    setScrapProducts([]);
   }, [billing.data?.key]);
   const visibleProducts = useMemo(
     () =>
@@ -224,6 +228,19 @@ export function BillingScreen() {
   };
   const closeCartPage = (closeWideDialog: () => void) =>
     isWide ? closeWideDialog() : replaceCartPage('cart');
+  const openScrap = async () => {
+    openCartPage('scrap', () => setScrapOpen(true));
+    if (!scrapProducts.length && !loadingScrapProducts) {
+      setLoadingScrapProducts(true);
+      try {
+        setScrapProducts(await billingApi.loadScrapProducts());
+      } catch (error) {
+        showSnackbar('Could not load scrap items', error instanceof Error ? error.message : 'Try again.');
+      } finally {
+        setLoadingScrapProducts(false);
+      }
+    }
+  };
   const cartPagePanResponder = useMemo(
     () =>
       PanResponder.create({
@@ -303,7 +320,7 @@ export function BillingScreen() {
             }
           : undefined;
   const addStandardProduct = (product: Product) => {
-    if (mode.mode === 'pharmacy' && pharmacyProductStatus(product).expired) {
+    if (mode.mode === 'pharmacy' && isEnabled('batchExpiry') && pharmacyProductStatus(product).expired) {
       showSnackbar('Expired stock', `${product.name} cannot be added because its expiry date has passed.`);
       return;
     }
@@ -311,11 +328,11 @@ export function BillingScreen() {
   };
   const selectProduct = (product: Product) => {
     const batches = productBatches.filter((batch) => batch.productId === product.id);
-    if (mode.mode === 'pharmacy' && batches.length) {
+    if (mode.mode === 'pharmacy' && isEnabled('batchExpiry') && batches.length) {
       setPharmacyProduct(product);
       return false;
     }
-    if (mode.mode === 'electronics' && requiresDeviceDetails(product)) {
+    if (mode.mode === 'electronics' && isEnabled('serialNumbers') && requiresDeviceDetails(product)) {
       setElectronicsProduct(product);
       return false;
     }
@@ -578,28 +595,26 @@ export function BillingScreen() {
               scanHandled.current = false;
               setScannerOpen(true);
             }}
-            scanEnabled={
-              auth.session?.organization?.settings.enableBarcodeScanning === undefined
-                ? mode.scanByDefault
-                : auth.session.organization.settings.enableBarcodeScanning !== false
-            }
-            onAddProduct={() => setQuickAddOpen(true)}
+            scanEnabled={isEnabled('enableBarcodeScanning') && mode.scanByDefault}
+            onAddProduct={isEnabled('inventory') ? () => setQuickAddOpen(true) : undefined}
             statsVisible={statsVisible}
-            onToggleStats={() => setStatsVisible((value) => !value)}
+            onToggleStats={
+              isEnabled('advancedReporting') ? () => setStatsVisible((value) => !value) : undefined
+            }
             searchPlaceholder={mode.searchPlaceholder}
           />
           <BillingModeBadge config={mode} />
-          {mode.mode === 'restaurant' && (
+          {mode.mode === 'restaurant' && isEnabled('tables') && (
             <RestaurantOrderModeSelector value={restaurantOrderMode} onChange={setRestaurantOrderMode} />
           )}
-          {mode.mode === 'restaurant' && restaurantOrderMode === 'DINE_IN' && (
+          {mode.mode === 'restaurant' && isEnabled('tables') && restaurantOrderMode === 'DINE_IN' && (
             <RestaurantTableSelector
               tables={restaurantTables}
               selectedId={restaurantTable?.id}
               onSelect={setRestaurantTable}
             />
           )}
-          {mode.mode === 'pharmacy' && (
+          {mode.mode === 'pharmacy' && isEnabled('prescriptions') && (
             <PharmacyPrescriptionContext
               doctorName={doctorName}
               prescriptionReference={prescriptionReference}
@@ -607,7 +622,7 @@ export function BillingScreen() {
               onPrescriptionReferenceChange={setPrescriptionReference}
             />
           )}
-          {statsVisible && (
+          {statsVisible && isEnabled('advancedReporting') && (
             <BillingSessionStats
               session={auth.session?.organization?.activeSession}
               pendingSales={billing.data?.cache.queue.length || 0}
@@ -618,11 +633,11 @@ export function BillingScreen() {
             category={category}
             products={visibleProducts}
             onAdd={
-              mode.mode === 'wholesale'
+              mode.mode === 'wholesale' && isEnabled('bulkPricing')
                 ? setBulkProduct
                 : mode.mode === 'restaurant'
                   ? setRestaurantProduct
-                  : mode.mode === 'service'
+                  : mode.mode === 'service' && isEnabled('serviceOrders')
                     ? (product) =>
                         product.categoryType === 'SERVICE' ||
                         product.details?.serviceDurationMinutes ||
@@ -650,21 +665,28 @@ export function BillingScreen() {
               paymentMethods={paymentMethods}
               taxRates={taxRates}
               customer={customer}
-              onSelectCustomer={() => openCartPage('customer', () => setCustomerPickerOpen(true))}
+              onSelectCustomer={
+                isEnabled('customers')
+                  ? () => openCartPage('customer', () => setCustomerPickerOpen(true))
+                  : undefined
+              }
               onChange={cart.changeQuantity}
               onItemDiscount={cart.setItemDiscount}
               onItemTaxRate={cart.setItemTaxRate}
               orderDiscount={cart.orderDiscount}
               onOrderDiscount={cart.setOrderDiscount}
-              allowItemDiscounts={auth.session?.organization?.settings.allowItemDiscounts === true}
-              allowOrderDiscounts={auth.session?.organization?.settings.allowOrderDiscounts === true}
+              allowItemDiscounts={isEnabled('allowItemDiscounts')}
+              allowOrderDiscounts={isEnabled('allowOrderDiscounts')}
               heldOrderCount={heldOrders.orders.length}
               onShowHeldOrders={() => openCartPage('held-orders', () => setHeldOrdersOpen(true))}
               onHold={holdCurrentOrder}
-              onPettyCash={() =>
-                billingAllowed
-                  ? openCartPage('petty-cash', () => setPettyCashOpen(true))
-                  : requestCounterDialog()
+              onPettyCash={
+                isEnabled('finance')
+                  ? () =>
+                      billingAllowed
+                        ? openCartPage('petty-cash', () => setPettyCashOpen(true))
+                        : requestCounterDialog()
+                  : undefined
               }
               onClear={() => {
                 cart.clearCart();
@@ -676,8 +698,8 @@ export function BillingScreen() {
               currencyCode={currencyCode}
               scrapValue={scrapExchange?.total}
               onScrap={
-                canManageScrap(auth.session?.tenant.role)
-                  ? () => openCartPage('scrap', () => setScrapOpen(true))
+                isEnabled('scrap') && canManageScrap(auth.session?.tenant.role)
+                  ? () => void openScrap()
                   : undefined
               }
             />
@@ -723,18 +745,22 @@ export function BillingScreen() {
               paymentMethods={paymentMethods}
               taxRates={taxRates}
               customer={customer}
-              onSelectCustomer={() => replaceCartPage('customer')}
+              onSelectCustomer={isEnabled('customers') ? () => replaceCartPage('customer') : undefined}
               onChange={cart.changeQuantity}
               onItemDiscount={cart.setItemDiscount}
               onItemTaxRate={cart.setItemTaxRate}
               orderDiscount={cart.orderDiscount}
               onOrderDiscount={cart.setOrderDiscount}
-              allowItemDiscounts={auth.session?.organization?.settings.allowItemDiscounts === true}
-              allowOrderDiscounts={auth.session?.organization?.settings.allowOrderDiscounts === true}
+              allowItemDiscounts={isEnabled('allowItemDiscounts')}
+              allowOrderDiscounts={isEnabled('allowOrderDiscounts')}
               heldOrderCount={heldOrders.orders.length}
               onShowHeldOrders={() => replaceCartPage('held-orders')}
               onHold={holdCurrentOrder}
-              onPettyCash={() => (billingAllowed ? replaceCartPage('petty-cash') : requestCounterDialog())}
+              onPettyCash={
+                isEnabled('finance')
+                  ? () => (billingAllowed ? replaceCartPage('petty-cash') : requestCounterDialog())
+                  : undefined
+              }
               onClear={() => {
                 cart.clearCart();
                 setScrapExchange(undefined);
@@ -744,7 +770,11 @@ export function BillingScreen() {
               onClose={closeCart}
               currencyCode={currencyCode}
               scrapValue={scrapExchange?.total}
-              onScrap={canManageScrap(auth.session?.tenant.role) ? () => replaceCartPage('scrap') : undefined}
+              onScrap={
+                isEnabled('scrap') && canManageScrap(auth.session?.tenant.role)
+                  ? () => void openScrap()
+                  : undefined
+              }
               innerContent={
                 cartPage === 'cart' ? undefined : (
                   <Animated.View
@@ -779,7 +809,8 @@ export function BillingScreen() {
                     <ScrapExchangeDialog
                       embedded
                       visible={cartPage === 'scrap'}
-                      products={products.filter((product) => product.categoryType === 'SCRAP')}
+                      products={scrapProducts}
+                      loading={loadingScrapProducts}
                       value={scrapExchange}
                       currencyCode={currencyCode}
                       onChange={setScrapExchange}
@@ -886,7 +917,8 @@ export function BillingScreen() {
       />
       <ScrapExchangeDialog
         visible={isWide && scrapOpen}
-        products={products.filter((product) => product.categoryType === 'SCRAP')}
+        products={scrapProducts}
+        loading={loadingScrapProducts}
         value={scrapExchange}
         currencyCode={currencyCode}
         onChange={setScrapExchange}

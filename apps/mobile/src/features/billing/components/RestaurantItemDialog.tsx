@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Minus, Plus, UtensilsCrossed, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CartCustomization, Product } from '../types/billing';
 import { formatCurrency } from '../../../shared/utils/currency';
@@ -45,7 +46,7 @@ export function RestaurantItemDialog({
   };
   return (
     <Modal transparent visible={!!product} animationType="slide" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <Pressable style={s.backdrop} onPress={onClose} />
         <View style={[s.sheet, { backgroundColor: c.surface }]}>
           <View style={s.header}>
@@ -60,7 +61,11 @@ export function RestaurantItemDialog({
               <X size={18} color={c.text} />
             </AppPressable>
           </View>
-          <ScrollView contentContainerStyle={s.body}>
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            contentContainerStyle={s.body}
+          >
             {modifiers.length > 0 && <Text style={[s.label, { color: c.textSecondary }]}>Options</Text>}
             {modifiers.length > 0 && (
               <View style={s.options}>
@@ -126,7 +131,7 @@ export function RestaurantItemDialog({
             </Text>
           </AppPressable>
         </View>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

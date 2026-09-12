@@ -3,6 +3,7 @@ import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 import { ArrowLeft, Search, UserRound, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { Customer } from '../types/billing';
 
@@ -99,7 +100,12 @@ export function CustomerPickerDialog({
           <Text style={[s.meta, { color: c.textSecondary }]}>No customer linked</Text>
         </View>
       </AppPressable>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.list}>
+      <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={s.list}
+      >
         {visibleCustomers.map((customer) => (
           <AppPressable
             key={customer.id}
@@ -142,10 +148,10 @@ export function CustomerPickerDialog({
   if (embedded) return visible ? panel : null;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <AppPressable accessibilityLabel="Close customer selection" style={s.backdrop} onPress={onClose} />
         {panel}
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

@@ -3,6 +3,7 @@ import { Minus, Package, Plus, Shield, Timer, UserRound, Wrench, X } from 'lucid
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CartCustomization, Product, ServiceUser } from '../types/billing';
 import { formatCurrency } from '../../../shared/utils/currency';
@@ -92,7 +93,7 @@ export function ServiceConfigurationDialog({
   };
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <AppPressable accessibilityLabel="Close service configuration" onPress={onClose} style={s.backdrop} />
         <SafeAreaView edges={['bottom']} style={[s.sheet, { backgroundColor: c.surface }]}>
           <View style={s.header}>
@@ -107,7 +108,12 @@ export function ServiceConfigurationDialog({
               <X size={19} color={c.textSecondary} />
             </AppPressable>
           </View>
-          <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            contentContainerStyle={s.body}
+            keyboardShouldPersistTaps="handled"
+          >
             <FieldLabel icon={UserRound} label="Assign technician" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
               <Choice label="Unassigned" active={!technicianId} onPress={() => setTechnicianId('')} />
@@ -205,7 +211,7 @@ export function ServiceConfigurationDialog({
             </AppPressable>
           </View>
         </SafeAreaView>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

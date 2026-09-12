@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ArrowLeft, Plus, Recycle, Trash2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { formatCurrency } from '../../../shared/utils/currency';
 import { createScrapExchange } from '../domain/scrapExchange';
@@ -12,6 +13,7 @@ type Row = { product: Product; quantity: string; rate: string };
 type Props = {
   visible: boolean;
   products: Product[];
+  loading?: boolean;
   value?: ScrapExchange;
   currencyCode: string;
   onChange: (value?: ScrapExchange) => void;
@@ -22,6 +24,7 @@ type Props = {
 export function ScrapExchangeDialog({
   visible,
   products,
+  loading = false,
   value,
   currencyCode,
   onChange,
@@ -79,7 +82,11 @@ export function ScrapExchangeDialog({
       <Text style={[s.help, { color: c.textSecondary }]}>
         Record items received from the customer. Their value is settled against this bill.
       </Text>
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
+        contentContainerStyle={s.content}
+      >
         {rows.map((row, index) => (
           <View key={`${row.product.id}:${index}`} style={[s.row, { borderColor: c.outlineMuted }]}>
             <View style={s.name}>
@@ -107,6 +114,7 @@ export function ScrapExchangeDialog({
           </View>
         ))}
         <Text style={[s.section, { color: c.textSecondary }]}>Available scrap products</Text>
+        {loading && <ActivityIndicator color={c.primary} style={s.loading} />}
         {products.map((product) => (
           <AppPressable
             key={product.id}
@@ -117,7 +125,7 @@ export function ScrapExchangeDialog({
             <Plus size={18} color={c.primary} />
           </AppPressable>
         ))}
-        {!products.length && (
+        {!loading && !products.length && (
           <Text style={[s.empty, { color: c.textSecondary }]}>
             Create products in a SCRAP category before accepting an exchange.
           </Text>
@@ -167,7 +175,9 @@ export function ScrapExchangeDialog({
   if (embedded) return visible ? panel : null;
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <SafeAreaView style={s.overlay}>{panel}</SafeAreaView>
+      <AppKeyboardSafeView>
+        <SafeAreaView style={s.overlay}>{panel}</SafeAreaView>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }
@@ -204,6 +214,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   empty: { textAlign: 'center', paddingVertical: 18, fontSize: 12 },
+  loading: { paddingVertical: 18 },
   footer: { borderTopWidth: 1, paddingTop: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   total: { fontSize: 17, fontWeight: '900' },
   remove: { padding: 10, marginLeft: 'auto' },

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AlertTriangle, PackageSearch, Pill, Plus } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -8,6 +9,7 @@ import { useBottomNavigationClearance } from '../../../shared/hooks/useBottomNav
 import type { Product } from '../types/billing';
 import { pharmacyProductStatus } from '../domain/pharmacyProduct';
 import { formatCurrency } from '../../../shared/utils/currency';
+import { ProductIcon } from './productIcons';
 
 type Props = {
   category: string;
@@ -28,6 +30,7 @@ export function ProductCatalog({
 }: Props) {
   const { width } = useWindowDimensions();
   const { isDark, themeColors: c } = useAppTheme();
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const isTablet = width >= 700;
   const bottomClearance = useBottomNavigationClearance();
   const columns = width >= 1024 ? 5 : isTablet ? 4 : 2;
@@ -76,23 +79,34 @@ export function ProductCatalog({
               ]}
             >
               <LinearGradient
-                colors={isDark ? ['#2B374A', '#202938'] : [product.color, product.color]}
+                colors={isDark ? ['#2B374A', '#202938'] : [c.primarySoft, c.primarySoft]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[s.image, { height: isTablet ? 112 : 76 }]}
               >
-                {product.imageUrl ? (
-                  <Image source={{ uri: product.imageUrl }} resizeMode="contain" style={s.productImage} />
+                {product.imageUrl && !failedImages.has(product.id) ? (
+                  <Image
+                    source={{ uri: product.imageUrl }}
+                    resizeMode="contain"
+                    style={s.productImage}
+                    onError={() =>
+                      setFailedImages((current) => {
+                        const next = new Set(current);
+                        next.add(product.id);
+                        return next;
+                      })
+                    }
+                  />
                 ) : (
-                  <Text style={s.emoji}>{product.emoji}</Text>
+                  <ProductIcon iconKey={product.details?.iconKey} size={36} />
                 )}
                 <AppPressable
                   accessibilityLabel={`Add ${product.name} to cart`}
                   disabled={disabled}
                   onPress={() => onAdd(product)}
-                  style={[s.add, { backgroundColor: c.primarySoft, borderColor: c.primary }]}
+                  style={[s.add, { backgroundColor: c.primary, borderColor: c.primary }]}
                 >
-                  <Plus size={18} color={c.primary} strokeWidth={2.8} />
+                  <Plus size={18} color="#FFFFFF" strokeWidth={2.8} />
                 </AppPressable>
               </LinearGradient>
               <Text numberOfLines={1} style={[s.name, { color: c.text }]}>
@@ -164,7 +178,6 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   image: { height: 76, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 38 },
   productImage: { width: '76%', height: '76%' },
   add: {
     position: 'absolute',

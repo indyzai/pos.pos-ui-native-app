@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { PackagePlus, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CartCustomization, Product } from '../types/billing';
 import { resolveWholesaleTier, wholesaleTiers } from '../domain/wholesalePricing';
@@ -29,7 +30,7 @@ export function BulkQuantityDialog({
   const selectedTier = product ? resolveWholesaleTier(product, amount) : undefined;
   return (
     <Modal transparent visible={!!product} animationType="fade" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <Pressable style={s.backdrop} onPress={onClose} />
         <View style={[s.dialog, { backgroundColor: c.surface, borderColor: c.outline }]}>
           <View style={s.header}>
@@ -115,7 +116,7 @@ export function BulkQuantityDialog({
             </Text>
           </AppPressable>
         </View>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

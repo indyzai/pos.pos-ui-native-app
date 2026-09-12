@@ -91,6 +91,8 @@ export function SignupScreen({ onSignUp, onLogin }: Props) {
         fullScreen={brandedMobileLayout}
       />
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         style={s.formScroll}
         contentContainerStyle={[
           s.formArea,

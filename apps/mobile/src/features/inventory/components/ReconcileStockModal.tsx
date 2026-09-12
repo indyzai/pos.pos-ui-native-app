@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Check, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { InventoryProduct, StockReconciliationInput } from '../types';
@@ -42,7 +43,7 @@ export function ReconcileStockModal({
   };
   return (
     <Modal transparent visible animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <AppKeyboardSafeView style={styles.overlay}>
         <AppPressable style={styles.backdrop} onPress={busy ? undefined : onClose} />
         <View style={[styles.sheet, { backgroundColor: c.surface }]}>
           <View style={styles.header}>
@@ -77,7 +78,7 @@ export function ReconcileStockModal({
             <Text style={styles.saveText}>{busy ? 'Saving…' : 'Save count'}</Text>
           </AppPressable>
         </View>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

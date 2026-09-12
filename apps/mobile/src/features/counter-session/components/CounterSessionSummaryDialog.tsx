@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Banknote, Calculator, ChevronDown, ChevronUp, LockKeyhole, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CounterSession } from '../../sales/salesOutbox';
@@ -146,7 +147,7 @@ export function CounterSessionSummaryDialog(props: Props) {
   const difference = closingCash.trim() ? Number(closingCash) - expectedCash : undefined;
   return (
     <Modal transparent visible={props.visible} animationType="fade" onRequestClose={props.onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <Pressable style={s.backdrop} onPress={closing ? undefined : props.onClose} />
         <View style={[s.dialog, { backgroundColor: c.surface, borderColor: c.outline }]}>
           <View style={s.header}>
@@ -171,7 +172,12 @@ export function CounterSessionSummaryDialog(props: Props) {
             </AppPressable>
           </View>
 
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={s.summaryGrid}>
               <Summary
                 label="Opening cash"
@@ -278,7 +284,7 @@ export function CounterSessionSummaryDialog(props: Props) {
             </AppPressable>
           </ScrollView>
         </View>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

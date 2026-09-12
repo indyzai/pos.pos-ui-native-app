@@ -72,6 +72,8 @@ export function OrdersScreen() {
   return (
     <View style={[s.screen, { backgroundColor: c.background }]}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         refreshControl={
           <RefreshControl
             refreshing={data.refreshing}

@@ -127,6 +127,8 @@ export function CheckoutDialog({
           </View>
         )}
         <ScrollView
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="interactive"
           style={s.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator

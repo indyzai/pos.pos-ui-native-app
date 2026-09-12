@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Calculator, ChevronDown, ChevronUp, Play, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { counterSessionApi } from '../counterSessionApi';
@@ -124,10 +125,15 @@ export function OpenCounterSessionDialog(props: Props) {
 
   return (
     <Modal transparent visible={props.visible} animationType="fade" onRequestClose={props.onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <Pressable style={s.backdrop} onPress={opening ? undefined : props.onClose} />
         <View style={[s.dialog, { backgroundColor: c.surface, borderColor: c.outline }]}>
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={s.header}>
               <View>
                 <Text style={[s.title, { color: c.text }]}>Open counter session</Text>
@@ -225,7 +231,7 @@ export function OpenCounterSessionDialog(props: Props) {
             </AppPressable>
           </ScrollView>
         </View>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

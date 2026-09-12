@@ -3,6 +3,7 @@ import { Barcode, ShieldCheck, Smartphone, X } from 'lucide-react-native';
 import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CartCustomization, Product } from '../types/billing';
 
@@ -44,7 +45,7 @@ export function ElectronicsItemDialog({
   };
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <AppPressable accessibilityLabel="Close device details" onPress={onClose} style={s.backdrop} />
         <SafeAreaView edges={['bottom']} style={[s.sheet, { backgroundColor: c.surface }]}>
           <View style={s.header}>
@@ -102,7 +103,7 @@ export function ElectronicsItemDialog({
             </AppPressable>
           </View>
         </SafeAreaView>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

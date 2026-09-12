@@ -13,21 +13,24 @@ import { AppHeader } from '../shared/components/layout/AppHeader';
 import { AppHeaderProvider } from '../shared/providers/AppHeaderProvider';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '../shared/providers/SnackbarProvider';
+import { AppPaperProvider } from '../shared/providers/AppPaperProvider';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <SnackbarProvider>
-            <AuthSessionProvider>
-              <DatabaseProvider>
-                <AppHeaderProvider>
-                  <RootNavigator />
-                </AppHeaderProvider>
-              </DatabaseProvider>
-            </AuthSessionProvider>
-          </SnackbarProvider>
+          <AppPaperProvider>
+            <SnackbarProvider>
+              <AuthSessionProvider>
+                <DatabaseProvider>
+                  <AppHeaderProvider>
+                    <RootNavigator />
+                  </AppHeaderProvider>
+                </DatabaseProvider>
+              </AuthSessionProvider>
+            </SnackbarProvider>
+          </AppPaperProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

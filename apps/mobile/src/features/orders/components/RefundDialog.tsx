@@ -3,6 +3,7 @@ import { Minus, Plus, RotateCcw, X } from 'lucide-react-native';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { formatCurrency } from '../../../shared/utils/currency';
 import { refundableQuantity, type RefundSelection } from '../refundPolicy';
@@ -51,7 +52,7 @@ export function RefundDialog({
   };
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.overlay}>
+      <AppKeyboardSafeView style={s.overlay}>
         <AppPressable style={s.backdrop} onPress={onClose} />
         <SafeAreaView edges={['bottom']} style={[s.sheet, { backgroundColor: c.surface }]}>
           <View style={s.header}>
@@ -63,7 +64,11 @@ export function RefundDialog({
               <X size={19} color={c.textSecondary} />
             </AppPressable>
           </View>
-          <ScrollView contentContainerStyle={s.body}>
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            keyboardDismissMode="interactive"
+            contentContainerStyle={s.body}
+          >
             {order.items.map((item) => {
               const available = refundableQuantity(order, item.productId, refunds);
               const quantity = quantities[item.productId] || 0;
@@ -125,7 +130,7 @@ export function RefundDialog({
             <Text style={s.confirmText}>{busy ? 'Saving…' : 'Create refund'}</Text>
           </AppPressable>
         </SafeAreaView>
-      </View>
+      </AppKeyboardSafeView>
     </Modal>
   );
 }

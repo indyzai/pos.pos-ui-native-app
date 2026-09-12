@@ -20,6 +20,7 @@ import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { colors, radii } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { SwipeableCartRow } from './SwipeableCartRow';
+import { ProductIcon } from './productIcons';
 import type {
   BillingPaymentMethod,
   BillingTaxRate,
@@ -40,7 +41,7 @@ type Props = {
   onPayment: (method: PaymentMethod) => void;
   paymentMethods: BillingPaymentMethod[];
   customer?: Customer;
-  onSelectCustomer: () => void;
+  onSelectCustomer?: () => void;
   onChange: (id: string, amount: number) => void;
   onItemDiscount: (id: string, discount: number) => void;
   onItemTaxRate: (id: string, rate: number) => void;
@@ -52,7 +53,7 @@ type Props = {
   heldOrderCount: number;
   onShowHeldOrders: () => void;
   onHold: () => void | Promise<void>;
-  onPettyCash: () => void;
+  onPettyCash?: () => void;
   onClear: () => void;
   onCheckout: () => void;
   counterClosed?: boolean;
@@ -159,13 +160,15 @@ export function OrderCart({
                   </View>
                 )}
               </AppPressable>
-              <AppPressable
-                accessibilityLabel="Record petty cash"
-                onPress={onPettyCash}
-                style={[s.headerAction, { backgroundColor: c.surfaceMuted }]}
-              >
-                <Wallet size={15} color={c.textSecondary} />
-              </AppPressable>
+              {onPettyCash ? (
+                <AppPressable
+                  accessibilityLabel="Record petty cash"
+                  onPress={onPettyCash}
+                  style={[s.headerAction, { backgroundColor: c.surfaceMuted }]}
+                >
+                  <Wallet size={15} color={c.textSecondary} />
+                </AppPressable>
+              ) : null}
               <AppPressable
                 accessibilityLabel="Hold current order"
                 disabled={!items.length}
@@ -194,30 +197,40 @@ export function OrderCart({
         <View style={s.innerContent}>{innerContent}</View>
       ) : (
         <>
-          <AppPressable onPress={onSelectCustomer} style={[s.customer, { backgroundColor: c.surfaceMuted }]}>
-            <UserRound size={15} color={c.primary} />
-            <View style={s.customerText}>
-              <Text numberOfLines={1} style={[s.customerName, { color: c.text }]}>
-                {customer?.name || 'Walk-in customer'}
-              </Text>
-              <Text style={[s.customerHint, { color: c.textSecondary }]}>
-                {customer
-                  ? customer.phone || customer.email || 'Customer selected'
-                  : 'Tap to select customer'}
-              </Text>
-            </View>
-            <Text style={[s.changeCustomer, { color: c.primary }]}>Change</Text>
-          </AppPressable>
+          {onSelectCustomer ? (
+            <AppPressable
+              onPress={onSelectCustomer}
+              style={[s.customer, { backgroundColor: c.surfaceMuted }]}
+            >
+              <UserRound size={15} color={c.primary} />
+              <View style={s.customerText}>
+                <Text numberOfLines={1} style={[s.customerName, { color: c.text }]}>
+                  {customer?.name || 'Walk-in customer'}
+                </Text>
+                <Text style={[s.customerHint, { color: c.textSecondary }]}>
+                  {customer
+                    ? customer.phone || customer.email || 'Customer selected'
+                    : 'Tap to select customer'}
+                </Text>
+              </View>
+              <Text style={[s.changeCustomer, { color: c.primary }]}>Change</Text>
+            </AppPressable>
+          ) : null}
           {items.length ? (
-            <ScrollView style={[s.rows, { borderColor: c.outlineMuted }]}>
+            <ScrollView
+              automaticallyAdjustKeyboardInsets
+              keyboardDismissMode="interactive"
+              keyboardShouldPersistTaps="handled"
+              style={[s.rows, { borderColor: c.outlineMuted }]}
+            >
               {items.map((item) => {
                 const rowId = item.lineId || item.id;
                 return (
                   <SwipeableCartRow key={rowId} onRemove={() => onChange(rowId, -item.quantity)}>
                     <View style={[s.itemCard, { borderColor: c.outlineMuted, backgroundColor: c.surface }]}>
                       <View style={s.row}>
-                        <View style={[s.thumb, { backgroundColor: isDark ? c.surfaceMuted : item.color }]}>
-                          <Text>{item.emoji}</Text>
+                        <View style={[s.thumb, { backgroundColor: isDark ? c.surfaceMuted : c.primarySoft }]}>
+                          <ProductIcon iconKey={item.details?.iconKey} size={17} />
                         </View>
                         <View style={s.product}>
                           <Text numberOfLines={1} style={[s.productName, { color: c.text }]}>

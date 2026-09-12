@@ -12,9 +12,9 @@ type Props = {
   onCategory: (value: string) => void;
   onScan: () => void;
   scanEnabled?: boolean;
-  onAddProduct: () => void;
+  onAddProduct?: () => void;
   statsVisible: boolean;
-  onToggleStats: () => void;
+  onToggleStats?: () => void;
   searchPlaceholder?: string;
 };
 
@@ -63,20 +63,24 @@ export function CatalogToolbar({
             <ScanBarcode size={22} color={c.primary} strokeWidth={2.25} />
           </AppPressable>
         )}
-        <AppPressable
-          accessibilityLabel="Add a new product"
-          onPress={onAddProduct}
-          style={[s.scanButton, { backgroundColor: c.primarySoft }]}
-        >
-          <Plus size={22} color={c.primary} strokeWidth={2.5} />
-        </AppPressable>
-        <AppPressable
-          accessibilityLabel={statsVisible ? 'Hide session statistics' : 'Show session statistics'}
-          onPress={onToggleStats}
-          style={[s.scanButton, { backgroundColor: statsVisible ? c.primary : c.primarySoft }]}
-        >
-          <BarChart3 size={21} color={statsVisible ? '#FFFFFF' : c.primary} strokeWidth={2.4} />
-        </AppPressable>
+        {onAddProduct ? (
+          <AppPressable
+            accessibilityLabel="Add a new product"
+            onPress={onAddProduct}
+            style={[s.scanButton, { backgroundColor: c.primarySoft }]}
+          >
+            <Plus size={22} color={c.primary} strokeWidth={2.5} />
+          </AppPressable>
+        ) : null}
+        {onToggleStats ? (
+          <AppPressable
+            accessibilityLabel={statsVisible ? 'Hide session statistics' : 'Show session statistics'}
+            onPress={onToggleStats}
+            style={[s.scanButton, { backgroundColor: statsVisible ? c.primary : c.primarySoft }]}
+          >
+            <BarChart3 size={21} color={statsVisible ? '#FFFFFF' : c.primary} strokeWidth={2.4} />
+          </AppPressable>
+        ) : null}
       </View>
       <ScrollView
         horizontal
