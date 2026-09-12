@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Trash2 } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { clearLocalUiData } from '../../db/maintenance';
@@ -98,7 +99,7 @@ export function DataSettingsSection() {
 
   const confirmClear = () => {
     const unsynced = counts.PENDING + counts.RUNNING + counts.FAILED + counts.CONFLICT;
-    Alert.alert(
+    showSnackbar(
       'Clear local POS database?',
       `${unsynced ? `${unsynced} unsynced record${unsynced === 1 ? '' : 's'} will be permanently removed. ` : ''}Cached POS data will be removed without signing out or deleting server data.`,
       [
@@ -113,10 +114,10 @@ export function DataSettingsSection() {
                 setLegacyJobs([]);
                 setWaybillJobs([]);
                 queryClient.removeQueries();
-                Alert.alert('Database cleared', 'Local POS and synchronization data were removed.');
+                showSnackbar('Database cleared', 'Local POS and synchronization data were removed.');
               })
               .catch((reason) =>
-                Alert.alert(
+                showSnackbar(
                   'Could not clear database',
                   reason instanceof Error ? reason.message : 'Try again.',
                 ),

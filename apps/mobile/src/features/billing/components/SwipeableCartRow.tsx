@@ -1,7 +1,9 @@
 import { useMemo, useRef, type ReactNode } from 'react';
-import { Animated, PanResponder, StyleSheet, Text, View } from 'react-native';
+import { Animated, PanResponder, Platform, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../../config/theme';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+
+const useNativeAnimationDriver = Platform.OS !== 'web';
 
 export function SwipeableCartRow({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
   const { themeColors } = useAppTheme();
@@ -20,17 +22,26 @@ export function SwipeableCartRow({ children, onRemove }: { children: ReactNode; 
         onPanResponderRelease: (_event, gesture) => {
           if (gesture.dx < -54 || gesture.vx < -0.55) {
             removed.current = true;
-            Animated.timing(translateX, { toValue: -120, duration: 140, useNativeDriver: true }).start(
-              ({ finished }) => {
-                if (finished) onRemove();
-              },
-            );
+            Animated.timing(translateX, {
+              toValue: -120,
+              duration: 140,
+              useNativeDriver: useNativeAnimationDriver,
+            }).start(({ finished }) => {
+              if (finished) onRemove();
+            });
             return;
           }
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: useNativeAnimationDriver,
+          }).start();
         },
         onPanResponderTerminate: () => {
-          if (!removed.current) Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+          if (!removed.current)
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: useNativeAnimationDriver,
+            }).start();
         },
       }),
     [onRemove, translateX],

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Check, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { InventoryProduct, StockReconciliationInput } from '../types';
 
@@ -29,7 +30,7 @@ export function ReconcileStockModal({
   const save = async () => {
     const countedQuantity = Number(quantity);
     if (!Number.isFinite(countedQuantity) || countedQuantity < 0) {
-      Alert.alert('Invalid stock', 'Counted quantity must be zero or greater.');
+      showSnackbar('Invalid stock', 'Counted quantity must be zero or greater.');
       return;
     }
     await onSave({

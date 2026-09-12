@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Redirect, useRouter } from 'expo-router';
-import { Alert, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
+import { showSnackbar } from '../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { authApi } from '../features/auth/authApi';
 import { useAuthSession } from '../features/auth/AuthSessionContext';
@@ -15,14 +16,14 @@ export default function DeviceSetup() {
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const submit = async () => {
-    if (pin !== confirm) return Alert.alert('Device PIN', 'PIN entries do not match.');
+    if (pin !== confirm) return showSnackbar('Device PIN', 'PIN entries do not match.');
     setBusy(true);
     try {
       await authApi.registerDevice(pin);
       await refreshSession();
       router.replace('/billing');
     } catch (error) {
-      Alert.alert(
+      showSnackbar(
         'Device access',
         error instanceof Error ? error.message : 'Unable to register this device.',
       );

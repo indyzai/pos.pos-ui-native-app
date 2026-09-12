@@ -1,15 +1,7 @@
 import { useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { AuthBranding } from './AuthBranding';
 import { EyeIcon } from './AuthIcons';
@@ -66,7 +58,7 @@ export function SignupScreen({ onSignUp, onLogin }: Props) {
         : !details.business || !details.type || !details.industry || !details.terms
           ? 'Complete your organization details and accept the terms.'
           : '';
-    if (message) Alert.alert('Check your details', message);
+    if (message) showSnackbar('Check your details', message);
     return !message;
   };
   const proceed = async () => {
@@ -86,7 +78,7 @@ export function SignupScreen({ onSignUp, onLogin }: Props) {
         industry: details.industry.trim(),
       });
     } catch (error) {
-      Alert.alert('Account creation failed', error instanceof Error ? error.message : 'Please try again.');
+      showSnackbar('Account creation failed', error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setLoading(false);
     }

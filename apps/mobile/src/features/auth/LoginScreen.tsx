@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { AuthBranding } from './AuthBranding';
 import { EyeIcon, GoogleIcon, MicrosoftIcon } from './AuthIcons';
@@ -54,7 +54,7 @@ export function LoginScreen({
   const [authError, setAuthError] = useState<string | null>(null);
   const submit = async () => {
     if (!email.trim() || !password)
-      return Alert.alert('Sign in', 'Enter your email address and password to continue.');
+      return showSnackbar('Sign in', 'Enter your email address and password to continue.');
     setAuthError(null);
     setLoading(true);
     try {

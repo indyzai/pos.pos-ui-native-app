@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { Banknote, Calculator, ChevronDown, ChevronUp, LockKeyhole, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CounterSession } from '../../sales/salesOutbox';
 import { counterSessionApi } from '../counterSessionApi';
@@ -121,7 +121,7 @@ export function CounterSessionSummaryDialog(props: Props) {
     const amount = Number(closingCash);
     if (!props.token || !props.tenantId || !props.session) return;
     if (!Number.isFinite(amount) || amount < 0 || closingCash.trim() === '') {
-      Alert.alert('Closing cash', 'Enter the counted cash before closing this session.');
+      showSnackbar('Closing cash', 'Enter the counted cash before closing this session.');
       return;
     }
     setClosing(true);
@@ -137,7 +137,7 @@ export function CounterSessionSummaryDialog(props: Props) {
       props.onClose();
       await props.onClosed();
     } catch (error) {
-      Alert.alert('Could not close counter', error instanceof Error ? error.message : 'Try again.');
+      showSnackbar('Could not close counter', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setClosing(false);
     }

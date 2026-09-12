@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { Calculator, ChevronDown, ChevronUp, Play, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';
@@ -102,11 +102,11 @@ export function OpenCounterSessionDialog(props: Props) {
   const open = async () => {
     const balance = Number(openingBalance);
     if (!props.token || !props.tenantId || !props.counterId) {
-      Alert.alert('Counter unavailable', 'Add a branch and counter before opening a session.');
+      showSnackbar('Counter unavailable', 'Add a branch and counter before opening a session.');
       return;
     }
     if (!Number.isFinite(balance) || balance < 0) {
-      Alert.alert('Opening cash', 'Enter a valid non-negative opening balance.');
+      showSnackbar('Opening cash', 'Enter a valid non-negative opening balance.');
       return;
     }
     setOpening(true);
@@ -116,7 +116,7 @@ export function OpenCounterSessionDialog(props: Props) {
       props.onClose();
       await props.onOpened();
     } catch (error) {
-      Alert.alert('Could not open counter', error instanceof Error ? error.message : 'Try again.');
+      showSnackbar('Could not open counter', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setOpening(false);
     }

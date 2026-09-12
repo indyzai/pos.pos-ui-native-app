@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Plus, Recycle, Trash2, X } from 'lucide-react-native';
+import { ArrowLeft, Plus, Recycle, Trash2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
@@ -16,9 +16,18 @@ type Props = {
   currencyCode: string;
   onChange: (value?: ScrapExchange) => void;
   onClose: () => void;
+  embedded?: boolean;
 };
 
-export function ScrapExchangeDialog({ visible, products, value, currencyCode, onChange, onClose }: Props) {
+export function ScrapExchangeDialog({
+  visible,
+  products,
+  value,
+  currencyCode,
+  onChange,
+  onClose,
+  embedded = false,
+}: Props) {
   const { themeColors: c } = useAppTheme();
   const [rows, setRows] = useState<Row[]>([]);
   useEffect(() => {
@@ -51,107 +60,114 @@ export function ScrapExchangeDialog({ visible, products, value, currencyCode, on
     ]);
   const update = (index: number, next: Partial<Row>) =>
     setRows((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, ...next } : row)));
+  const panel = (
+    <View style={[s.sheet, embedded && s.embedded, { backgroundColor: c.surface }]}>
+      {!embedded && (
+        <View style={s.header}>
+          <View style={s.titleRow}>
+            <Recycle size={20} color={c.primary} />
+            <Text style={[s.title, { color: c.text }]}>Customer scrap exchange</Text>
+          </View>
+          <AppPressable
+            accessibilityLabel={embedded ? 'Back to cart' : 'Close scrap exchange'}
+            onPress={onClose}
+          >
+            {embedded ? <ArrowLeft color={c.textSecondary} /> : <X color={c.textSecondary} />}
+          </AppPressable>
+        </View>
+      )}
+      <Text style={[s.help, { color: c.textSecondary }]}>
+        Record items received from the customer. Their value is settled against this bill.
+      </Text>
+      <ScrollView contentContainerStyle={s.content}>
+        {rows.map((row, index) => (
+          <View key={`${row.product.id}:${index}`} style={[s.row, { borderColor: c.outlineMuted }]}>
+            <View style={s.name}>
+              <Text style={[s.product, { color: c.text }]}>{row.product.name}</Text>
+              <Text style={[s.caption, { color: c.textSecondary }]}>Quantity × rate</Text>
+            </View>
+            <TextInput
+              value={row.quantity}
+              onChangeText={(quantity) => update(index, { quantity })}
+              keyboardType="decimal-pad"
+              style={[s.input, { color: c.text, borderColor: c.outline }]}
+            />
+            <TextInput
+              value={row.rate}
+              onChangeText={(rate) => update(index, { rate })}
+              keyboardType="decimal-pad"
+              style={[s.input, s.rate, { color: c.text, borderColor: c.outline }]}
+            />
+            <AppPressable
+              accessibilityLabel={`Remove ${row.product.name}`}
+              onPress={() => setRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+            >
+              <Trash2 size={18} color={c.error} />
+            </AppPressable>
+          </View>
+        ))}
+        <Text style={[s.section, { color: c.textSecondary }]}>Available scrap products</Text>
+        {products.map((product) => (
+          <AppPressable
+            key={product.id}
+            onPress={() => add(product)}
+            style={[s.option, { backgroundColor: c.surfaceMuted }]}
+          >
+            <Text style={[s.product, { color: c.text }]}>{product.name}</Text>
+            <Plus size={18} color={c.primary} />
+          </AppPressable>
+        ))}
+        {!products.length && (
+          <Text style={[s.empty, { color: c.textSecondary }]}>
+            Create products in a SCRAP category before accepting an exchange.
+          </Text>
+        )}
+      </ScrollView>
+      <View style={[s.footer, { borderTopColor: c.outlineMuted }]}>
+        <View>
+          <Text style={[s.caption, { color: c.textSecondary }]}>Scrap credit</Text>
+          <Text style={[s.total, { color: c.primary }]}>{formatCurrency(total, currencyCode)}</Text>
+        </View>
+        {value && (
+          <AppPressable
+            onPress={() => {
+              onChange(undefined);
+              onClose();
+            }}
+            style={s.remove}
+          >
+            <Text style={{ color: c.error }}>Remove</Text>
+          </AppPressable>
+        )}
+        <AppPressable
+          disabled={!rows.length}
+          onPress={() => {
+            try {
+              onChange(
+                createScrapExchange(
+                  rows.map((row) => ({
+                    product: row.product,
+                    quantity: Number(row.quantity),
+                    unitPrice: Number(row.rate),
+                  })),
+                ),
+              );
+              onClose();
+            } catch {
+              /* invalid rows stay editable */
+            }
+          }}
+          style={[s.done, { backgroundColor: rows.length ? c.primary : c.surfaceMuted }]}
+        >
+          <Text style={s.doneText}>Apply exchange</Text>
+        </AppPressable>
+      </View>
+    </View>
+  );
+  if (embedded) return visible ? panel : null;
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <SafeAreaView style={s.overlay}>
-        <View style={[s.sheet, { backgroundColor: c.surface }]}>
-          <View style={s.header}>
-            <View style={s.titleRow}>
-              <Recycle size={20} color={c.primary} />
-              <Text style={[s.title, { color: c.text }]}>Customer scrap exchange</Text>
-            </View>
-            <AppPressable accessibilityLabel="Close scrap exchange" onPress={onClose}>
-              <X color={c.textSecondary} />
-            </AppPressable>
-          </View>
-          <Text style={[s.help, { color: c.textSecondary }]}>
-            Record items received from the customer. Their value is settled against this bill.
-          </Text>
-          <ScrollView contentContainerStyle={s.content}>
-            {rows.map((row, index) => (
-              <View key={`${row.product.id}:${index}`} style={[s.row, { borderColor: c.outlineMuted }]}>
-                <View style={s.name}>
-                  <Text style={[s.product, { color: c.text }]}>{row.product.name}</Text>
-                  <Text style={[s.caption, { color: c.textSecondary }]}>Quantity × rate</Text>
-                </View>
-                <TextInput
-                  value={row.quantity}
-                  onChangeText={(quantity) => update(index, { quantity })}
-                  keyboardType="decimal-pad"
-                  style={[s.input, { color: c.text, borderColor: c.outline }]}
-                />
-                <TextInput
-                  value={row.rate}
-                  onChangeText={(rate) => update(index, { rate })}
-                  keyboardType="decimal-pad"
-                  style={[s.input, s.rate, { color: c.text, borderColor: c.outline }]}
-                />
-                <AppPressable
-                  accessibilityLabel={`Remove ${row.product.name}`}
-                  onPress={() => setRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}
-                >
-                  <Trash2 size={18} color={c.error} />
-                </AppPressable>
-              </View>
-            ))}
-            <Text style={[s.section, { color: c.textSecondary }]}>Available scrap products</Text>
-            {products.map((product) => (
-              <AppPressable
-                key={product.id}
-                onPress={() => add(product)}
-                style={[s.option, { backgroundColor: c.surfaceMuted }]}
-              >
-                <Text style={[s.product, { color: c.text }]}>{product.name}</Text>
-                <Plus size={18} color={c.primary} />
-              </AppPressable>
-            ))}
-            {!products.length && (
-              <Text style={[s.empty, { color: c.textSecondary }]}>
-                Create products in a SCRAP category before accepting an exchange.
-              </Text>
-            )}
-          </ScrollView>
-          <View style={[s.footer, { borderTopColor: c.outlineMuted }]}>
-            <View>
-              <Text style={[s.caption, { color: c.textSecondary }]}>Scrap credit</Text>
-              <Text style={[s.total, { color: c.primary }]}>{formatCurrency(total, currencyCode)}</Text>
-            </View>
-            {value && (
-              <AppPressable
-                onPress={() => {
-                  onChange(undefined);
-                  onClose();
-                }}
-                style={s.remove}
-              >
-                <Text style={{ color: c.error }}>Remove</Text>
-              </AppPressable>
-            )}
-            <AppPressable
-              disabled={!rows.length}
-              onPress={() => {
-                try {
-                  onChange(
-                    createScrapExchange(
-                      rows.map((row) => ({
-                        product: row.product,
-                        quantity: Number(row.quantity),
-                        unitPrice: Number(row.rate),
-                      })),
-                    ),
-                  );
-                  onClose();
-                } catch {
-                  /* invalid rows stay editable */
-                }
-              }}
-              style={[s.done, { backgroundColor: rows.length ? c.primary : c.surfaceMuted }]}
-            >
-              <Text style={s.doneText}>Apply exchange</Text>
-            </AppPressable>
-          </View>
-        </View>
-      </SafeAreaView>
+      <SafeAreaView style={s.overlay}>{panel}</SafeAreaView>
     </Modal>
   );
 }
@@ -159,6 +175,7 @@ export function ScrapExchangeDialog({ visible, products, value, currencyCode, on
 const s = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,.55)', justifyContent: 'flex-end' },
   sheet: { maxHeight: '88%', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 },
+  embedded: { flex: 1, maxHeight: '100%', borderTopLeftRadius: 0, borderTopRightRadius: 0 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   title: { fontSize: 18, fontWeight: '900' },

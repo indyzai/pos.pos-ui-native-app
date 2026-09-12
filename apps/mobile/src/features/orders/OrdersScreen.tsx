@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AlertCircle, CheckCircle2, Clock3, ReceiptText, RotateCcw, Search } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
 import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
@@ -33,7 +34,7 @@ export function OrdersScreen() {
       await data.refresh(next.signal);
     } catch (error) {
       if (!next.signal.aborted)
-        Alert.alert('Orders refresh failed', error instanceof Error ? error.message : 'Try again.');
+        showSnackbar('Orders refresh failed', error instanceof Error ? error.message : 'Try again.');
     } finally {
       if (controller.current === next) {
         controller.current = undefined;
@@ -204,10 +205,10 @@ export function OrdersScreen() {
             .then(() => {
               setRefundOrder(undefined);
               setTab('refunds');
-              Alert.alert('Refund saved', 'The credit note is stored locally and will sync on refresh.');
+              showSnackbar('Refund saved', 'The credit note is stored locally and will sync on refresh.');
             })
             .catch((error) =>
-              Alert.alert('Could not save refund', error instanceof Error ? error.message : 'Try again.'),
+              showSnackbar('Could not save refund', error instanceof Error ? error.message : 'Try again.'),
             );
         }}
       />

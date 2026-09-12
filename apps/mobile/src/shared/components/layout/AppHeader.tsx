@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { showSnackbar } from '../../providers/SnackbarProvider';
 import {
   ChevronLeft,
   ChevronRight,
@@ -110,15 +110,15 @@ export function AppHeader({
   };
   const handleDebugUser = async () => {
     const storedUser = session?.user;
-    Alert.alert('Debug user', storedUser ? JSON.stringify(storedUser, null, 2) : 'No stored user found.');
+    showSnackbar('Debug user', storedUser ? JSON.stringify(storedUser, null, 2) : 'No stored user found.');
   };
   const handleSwitchBusiness = () => {
     const tenants = user?.tenants ?? [];
     if (tenants.length < 2) {
-      Alert.alert('Switch business', 'There are no other businesses linked to this account.');
+      showSnackbar('Switch business', 'There are no other businesses linked to this account.');
       return;
     }
-    Alert.alert('Switch business', 'Choose the business you want to use.', [
+    showSnackbar('Switch business', 'Choose the business you want to use.', [
       ...tenants.map((tenant) => ({
         text: tenant.name || 'Unnamed business',
         onPress: () => {

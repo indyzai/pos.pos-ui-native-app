@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { PanResponder, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   ArrowRight,
+  ArrowLeft,
   Banknote,
   ChevronDown,
   ChevronUp,
@@ -59,6 +60,9 @@ type Props = {
   currencyCode?: string;
   scrapValue?: number;
   onScrap?: () => void;
+  innerContent?: ReactNode;
+  innerTitle?: string;
+  onInnerBack?: () => void;
 };
 export function OrderCart({
   items,
@@ -91,6 +95,9 @@ export function OrderCart({
   currencyCode = 'INR',
   scrapValue = 0,
   onScrap,
+  innerContent,
+  innerTitle,
+  onInnerBack,
 }: Props) {
   const { isDark, themeColors: c } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -118,43 +125,62 @@ export function OrderCart({
       ]}
     >
       <View {...headerPanResponder.panHandlers} style={s.head}>
-        <View>
-          <Text style={[s.title, { color: c.text }]}>Current order</Text>
-          <Text style={[s.subtitle, { color: c.textSecondary }]}>
-            {itemCount ? `${itemCount} item${itemCount > 1 ? 's' : ''} in cart` : 'Add items to start a sale'}
-          </Text>
+        <View style={s.headerTitleRow}>
+          {innerContent && onInnerBack ? (
+            <AppPressable
+              accessibilityLabel="Back to cart"
+              onPress={onInnerBack}
+              style={[s.headerBack, { backgroundColor: c.surfaceMuted }]}
+            >
+              <ArrowLeft size={17} color={c.textSecondary} />
+            </AppPressable>
+          ) : null}
+          <View>
+            <Text style={[s.title, { color: c.text }]}>{innerContent ? innerTitle : 'Current order'}</Text>
+            <Text style={[s.subtitle, { color: c.textSecondary }]}>
+              {itemCount
+                ? `${itemCount} item${itemCount > 1 ? 's' : ''} in cart`
+                : 'Add items to start a sale'}
+            </Text>
+          </View>
         </View>
         <View style={s.headActions}>
-          <AppPressable
-            accessibilityLabel={`Held orders, ${heldOrderCount}`}
-            onPress={onShowHeldOrders}
-            style={[s.headerAction, { backgroundColor: c.surfaceMuted }]}
-          >
-            <Clock3 size={15} color={c.textSecondary} />
-            {heldOrderCount > 0 && (
-              <View style={[s.heldBadge, { backgroundColor: c.primary }]}>
-                <Text style={s.heldBadgeText}>{heldOrderCount}</Text>
-              </View>
-            )}
-          </AppPressable>
-          <AppPressable
-            accessibilityLabel="Record petty cash"
-            onPress={onPettyCash}
-            style={[s.headerAction, { backgroundColor: c.surfaceMuted }]}
-          >
-            <Wallet size={15} color={c.textSecondary} />
-          </AppPressable>
-          <AppPressable
-            accessibilityLabel="Hold current order"
-            disabled={!items.length}
-            onPress={() => void onHold()}
-            style={[s.headerAction, { backgroundColor: c.surfaceMuted, opacity: items.length ? 1 : 0.4 }]}
-          >
-            <Pause size={15} color={c.textSecondary} />
-          </AppPressable>
-          <AppPressable disabled={!items.length} onPress={onClear}>
-            <Text style={[s.clear, { color: c.error }, !items.length && { color: c.outline }]}>Clear</Text>
-          </AppPressable>
+          {!innerContent && (
+            <>
+              <AppPressable
+                accessibilityLabel={`Held orders, ${heldOrderCount}`}
+                onPress={onShowHeldOrders}
+                style={[s.headerAction, { backgroundColor: c.surfaceMuted }]}
+              >
+                <Clock3 size={15} color={c.textSecondary} />
+                {heldOrderCount > 0 && (
+                  <View style={[s.heldBadge, { backgroundColor: c.primary }]}>
+                    <Text style={s.heldBadgeText}>{heldOrderCount}</Text>
+                  </View>
+                )}
+              </AppPressable>
+              <AppPressable
+                accessibilityLabel="Record petty cash"
+                onPress={onPettyCash}
+                style={[s.headerAction, { backgroundColor: c.surfaceMuted }]}
+              >
+                <Wallet size={15} color={c.textSecondary} />
+              </AppPressable>
+              <AppPressable
+                accessibilityLabel="Hold current order"
+                disabled={!items.length}
+                onPress={() => void onHold()}
+                style={[s.headerAction, { backgroundColor: c.surfaceMuted, opacity: items.length ? 1 : 0.4 }]}
+              >
+                <Pause size={15} color={c.textSecondary} />
+              </AppPressable>
+              <AppPressable disabled={!items.length} onPress={onClear}>
+                <Text style={[s.clear, { color: c.error }, !items.length && { color: c.outline }]}>
+                  Clear
+                </Text>
+              </AppPressable>
+            </>
+          )}
           <AppPressable
             accessibilityLabel="Close cart"
             onPress={onClose}
@@ -164,233 +190,255 @@ export function OrderCart({
           </AppPressable>
         </View>
       </View>
-      <AppPressable onPress={onSelectCustomer} style={[s.customer, { backgroundColor: c.surfaceMuted }]}>
-        <UserRound size={15} color={c.primary} />
-        <View style={s.customerText}>
-          <Text numberOfLines={1} style={[s.customerName, { color: c.text }]}>
-            {customer?.name || 'Walk-in customer'}
-          </Text>
-          <Text style={[s.customerHint, { color: c.textSecondary }]}>
-            {customer ? customer.phone || customer.email || 'Customer selected' : 'Tap to select customer'}
-          </Text>
-        </View>
-        <Text style={[s.changeCustomer, { color: c.primary }]}>Change</Text>
-      </AppPressable>
-      {items.length ? (
-        <ScrollView style={[s.rows, { borderColor: c.outlineMuted }]}>
-          {items.map((item) => {
-            const rowId = item.lineId || item.id;
-            return (
-              <SwipeableCartRow key={rowId} onRemove={() => onChange(rowId, -item.quantity)}>
-                <View style={[s.itemCard, { borderColor: c.outlineMuted, backgroundColor: c.surface }]}>
-                  <View style={s.row}>
-                    <View style={[s.thumb, { backgroundColor: isDark ? c.surfaceMuted : item.color }]}>
-                      <Text>{item.emoji}</Text>
-                    </View>
-                    <View style={s.product}>
-                      <Text numberOfLines={1} style={[s.productName, { color: c.text }]}>
-                        {item.name}
-                      </Text>
-                      <Text style={[s.productPrice, { color: c.textSecondary }]}>{money(item.price)}</Text>
-                      {item.customization?.label ? (
-                        <Text numberOfLines={2} style={[s.customization, { color: c.primary }]}>
-                          {item.customization.label}
-                        </Text>
-                      ) : null}
-                      {item.customization?.notes ? (
-                        <Text numberOfLines={2} style={[s.itemNotes, { color: c.textSecondary }]}>
-                          {item.customization.notes}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <View style={s.qty}>
-                      <AppPressable
-                        onPress={() => onChange(rowId, -1)}
-                        style={[s.qtyButton, { backgroundColor: c.surfaceMuted }]}
-                      >
-                        <Text style={[s.qtySymbol, { color: c.textSecondary }]}>−</Text>
-                      </AppPressable>
-                      <Text style={[s.qtyValue, { color: c.text }]}>{item.quantity}</Text>
-                      <AppPressable
-                        disabled={item.quantity >= item.stock}
-                        onPress={() => onChange(rowId, 1)}
-                        style={[
-                          s.qtyButton,
-                          { backgroundColor: c.surfaceMuted, opacity: item.quantity >= item.stock ? 0.4 : 1 },
-                        ]}
-                      >
-                        <Text style={[s.qtySymbol, { color: c.textSecondary }]}>+</Text>
-                      </AppPressable>
-                    </View>
-                    <Text style={[s.lineTotal, { color: c.text }]}>
-                      {money(item.price * item.quantity - (item.discount || 0))}
-                    </Text>
-                    {(allowItemDiscounts || taxRates.length > 0) && (
-                      <AppPressable
-                        accessibilityLabel={`${expandedItem === rowId ? 'Hide' : 'Edit'} ${item.name} discount`}
-                        onPress={() => setExpandedItem((value) => (value === rowId ? undefined : rowId))}
-                        style={[s.expand, { backgroundColor: c.surfaceMuted }]}
-                      >
-                        {expandedItem === rowId ? (
-                          <ChevronUp size={14} color={c.textSecondary} />
-                        ) : (
-                          <ChevronDown size={14} color={c.textSecondary} />
-                        )}
-                      </AppPressable>
-                    )}
-                  </View>
-                  {(allowItemDiscounts || taxRates.length > 0) && expandedItem === rowId && (
-                    <View style={[s.itemDetails, { borderTopColor: c.outlineMuted }]}>
-                      {allowItemDiscounts && (
-                        <>
-                          <View style={s.discountLabel}>
-                            <Tag size={13} color={c.textSecondary} />
-                            <Text style={[s.discountText, { color: c.textSecondary }]}>Item discount</Text>
-                          </View>
-                          <TextInput
-                            value={item.discount ? String(item.discount) : ''}
-                            onChangeText={(value) => onItemDiscount(rowId, Number(value) || 0)}
-                            keyboardType="decimal-pad"
-                            placeholder={formatCurrency(0, currencyCode, 0)}
-                            placeholderTextColor={c.textSecondary}
+      {innerContent ? (
+        <View style={s.innerContent}>{innerContent}</View>
+      ) : (
+        <>
+          <AppPressable onPress={onSelectCustomer} style={[s.customer, { backgroundColor: c.surfaceMuted }]}>
+            <UserRound size={15} color={c.primary} />
+            <View style={s.customerText}>
+              <Text numberOfLines={1} style={[s.customerName, { color: c.text }]}>
+                {customer?.name || 'Walk-in customer'}
+              </Text>
+              <Text style={[s.customerHint, { color: c.textSecondary }]}>
+                {customer
+                  ? customer.phone || customer.email || 'Customer selected'
+                  : 'Tap to select customer'}
+              </Text>
+            </View>
+            <Text style={[s.changeCustomer, { color: c.primary }]}>Change</Text>
+          </AppPressable>
+          {items.length ? (
+            <ScrollView style={[s.rows, { borderColor: c.outlineMuted }]}>
+              {items.map((item) => {
+                const rowId = item.lineId || item.id;
+                return (
+                  <SwipeableCartRow key={rowId} onRemove={() => onChange(rowId, -item.quantity)}>
+                    <View style={[s.itemCard, { borderColor: c.outlineMuted, backgroundColor: c.surface }]}>
+                      <View style={s.row}>
+                        <View style={[s.thumb, { backgroundColor: isDark ? c.surfaceMuted : item.color }]}>
+                          <Text>{item.emoji}</Text>
+                        </View>
+                        <View style={s.product}>
+                          <Text numberOfLines={1} style={[s.productName, { color: c.text }]}>
+                            {item.name}
+                          </Text>
+                          <Text style={[s.productPrice, { color: c.textSecondary }]}>
+                            {money(item.price)}
+                          </Text>
+                          {item.customization?.label ? (
+                            <Text numberOfLines={2} style={[s.customization, { color: c.primary }]}>
+                              {item.customization.label}
+                            </Text>
+                          ) : null}
+                          {item.customization?.notes ? (
+                            <Text numberOfLines={2} style={[s.itemNotes, { color: c.textSecondary }]}>
+                              {item.customization.notes}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View style={s.qty}>
+                          <AppPressable
+                            onPress={() => onChange(rowId, -1)}
+                            style={[s.qtyButton, { backgroundColor: c.surfaceMuted }]}
+                          >
+                            <Text style={[s.qtySymbol, { color: c.textSecondary }]}>−</Text>
+                          </AppPressable>
+                          <Text style={[s.qtyValue, { color: c.text }]}>{item.quantity}</Text>
+                          <AppPressable
+                            disabled={item.quantity >= item.stock}
+                            onPress={() => onChange(rowId, 1)}
                             style={[
-                              s.discountInput,
-                              { color: c.text, backgroundColor: c.background, borderColor: c.outline },
+                              s.qtyButton,
+                              {
+                                backgroundColor: c.surfaceMuted,
+                                opacity: item.quantity >= item.stock ? 0.4 : 1,
+                              },
                             ]}
-                          />
-                        </>
-                      )}
-                      {!!taxRates.length && (
-                        <View style={s.taxPicker}>
-                          {taxRates.map((taxRate) => {
-                            const selected = Number(item.taxRate || 0) === taxRate.percentage;
-                            return (
-                              <AppPressable
-                                key={taxRate.id}
-                                accessibilityLabel={`Set ${item.name} tax to ${taxRate.percentage}%`}
-                                onPress={() => onItemTaxRate(rowId, taxRate.percentage)}
-                                style={[
-                                  s.taxOption,
-                                  {
-                                    borderColor: selected ? c.primary : c.outline,
-                                    backgroundColor: selected ? c.primarySoft : c.background,
-                                  },
-                                ]}
-                              >
-                                <Text
-                                  style={[s.taxOptionText, { color: selected ? c.primary : c.textSecondary }]}
-                                >
-                                  {taxRate.percentage}%
+                          >
+                            <Text style={[s.qtySymbol, { color: c.textSecondary }]}>+</Text>
+                          </AppPressable>
+                        </View>
+                        <Text style={[s.lineTotal, { color: c.text }]}>
+                          {money(item.price * item.quantity - (item.discount || 0))}
+                        </Text>
+                        {(allowItemDiscounts || taxRates.length > 0) && (
+                          <AppPressable
+                            accessibilityLabel={`${expandedItem === rowId ? 'Hide' : 'Edit'} ${item.name} discount`}
+                            onPress={() => setExpandedItem((value) => (value === rowId ? undefined : rowId))}
+                            style={[s.expand, { backgroundColor: c.surfaceMuted }]}
+                          >
+                            {expandedItem === rowId ? (
+                              <ChevronUp size={14} color={c.textSecondary} />
+                            ) : (
+                              <ChevronDown size={14} color={c.textSecondary} />
+                            )}
+                          </AppPressable>
+                        )}
+                      </View>
+                      {(allowItemDiscounts || taxRates.length > 0) && expandedItem === rowId && (
+                        <View style={[s.itemDetails, { borderTopColor: c.outlineMuted }]}>
+                          {allowItemDiscounts && (
+                            <>
+                              <View style={s.discountLabel}>
+                                <Tag size={13} color={c.textSecondary} />
+                                <Text style={[s.discountText, { color: c.textSecondary }]}>
+                                  Item discount
                                 </Text>
-                              </AppPressable>
-                            );
-                          })}
+                              </View>
+                              <TextInput
+                                value={item.discount ? String(item.discount) : ''}
+                                onChangeText={(value) => onItemDiscount(rowId, Number(value) || 0)}
+                                keyboardType="decimal-pad"
+                                placeholder={formatCurrency(0, currencyCode, 0)}
+                                placeholderTextColor={c.textSecondary}
+                                style={[
+                                  s.discountInput,
+                                  { color: c.text, backgroundColor: c.background, borderColor: c.outline },
+                                ]}
+                              />
+                            </>
+                          )}
+                          {!!taxRates.length && (
+                            <View style={s.taxPicker}>
+                              {taxRates.map((taxRate) => {
+                                const selected = Number(item.taxRate || 0) === taxRate.percentage;
+                                return (
+                                  <AppPressable
+                                    key={taxRate.id}
+                                    accessibilityLabel={`Set ${item.name} tax to ${taxRate.percentage}%`}
+                                    onPress={() => onItemTaxRate(rowId, taxRate.percentage)}
+                                    style={[
+                                      s.taxOption,
+                                      {
+                                        borderColor: selected ? c.primary : c.outline,
+                                        backgroundColor: selected ? c.primarySoft : c.background,
+                                      },
+                                    ]}
+                                  >
+                                    <Text
+                                      style={[
+                                        s.taxOptionText,
+                                        { color: selected ? c.primary : c.textSecondary },
+                                      ]}
+                                    >
+                                      {taxRate.percentage}%
+                                    </Text>
+                                  </AppPressable>
+                                );
+                              })}
+                            </View>
+                          )}
                         </View>
                       )}
                     </View>
-                  )}
-                </View>
-              </SwipeableCartRow>
-            );
-          })}
-        </ScrollView>
-      ) : (
-        <View style={[s.empty, { borderColor: c.outlineMuted }]}>
-          <Text>🛍</Text>
-          <Text style={[s.emptyText, { color: c.textSecondary }]}>Your cart is empty</Text>
-        </View>
-      )}
-      <View style={[s.checkoutFooter, { paddingBottom: insets.bottom }]}>
-        {allowOrderDiscounts && items.length > 0 && (
-          <View style={s.orderDiscount}>
-            <View style={s.discountLabel}>
-              <Tag size={13} color={c.textSecondary} />
-              <Text style={[s.discountText, { color: c.textSecondary }]}>Order discount</Text>
+                  </SwipeableCartRow>
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <View style={[s.empty, { borderColor: c.outlineMuted }]}>
+              <Text>🛍</Text>
+              <Text style={[s.emptyText, { color: c.textSecondary }]}>Your cart is empty</Text>
             </View>
-            <TextInput
-              value={orderDiscount ? String(orderDiscount) : ''}
-              onChangeText={(value) => onOrderDiscount(Number(value) || 0)}
-              keyboardType="decimal-pad"
-              placeholder={formatCurrency(0, currencyCode, 0)}
-              placeholderTextColor={c.textSecondary}
-              style={[
-                s.discountInput,
-                { color: c.text, backgroundColor: c.background, borderColor: c.outline },
-              ]}
-            />
-          </View>
-        )}
-        <View style={s.summary}>
-          <Line label="Subtotal" value={money(subtotal)} />
-          {discount > 0 && <Line label="Discount" value={`-${money(discount)}`} />}
-          <Line label="Tax" value={money(tax)} />
-          {scrapValue > 0 && <Line label="Scrap credit" value={`-${money(scrapValue)}`} />}
-          <View style={[s.total, { borderColor: c.outlineMuted }]}>
-            <Text style={[s.totalLabel, { color: c.text }]}>Total</Text>
-            <Text style={[s.totalValue, { color: c.primary }]}>{money(total)}</Text>
-          </View>
-        </View>
-        {onScrap && (
-          <AppPressable onPress={onScrap} style={[s.scrap, { backgroundColor: c.surfaceMuted }]}>
-            <Recycle size={15} color={c.primary} />
-            <Text style={[s.paymentText, { color: c.primary }]}>
-              {scrapValue ? `Edit scrap · ${money(scrapValue)}` : 'Add customer scrap'}
-            </Text>
-          </AppPressable>
-        )}
-        <View style={s.paymentRow}>
-          {paymentMethods
-            .filter((method) => method.isQuickAccess)
-            .slice(0, 3)
-            .map((method) => {
-              const Icon = method.code === 'CASH' ? Banknote : method.code === 'CARD' ? CreditCard : ScanLine;
-              return (
-                <AppPressable
-                  key={method.id}
-                  onPress={() => onPayment(method.code)}
+          )}
+          <View style={[s.checkoutFooter, { paddingBottom: insets.bottom }]}>
+            {allowOrderDiscounts && items.length > 0 && (
+              <View style={s.orderDiscount}>
+                <View style={s.discountLabel}>
+                  <Tag size={13} color={c.textSecondary} />
+                  <Text style={[s.discountText, { color: c.textSecondary }]}>Order discount</Text>
+                </View>
+                <TextInput
+                  value={orderDiscount ? String(orderDiscount) : ''}
+                  onChangeText={(value) => onOrderDiscount(Number(value) || 0)}
+                  keyboardType="decimal-pad"
+                  placeholder={formatCurrency(0, currencyCode, 0)}
+                  placeholderTextColor={c.textSecondary}
                   style={[
-                    s.payment,
-                    { borderColor: c.outline, backgroundColor: c.surface },
-                    payment === method.code && { backgroundColor: c.surfaceAccent, borderColor: c.primary },
+                    s.discountInput,
+                    { color: c.text, backgroundColor: c.background, borderColor: c.outline },
                   ]}
-                >
-                  <Icon
-                    size={14}
-                    color={payment === method.code ? c.primary : c.textSecondary}
-                    strokeWidth={2.2}
-                  />
-                  <Text
-                    style={[
-                      s.paymentText,
-                      { color: c.textSecondary },
-                      payment === method.code && { color: c.primary },
-                    ]}
-                  >
-                    {method.name}
-                  </Text>
-                </AppPressable>
-              );
-            })}
-        </View>
-        <AppPressable
-          disabled={!items.length}
-          onPress={onCheckout}
-          style={[
-            s.charge,
-            { backgroundColor: items.length ? c.primarySoft : c.surfaceMuted },
-            items.length > 0 && { borderColor: c.primary },
-          ]}
-        >
-          <Text style={[s.chargeText, { color: items.length ? c.primary : c.textSecondary }]}>
-            {counterClosed
-              ? 'Open counter to checkout'
-              : items.length
-                ? `Charge ${money(Math.max(0, total - scrapValue))}`
-                : 'Add items to checkout'}
-          </Text>
-          <ArrowRight size={21} color={items.length ? c.primary : c.textSecondary} strokeWidth={2.7} />
-        </AppPressable>
-      </View>
+                />
+              </View>
+            )}
+            <View style={s.summary}>
+              <Line label="Subtotal" value={money(subtotal)} />
+              {discount > 0 && <Line label="Discount" value={`-${money(discount)}`} />}
+              <Line label="Tax" value={money(tax)} />
+              {scrapValue > 0 && <Line label="Scrap credit" value={`-${money(scrapValue)}`} />}
+              <View style={[s.total, { borderColor: c.outlineMuted }]}>
+                <Text style={[s.totalLabel, { color: c.text }]}>Total</Text>
+                <Text style={[s.totalValue, { color: c.primary }]}>{money(total)}</Text>
+              </View>
+            </View>
+            {onScrap && (
+              <AppPressable onPress={onScrap} style={[s.scrap, { backgroundColor: c.surfaceMuted }]}>
+                <Recycle size={15} color={c.primary} />
+                <Text style={[s.paymentText, { color: c.primary }]}>
+                  {scrapValue ? `Edit scrap · ${money(scrapValue)}` : 'Add customer scrap'}
+                </Text>
+              </AppPressable>
+            )}
+            <View style={s.paymentRow}>
+              {paymentMethods
+                .filter((method) => method.isQuickAccess)
+                .slice(0, 3)
+                .map((method) => {
+                  const Icon =
+                    method.code === 'CASH' ? Banknote : method.code === 'CARD' ? CreditCard : ScanLine;
+                  return (
+                    <AppPressable
+                      key={method.id}
+                      onPress={() => onPayment(method.code)}
+                      style={[
+                        s.payment,
+                        { borderColor: c.outline, backgroundColor: c.surface },
+                        payment === method.code && {
+                          backgroundColor: c.surfaceAccent,
+                          borderColor: c.primary,
+                        },
+                      ]}
+                    >
+                      <Icon
+                        size={14}
+                        color={payment === method.code ? c.primary : c.textSecondary}
+                        strokeWidth={2.2}
+                      />
+                      <Text
+                        style={[
+                          s.paymentText,
+                          { color: c.textSecondary },
+                          payment === method.code && { color: c.primary },
+                        ]}
+                      >
+                        {method.name}
+                      </Text>
+                    </AppPressable>
+                  );
+                })}
+            </View>
+            <AppPressable
+              disabled={!items.length}
+              onPress={onCheckout}
+              style={[
+                s.charge,
+                { backgroundColor: items.length ? c.primarySoft : c.surfaceMuted },
+                items.length > 0 && { borderColor: c.primary },
+              ]}
+            >
+              <Text style={[s.chargeText, { color: items.length ? c.primary : c.textSecondary }]}>
+                {counterClosed
+                  ? 'Open counter to checkout'
+                  : items.length
+                    ? `Charge ${money(Math.max(0, total - scrapValue))}`
+                    : 'Add items to checkout'}
+              </Text>
+              <ArrowRight size={21} color={items.length ? c.primary : c.textSecondary} strokeWidth={2.7} />
+            </AppPressable>
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -415,6 +463,9 @@ const s = StyleSheet.create({
   },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10 },
   headActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerTitleRow: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  headerBack: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  innerContent: { flex: 1, minHeight: 0, overflow: 'hidden' },
   scrap: {
     minHeight: 38,
     borderRadius: 10,

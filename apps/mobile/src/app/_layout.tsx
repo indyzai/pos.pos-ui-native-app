@@ -12,19 +12,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';
 import { AppHeaderProvider } from '../shared/providers/AppHeaderProvider';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
+import { SnackbarProvider } from '../shared/providers/SnackbarProvider';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <AuthSessionProvider>
-            <DatabaseProvider>
-              <AppHeaderProvider>
-                <RootNavigator />
-              </AppHeaderProvider>
-            </DatabaseProvider>
-          </AuthSessionProvider>
+          <SnackbarProvider>
+            <AuthSessionProvider>
+              <DatabaseProvider>
+                <AppHeaderProvider>
+                  <RootNavigator />
+                </AppHeaderProvider>
+              </DatabaseProvider>
+            </AuthSessionProvider>
+          </SnackbarProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

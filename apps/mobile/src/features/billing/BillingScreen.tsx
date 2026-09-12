@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingCart } from 'lucide-react-native';
 import {
-  Alert,
   Animated,
-  InteractionManager,
   Modal,
   PanResponder,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -59,6 +58,18 @@ import { PharmacyBatchDialog } from './components/PharmacyBatchDialog';
 import { ScrapExchangeDialog } from './components/ScrapExchangeDialog';
 import type { ScrapExchange } from './types/billing';
 import { canManageScrap } from '../scrap/permissions';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
+
+type CartPage = 'cart' | 'customer' | 'held-orders' | 'petty-cash' | 'scrap' | 'checkout';
+const useNativeAnimationDriver = Platform.OS !== 'web';
+const cartPageTitles: Record<CartPage, string> = {
+  cart: 'Current order',
+  customer: 'Select customer',
+  'held-orders': 'Held orders',
+  'petty-cash': 'Petty cash',
+  scrap: 'Customer scrap exchange',
+  checkout: 'Checkout & payment',
+};
 
 export function BillingScreen() {
   const { themeColors } = useAppTheme();
@@ -85,6 +96,7 @@ export function BillingScreen() {
   const [scrapOpen, setScrapOpen] = useState(false);
   const [scrapExchange, setScrapExchange] = useState<ScrapExchange>();
   const [cartOpen, setCartOpen] = useState(false);
+  const [cartPage, setCartPage] = useState<CartPage>('cart');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -94,7 +106,8 @@ export function BillingScreen() {
   const isTablet = width >= 700;
   const isWide = isTablet && width > height;
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
-  const cartDialogTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const cartContentTranslateX = useRef(new Animated.Value(0)).current;
+  const cartContentAnimating = useRef(false);
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
   const { requestCounterDialog, setFeatureRefresh, setRefreshJob } = useAppHeader();
@@ -138,7 +151,6 @@ export function BillingScreen() {
   useEffect(
     () => () => {
       refreshController.current?.abort();
-      if (cartDialogTimer.current) clearTimeout(cartDialogTimer.current);
       setRefreshJob(undefined);
     },
     [setRefreshJob],
@@ -172,23 +184,74 @@ export function BillingScreen() {
     [category, search, products],
   );
   const closeCart = () => {
+    cartContentTranslateX.stopAnimation();
+    cartContentAnimating.current = false;
     setCartOpen(false);
+    setCartPage('cart');
     sheetTranslateY.setValue(0);
+    cartContentTranslateX.setValue(0);
   };
-  const openFromCart = (openDialog: () => void) => {
-    if (isWide) {
-      openDialog();
-      return;
-    }
-
-    closeCart();
-    if (cartDialogTimer.current) clearTimeout(cartDialogTimer.current);
-    InteractionManager.runAfterInteractions(() => {
-      // Native Modal dismissal is asynchronous. Waiting for the sheet animation
-      // prevents a second native modal from being presented behind the cart.
-      cartDialogTimer.current = setTimeout(openDialog, 320);
+  const replaceCartPage = (page: CartPage) => {
+    if (page === cartPage || cartContentAnimating.current) return;
+    const direction = page === 'cart' ? -1 : 1;
+    cartContentAnimating.current = true;
+    Animated.timing(cartContentTranslateX, {
+      toValue: -direction * width,
+      duration: 150,
+      useNativeDriver: useNativeAnimationDriver,
+    }).start(() => {
+      setCartPage(page);
+      cartContentTranslateX.setValue(direction * width);
+      requestAnimationFrame(() => {
+        Animated.spring(cartContentTranslateX, {
+          toValue: 0,
+          damping: 22,
+          stiffness: 240,
+          mass: 0.75,
+          useNativeDriver: useNativeAnimationDriver,
+        }).start(() => {
+          cartContentAnimating.current = false;
+        });
+      });
     });
   };
+  const openCartPage = (page: CartPage, openWideDialog: () => void) => {
+    if (isWide) {
+      openWideDialog();
+      return;
+    }
+    replaceCartPage(page);
+  };
+  const closeCartPage = (closeWideDialog: () => void) =>
+    isWide ? closeWideDialog() : replaceCartPage('cart');
+  const cartPagePanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gesture) =>
+          cartPage !== 'cart' && gesture.dx > 12 && gesture.dx > Math.abs(gesture.dy),
+        onPanResponderMove: (_event, gesture) => cartContentTranslateX.setValue(Math.max(0, gesture.dx)),
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dx > width * 0.25 || gesture.vx > 0.7) {
+            replaceCartPage('cart');
+            return;
+          }
+          Animated.spring(cartContentTranslateX, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 240,
+            useNativeDriver: useNativeAnimationDriver,
+          }).start();
+        },
+        onPanResponderTerminate: () =>
+          Animated.spring(cartContentTranslateX, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 240,
+            useNativeDriver: useNativeAnimationDriver,
+          }).start(),
+      }),
+    [cartContentTranslateX, cartPage, width],
+  );
   const checkout = () => {
     if (!cart.items.length || submitting) return;
     if (!billingAllowed) {
@@ -196,7 +259,7 @@ export function BillingScreen() {
       return;
     }
     if (mode.mode === 'restaurant' && restaurantOrderMode === 'DINE_IN' && !restaurantTable) {
-      Alert.alert('Select a table', 'Choose a table before checking out a dine-in order.');
+      showSnackbar('Select a table', 'Choose a table before checking out a dine-in order.');
       return;
     }
     if (
@@ -204,17 +267,17 @@ export function BillingScreen() {
       cart.items.some((item) => item.details?.prescriptionRequired || item.details?.scheduledDrug) &&
       !doctorName.trim()
     ) {
-      Alert.alert('Prescription details required', 'Enter the prescribing doctor before checkout.');
+      showSnackbar('Prescription details required', 'Enter the prescribing doctor before checkout.');
       return;
     }
     if (mode.mode === 'electronics') {
       const trackingError = validateTrackedDevices(cart.items);
       if (trackingError) {
-        Alert.alert('Device details required', trackingError);
+        showSnackbar('Device details required', trackingError);
         return;
       }
     }
-    openFromCart(() => setCheckoutOpen(true));
+    openCartPage('checkout', () => setCheckoutOpen(true));
   };
   const currentOrderContext = () =>
     mode.mode === 'restaurant'
@@ -241,7 +304,7 @@ export function BillingScreen() {
           : undefined;
   const addStandardProduct = (product: Product) => {
     if (mode.mode === 'pharmacy' && pharmacyProductStatus(product).expired) {
-      Alert.alert('Expired stock', `${product.name} cannot be added because its expiry date has passed.`);
+      showSnackbar('Expired stock', `${product.name} cannot be added because its expiry date has passed.`);
       return;
     }
     cart.addItem(product);
@@ -271,7 +334,7 @@ export function BillingScreen() {
       setScrapExchange(undefined);
       if (!isWide) closeCart();
     } catch (error) {
-      Alert.alert('Could not hold order', error instanceof Error ? error.message : 'Try again.');
+      showSnackbar('Could not hold order', error instanceof Error ? error.message : 'Try again.');
     }
   };
   const completeCheckout = async (checkoutPayment: CheckoutPayment) => {
@@ -303,6 +366,7 @@ export function BillingScreen() {
       setPrescriptionReference('');
       setScrapExchange(undefined);
       setCartOpen(false);
+      setCartPage('cart');
       setCheckoutOpen(false);
       const organization = auth.session?.organization;
       const activeSession = organization?.activeSession;
@@ -327,7 +391,7 @@ export function BillingScreen() {
       }
       await billing.reload();
     } catch (e) {
-      Alert.alert('Sale not saved', e instanceof Error ? e.message : 'Please try again.');
+      showSnackbar('Sale not saved', e instanceof Error ? e.message : 'Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -343,11 +407,81 @@ export function BillingScreen() {
         item.id.toLowerCase() === value.toLowerCase(),
     );
     if (product) {
-      if (selectProduct(product)) Alert.alert('Added to cart', product.name);
+      if (selectProduct(product)) showSnackbar('Added to cart', product.name);
       return;
     }
     setSearch(value);
-    Alert.alert('Code scanned', `No product matched “${value}”. Showing it in search.`);
+    showSnackbar('Code scanned', `No product matched “${value}”. Showing it in search.`);
+  };
+  const createCustomer = async (input: { name: string; phone?: string }) => {
+    if (!billing.data) throw new Error('Billing is not ready.');
+    try {
+      const created = await billingApi.createCustomer(billing.data.key, input);
+      await billing.reload();
+      return created;
+    } catch (error) {
+      showSnackbar('Could not create customer', error instanceof Error ? error.message : 'Try again.');
+      throw error;
+    }
+  };
+  const savePettyCash = async (input: {
+    type: 'INCOME' | 'EXPENSE';
+    amount: number;
+    description?: string;
+  }) => {
+    const session = auth.session;
+    const counter = session?.organization?.activeSession;
+    if (!session || !counter) {
+      closeCartPage(() => setPettyCashOpen(false));
+      requestCounterDialog();
+      return;
+    }
+    setRecordingPettyCash(true);
+    try {
+      await counterSessionApi.recordPettyCash(session.token, String(session.tenant.id), {
+        ...input,
+        counterSessionId: counter.id,
+        branchId: counter.branchId,
+      });
+      closeCartPage(() => setPettyCashOpen(false));
+      await auth.refreshSession();
+      showSnackbar(
+        'Cash entry recorded',
+        `${input.type === 'EXPENSE' ? 'Expense' : 'Income'} of ${formatCurrency(input.amount, currencyCode)} recorded.`,
+      );
+    } catch (error) {
+      showSnackbar('Could not record cash entry', error instanceof Error ? error.message : 'Try again.');
+    } finally {
+      setRecordingPettyCash(false);
+    }
+  };
+  const resumeHeldOrder = async (order: (typeof heldOrders.orders)[number]) => {
+    try {
+      if (cart.items.length)
+        await heldOrders.hold(cart.items, cart.orderDiscount, customer, currentOrderContext(), scrapExchange);
+      cart.replaceCart(order.items, order.orderDiscount);
+      setCustomer(order.customer);
+      if (order.orderContext?.orderMode) setRestaurantOrderMode(order.orderContext.orderMode);
+      setDoctorName(order.orderContext?.doctorName || '');
+      setPrescriptionReference(order.orderContext?.prescriptionReference || '');
+      setScrapExchange(order.scrapExchange);
+      setRestaurantTable(
+        order.orderContext?.tableId
+          ? {
+              id: order.orderContext.tableId,
+              name: order.orderContext.tableName || 'Table',
+              branchId: auth.session?.organization?.activeSession?.branchId || '',
+              capacity: 0,
+              status: 'AVAILABLE',
+            }
+          : undefined,
+      );
+      await heldOrders.remove(order.id);
+      closeCartPage(() => setHeldOrdersOpen(false));
+      setCartOpen(true);
+    } catch (error) {
+      showSnackbar('Could not resume order', error instanceof Error ? error.message : 'Try again.');
+    }
   };
   useEffect(() => {
     setCenterItem({
@@ -373,7 +507,7 @@ export function BillingScreen() {
       await billing.refresh(controller.signal);
     } catch (error) {
       if (!controller.signal.aborted) {
-        Alert.alert('Billing refresh failed', error instanceof Error ? error.message : 'Try again.');
+        showSnackbar('Billing refresh failed', error instanceof Error ? error.message : 'Try again.');
       }
     } finally {
       if (refreshController.current === controller) {
@@ -391,15 +525,23 @@ export function BillingScreen() {
         onPanResponderMove: (_event, gesture) => sheetTranslateY.setValue(Math.max(0, gesture.dy)),
         onPanResponderRelease: (_event, gesture) => {
           if (gesture.dy > 90 || gesture.vy > 1) {
-            Animated.timing(sheetTranslateY, { toValue: 700, duration: 160, useNativeDriver: true }).start(
-              closeCart,
-            );
+            Animated.timing(sheetTranslateY, {
+              toValue: 700,
+              duration: 160,
+              useNativeDriver: useNativeAnimationDriver,
+            }).start(closeCart);
             return;
           }
-          Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true }).start();
+          Animated.spring(sheetTranslateY, {
+            toValue: 0,
+            useNativeDriver: useNativeAnimationDriver,
+          }).start();
         },
         onPanResponderTerminate: () =>
-          Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true }).start(),
+          Animated.spring(sheetTranslateY, {
+            toValue: 0,
+            useNativeDriver: useNativeAnimationDriver,
+          }).start(),
       }),
     [sheetTranslateY],
   );
@@ -508,7 +650,7 @@ export function BillingScreen() {
               paymentMethods={paymentMethods}
               taxRates={taxRates}
               customer={customer}
-              onSelectCustomer={() => openFromCart(() => setCustomerPickerOpen(true))}
+              onSelectCustomer={() => openCartPage('customer', () => setCustomerPickerOpen(true))}
               onChange={cart.changeQuantity}
               onItemDiscount={cart.setItemDiscount}
               onItemTaxRate={cart.setItemTaxRate}
@@ -517,10 +659,12 @@ export function BillingScreen() {
               allowItemDiscounts={auth.session?.organization?.settings.allowItemDiscounts === true}
               allowOrderDiscounts={auth.session?.organization?.settings.allowOrderDiscounts === true}
               heldOrderCount={heldOrders.orders.length}
-              onShowHeldOrders={() => openFromCart(() => setHeldOrdersOpen(true))}
+              onShowHeldOrders={() => openCartPage('held-orders', () => setHeldOrdersOpen(true))}
               onHold={holdCurrentOrder}
               onPettyCash={() =>
-                openFromCart(() => (billingAllowed ? setPettyCashOpen(true) : requestCounterDialog()))
+                billingAllowed
+                  ? openCartPage('petty-cash', () => setPettyCashOpen(true))
+                  : requestCounterDialog()
               }
               onClear={() => {
                 cart.clearCart();
@@ -533,7 +677,7 @@ export function BillingScreen() {
               scrapValue={scrapExchange?.total}
               onScrap={
                 canManageScrap(auth.session?.tenant.role)
-                  ? () => openFromCart(() => setScrapOpen(true))
+                  ? () => openCartPage('scrap', () => setScrapOpen(true))
                   : undefined
               }
             />
@@ -548,7 +692,12 @@ export function BillingScreen() {
           </Text>
         </AppPressable>
       )}
-      <Modal transparent visible={!isWide && cartOpen} animationType="slide" onRequestClose={closeCart}>
+      <Modal
+        transparent
+        visible={!isWide && cartOpen}
+        animationType="slide"
+        onRequestClose={() => (cartPage === 'cart' ? closeCart() : replaceCartPage('cart'))}
+      >
         <View style={s.modal}>
           <Pressable style={s.backdrop} onPress={closeCart} />
           <Animated.View
@@ -574,7 +723,7 @@ export function BillingScreen() {
               paymentMethods={paymentMethods}
               taxRates={taxRates}
               customer={customer}
-              onSelectCustomer={() => openFromCart(() => setCustomerPickerOpen(true))}
+              onSelectCustomer={() => replaceCartPage('customer')}
               onChange={cart.changeQuantity}
               onItemDiscount={cart.setItemDiscount}
               onItemTaxRate={cart.setItemTaxRate}
@@ -583,11 +732,9 @@ export function BillingScreen() {
               allowItemDiscounts={auth.session?.organization?.settings.allowItemDiscounts === true}
               allowOrderDiscounts={auth.session?.organization?.settings.allowOrderDiscounts === true}
               heldOrderCount={heldOrders.orders.length}
-              onShowHeldOrders={() => openFromCart(() => setHeldOrdersOpen(true))}
+              onShowHeldOrders={() => replaceCartPage('held-orders')}
               onHold={holdCurrentOrder}
-              onPettyCash={() =>
-                openFromCart(() => (billingAllowed ? setPettyCashOpen(true) : requestCounterDialog()))
-              }
+              onPettyCash={() => (billingAllowed ? replaceCartPage('petty-cash') : requestCounterDialog())}
               onClear={() => {
                 cart.clearCart();
                 setScrapExchange(undefined);
@@ -597,11 +744,64 @@ export function BillingScreen() {
               onClose={closeCart}
               currencyCode={currencyCode}
               scrapValue={scrapExchange?.total}
-              onScrap={
-                canManageScrap(auth.session?.tenant.role)
-                  ? () => openFromCart(() => setScrapOpen(true))
-                  : undefined
+              onScrap={canManageScrap(auth.session?.tenant.role) ? () => replaceCartPage('scrap') : undefined}
+              innerContent={
+                cartPage === 'cart' ? undefined : (
+                  <Animated.View
+                    {...cartPagePanResponder.panHandlers}
+                    style={[s.cartInnerPage, { transform: [{ translateX: cartContentTranslateX }] }]}
+                  >
+                    <CustomerPickerDialog
+                      embedded
+                      visible={cartPage === 'customer'}
+                      customers={customers}
+                      selected={customer}
+                      onSelect={setCustomer}
+                      onCreate={createCustomer}
+                      onClose={() => replaceCartPage('cart')}
+                    />
+                    <HeldOrdersDialog
+                      embedded
+                      visible={cartPage === 'held-orders'}
+                      orders={heldOrders.orders}
+                      currencyCode={currencyCode}
+                      onClose={() => replaceCartPage('cart')}
+                      onDelete={(id) => void heldOrders.remove(id)}
+                      onResume={(order) => void resumeHeldOrder(order)}
+                    />
+                    <PettyCashDialog
+                      embedded
+                      visible={cartPage === 'petty-cash'}
+                      busy={recordingPettyCash}
+                      onClose={() => !recordingPettyCash && replaceCartPage('cart')}
+                      onSave={savePettyCash}
+                    />
+                    <ScrapExchangeDialog
+                      embedded
+                      visible={cartPage === 'scrap'}
+                      products={products.filter((product) => product.categoryType === 'SCRAP')}
+                      value={scrapExchange}
+                      currencyCode={currencyCode}
+                      onChange={setScrapExchange}
+                      onClose={() => replaceCartPage('cart')}
+                    />
+                    <CheckoutDialog
+                      embedded
+                      visible={cartPage === 'checkout'}
+                      total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
+                      itemCount={cart.itemCount}
+                      initialMethod={payment}
+                      paymentMethods={paymentMethods}
+                      currencyCode={currencyCode}
+                      submitting={submitting}
+                      onClose={() => !submitting && replaceCartPage('cart')}
+                      onConfirm={(checkoutPayment) => void completeCheckout(checkoutPayment)}
+                    />
+                  </Animated.View>
+                )
               }
+              innerTitle={cartPageTitles[cartPage]}
+              onInnerBack={() => replaceCartPage('cart')}
             />
           </Animated.View>
         </View>
@@ -659,48 +859,22 @@ export function BillingScreen() {
             const refreshed = await billingApi.load();
             const created = refreshed.cache.products.find((item) => item.id === job.entityId);
             if (created) cart.addItem(created);
-            Alert.alert('Product created', `${input.name} is available in billing.`);
+            showSnackbar('Product created', `${input.name} is available in billing.`);
           } catch (error) {
-            Alert.alert('Could not create product', error instanceof Error ? error.message : 'Try again.');
+            showSnackbar('Could not create product', error instanceof Error ? error.message : 'Try again.');
           } finally {
             setCreatingProduct(false);
           }
         }}
       />
       <PettyCashDialog
-        visible={pettyCashOpen}
+        visible={isWide && pettyCashOpen}
         busy={recordingPettyCash}
         onClose={() => !recordingPettyCash && setPettyCashOpen(false)}
-        onSave={async (input) => {
-          const session = auth.session;
-          const counter = session?.organization?.activeSession;
-          if (!session || !counter) {
-            setPettyCashOpen(false);
-            requestCounterDialog();
-            return;
-          }
-          setRecordingPettyCash(true);
-          try {
-            await counterSessionApi.recordPettyCash(session.token, String(session.tenant.id), {
-              ...input,
-              counterSessionId: counter.id,
-              branchId: counter.branchId,
-            });
-            setPettyCashOpen(false);
-            await auth.refreshSession();
-            Alert.alert(
-              'Cash entry recorded',
-              `${input.type === 'EXPENSE' ? 'Expense' : 'Income'} of ${formatCurrency(input.amount, currencyCode)} recorded.`,
-            );
-          } catch (error) {
-            Alert.alert('Could not record cash entry', error instanceof Error ? error.message : 'Try again.');
-          } finally {
-            setRecordingPettyCash(false);
-          }
-        }}
+        onSave={savePettyCash}
       />
       <CheckoutDialog
-        visible={checkoutOpen}
+        visible={isWide && checkoutOpen}
         total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
         itemCount={cart.itemCount}
         initialMethod={payment}
@@ -711,7 +885,7 @@ export function BillingScreen() {
         onConfirm={(checkoutPayment) => void completeCheckout(checkoutPayment)}
       />
       <ScrapExchangeDialog
-        visible={scrapOpen}
+        visible={isWide && scrapOpen}
         products={products.filter((product) => product.categoryType === 'SCRAP')}
         value={scrapExchange}
         currencyCode={currencyCode}
@@ -728,12 +902,12 @@ export function BillingScreen() {
                 setPrintingReceipt(true);
                 try {
                   const job = await printingApi.queueReceipt(receipt.id, session.counterId, session.branchId);
-                  Alert.alert(
+                  showSnackbar(
                     job.status === 'COMPLETED' ? 'Print queued' : 'Print saved for retry',
                     `${job.printerName} · job ${job.serverId || job.id}${job.error ? `\n${job.error}` : ''}`,
                   );
                 } catch (error) {
-                  Alert.alert(
+                  showSnackbar(
                     'Could not print receipt',
                     error instanceof Error ? error.message : 'Try again.',
                   );
@@ -746,65 +920,20 @@ export function BillingScreen() {
         onClose={() => setReceipt(undefined)}
       />
       <CustomerPickerDialog
-        visible={customerPickerOpen}
+        visible={isWide && customerPickerOpen}
         customers={customers}
         selected={customer}
         onSelect={setCustomer}
-        onCreate={async (input) => {
-          if (!billing.data) throw new Error('Billing is not ready.');
-          try {
-            const created = await billingApi.createCustomer(billing.data.key, input);
-            await billing.reload();
-            return created;
-          } catch (error) {
-            Alert.alert('Could not create customer', error instanceof Error ? error.message : 'Try again.');
-            throw error;
-          }
-        }}
+        onCreate={createCustomer}
         onClose={() => setCustomerPickerOpen(false)}
       />
       <HeldOrdersDialog
-        visible={heldOrdersOpen}
+        visible={isWide && heldOrdersOpen}
         orders={heldOrders.orders}
         currencyCode={currencyCode}
         onClose={() => setHeldOrdersOpen(false)}
         onDelete={(id) => void heldOrders.remove(id)}
-        onResume={(order) => {
-          void (async () => {
-            try {
-              if (cart.items.length)
-                await heldOrders.hold(
-                  cart.items,
-                  cart.orderDiscount,
-                  customer,
-                  currentOrderContext(),
-                  scrapExchange,
-                );
-              cart.replaceCart(order.items, order.orderDiscount);
-              setCustomer(order.customer);
-              if (order.orderContext?.orderMode) setRestaurantOrderMode(order.orderContext.orderMode);
-              setDoctorName(order.orderContext?.doctorName || '');
-              setPrescriptionReference(order.orderContext?.prescriptionReference || '');
-              setScrapExchange(order.scrapExchange);
-              setRestaurantTable(
-                order.orderContext?.tableId
-                  ? {
-                      id: order.orderContext.tableId,
-                      name: order.orderContext.tableName || 'Table',
-                      branchId: auth.session?.organization?.activeSession?.branchId || '',
-                      capacity: 0,
-                      status: 'AVAILABLE',
-                    }
-                  : undefined,
-              );
-              await heldOrders.remove(order.id);
-              setHeldOrdersOpen(false);
-              setCartOpen(true);
-            } catch (error) {
-              Alert.alert('Could not resume order', error instanceof Error ? error.message : 'Try again.');
-            }
-          })();
-        }}
+        onResume={(order) => void resumeHeldOrder(order)}
       />
     </View>
   );
@@ -842,6 +971,7 @@ const s = StyleSheet.create({
     borderTopRightRadius: 28,
   },
   dragArea: { height: 32, alignItems: 'center', justifyContent: 'center' },
+  cartInnerPage: { flex: 1, minHeight: 0 },
   handle: {
     width: 38,
     height: 4,

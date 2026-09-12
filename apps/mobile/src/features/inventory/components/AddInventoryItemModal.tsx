@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, X } from 'lucide-react-native';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CreateInventoryItemInput } from '../types';
 
@@ -41,7 +42,7 @@ export function AddInventoryItemModal({
       !Number.isFinite(numericStock) ||
       numericStock < 0
     ) {
-      Alert.alert('Invalid item', 'Enter a name, non-negative price, and non-negative stock quantity.');
+      showSnackbar('Invalid item', 'Enter a name, non-negative price, and non-negative stock quantity.');
       return;
     }
     await onSave({

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import {
   ChevronDown,
   ChevronUp,
@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { authApi, type DeviceRegistrationDetails } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
@@ -52,7 +53,7 @@ export function DeviceSettingsSection({
       setApiEnvironmentState(environment);
       setApiUrls({ posApiUrl, authApiUrl });
     } catch (error) {
-      Alert.alert('Could not change API environment', error instanceof Error ? error.message : 'Try again.');
+      showSnackbar('Could not change API environment', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setSwitchingEnvironment(false);
     }
@@ -60,17 +61,17 @@ export function DeviceSettingsSection({
 
   const save = useCallback(async () => {
     if (busy) return;
-    if (!pin) return Alert.alert('Device PIN', 'Enter a new PIN before saving.');
-    if (pin !== confirm) return Alert.alert('Device PIN', 'PIN entries do not match.');
+    if (!pin) return showSnackbar('Device PIN', 'Enter a new PIN before saving.');
+    if (pin !== confirm) return showSnackbar('Device PIN', 'PIN entries do not match.');
     setBusy(true);
     try {
       await authApi.registerDevice(pin);
       setDetails(await authApi.getDeviceRegistrationDetails());
       setPin('');
       setConfirm('');
-      Alert.alert('PIN changed', 'Your device PIN has been updated.');
+      showSnackbar('PIN changed', 'Your device PIN has been updated.');
     } catch (error) {
-      Alert.alert('PIN change failed', error instanceof Error ? error.message : 'Try again.');
+      showSnackbar('PIN change failed', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setBusy(false);
     }
@@ -93,7 +94,7 @@ export function DeviceSettingsSection({
       await authApi.verifyDeviceAccess();
       setPinOpen(true);
     } catch (error) {
-      Alert.alert('Authentication required', error instanceof Error ? error.message : 'Try again.');
+      showSnackbar('Authentication required', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setAuthorizingPin(false);
     }

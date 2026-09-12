@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Banknote, CreditCard, ScanLine, X } from 'lucide-react-native';
+import { ArrowLeft, Banknote, CreditCard, ScanLine, X } from 'lucide-react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
@@ -28,6 +28,7 @@ type Props = {
   onClose: () => void;
   onConfirm: (payment: CheckoutPayment) => void;
   currencyCode?: string;
+  embedded?: boolean;
 };
 
 export function CheckoutDialog({
@@ -40,6 +41,7 @@ export function CheckoutDialog({
   onClose,
   onConfirm,
   currencyCode = 'INR',
+  embedded = false,
 }: Props) {
   const { themeColors: c } = useAppTheme();
   const money = (value: number) => formatCurrency(value, currencyCode);
@@ -96,187 +98,193 @@ export function CheckoutDialog({
     });
   };
 
+  const panel = (
+    <SafeAreaView
+      edges={['bottom']}
+      style={[s.sheet, embedded && s.embedded, { backgroundColor: c.surface, borderColor: c.outline }]}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={s.keyboardContainer}
+      >
+        {!embedded && (
+          <View style={[s.header, { borderBottomColor: c.outlineMuted }]}>
+            <View>
+              <Text style={[s.title, { color: c.text }]}>Checkout & payment</Text>
+              <Text style={[s.subtitle, { color: c.textSecondary }]}>{itemCount} items to complete</Text>
+            </View>
+            <AppPressable
+              accessibilityLabel={embedded ? 'Back to cart' : 'Close checkout'}
+              onPress={onClose}
+              style={[s.close, { backgroundColor: c.surfaceMuted }]}
+            >
+              {embedded ? (
+                <ArrowLeft size={18} color={c.textSecondary} />
+              ) : (
+                <X size={18} color={c.textSecondary} />
+              )}
+            </AppPressable>
+          </View>
+        )}
+        <ScrollView
+          style={s.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
+          contentContainerStyle={s.body}
+        >
+          <View style={[s.amountCard, { backgroundColor: c.primarySoft }]}>
+            <Text style={[s.amountLabel, { color: c.textSecondary }]}>Amount due</Text>
+            <Text style={[s.amount, { color: c.primary }]}>{money(total)}</Text>
+          </View>
+          <Text style={[s.sectionLabel, { color: c.textSecondary }]}>Payment method</Text>
+          <View style={s.methods}>
+            {paymentMethods.map(({ code, name }) => {
+              const selected = method === code;
+              const Icon = code === 'CASH' ? Banknote : code === 'CARD' ? CreditCard : ScanLine;
+              return (
+                <AppPressable
+                  key={code}
+                  onPress={() => {
+                    setMethod(code);
+                    const configured = paymentMethods.find((item) => item.code === code);
+                    setBankAccountId(
+                      configured?.defaultBankAccountId ??
+                        configured?.bankAccounts.find((item) => item.isDefault)?.id,
+                    );
+                    if (code === 'CASH' && !cash) setCash(total.toFixed(2));
+                  }}
+                  style={[
+                    s.method,
+                    {
+                      borderColor: selected ? c.primary : c.outline,
+                      backgroundColor: selected ? c.primarySoft : c.background,
+                    },
+                  ]}
+                >
+                  <Icon size={19} color={selected ? c.primary : c.textSecondary} />
+                  <Text numberOfLines={1} style={[s.methodText, { color: selected ? c.primary : c.text }]}>
+                    {name}
+                  </Text>
+                </AppPressable>
+              );
+            })}
+          </View>
+          {method === 'CASH' ? (
+            <View>
+              <Text style={[s.inputLabel, { color: c.textSecondary }]}>Cash received</Text>
+              <TextInput
+                value={cash}
+                onChangeText={setCash}
+                keyboardType="decimal-pad"
+                placeholder={total.toFixed(2)}
+                placeholderTextColor={c.textSecondary}
+                style={[s.input, { color: c.text, backgroundColor: c.background, borderColor: c.outline }]}
+              />
+              <View style={[s.changeRow, { backgroundColor: cashShort ? c.errorSoft : c.surfaceMuted }]}>
+                <Text style={[s.changeLabel, { color: cashShort ? c.error : c.textSecondary }]}>
+                  {cashShort ? 'Amount still due' : 'Change due'}
+                </Text>
+                <Text style={[s.changeValue, { color: cashShort ? c.error : c.text }]}>
+                  {money(cashShort ? total - tendered : changeDue)}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View>
+              {method === 'CARD' && (
+                <>
+                  <Text style={[s.inputLabel, { color: c.textSecondary }]}>Card last 4 digits</Text>
+                  <TextInput
+                    value={cardLast4}
+                    onChangeText={(value) => setCardLast4(value.replace(/\D/g, '').slice(0, 4))}
+                    keyboardType="number-pad"
+                    placeholder="Optional"
+                    placeholderTextColor={c.textSecondary}
+                    style={[
+                      s.input,
+                      { color: c.text, backgroundColor: c.background, borderColor: c.outline },
+                    ]}
+                  />
+                </>
+              )}
+              <Text style={[s.inputLabel, { color: c.textSecondary }]}>
+                {method === 'UPI' ? 'UPI reference / UTR' : 'Authorization / reference'}
+              </Text>
+              <TextInput
+                value={reference}
+                onChangeText={setReference}
+                placeholder="Optional"
+                autoCapitalize="characters"
+                placeholderTextColor={c.textSecondary}
+                style={[s.input, { color: c.text, backgroundColor: c.background, borderColor: c.outline }]}
+              />
+              {!!selectedMethod?.bankAccounts.filter((account) => account.isActive).length && (
+                <>
+                  <Text style={[s.inputLabel, { color: c.textSecondary }]}>Deposit account</Text>
+                  <View style={s.accounts}>
+                    {selectedMethod.bankAccounts
+                      .filter((account) => account.isActive)
+                      .map((account) => (
+                        <AppPressable
+                          key={account.id}
+                          onPress={() => setBankAccountId(account.id)}
+                          style={[
+                            s.account,
+                            {
+                              borderColor: bankAccountId === account.id ? c.primary : c.outline,
+                              backgroundColor: bankAccountId === account.id ? c.primarySoft : c.background,
+                            },
+                          ]}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              s.accountName,
+                              { color: bankAccountId === account.id ? c.primary : c.text },
+                            ]}
+                          >
+                            {account.accountName}
+                          </Text>
+                          <Text numberOfLines={1} style={[s.accountMeta, { color: c.textSecondary }]}>
+                            {account.upiId || account.bankName}
+                          </Text>
+                        </AppPressable>
+                      ))}
+                  </View>
+                </>
+              )}
+              {upiPaymentUri && (
+                <View style={[s.qrCard, { backgroundColor: c.surfaceMuted }]}>
+                  <View style={s.qr}>
+                    <QRCode value={upiPaymentUri} size={150} backgroundColor="#FFFFFF" color="#111111" />
+                  </View>
+                  <Text style={[s.qrTitle, { color: c.text }]}>Scan to pay {money(total)}</Text>
+                  <Text style={[s.qrHint, { color: c.textSecondary }]}>
+                    Payment goes to {selectedBankAccount?.upiId}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </ScrollView>
+        <View style={[s.footer, { borderTopColor: c.outlineMuted }]}>
+          <AppPressable
+            disabled={blocked}
+            onPress={confirm}
+            style={[s.confirm, { backgroundColor: c.primary, opacity: blocked ? 0.5 : 1 }]}
+          >
+            <Text style={s.confirmText}>{submitting ? 'Saving sale…' : `Complete · ${money(total)}`}</Text>
+          </AppPressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+  if (embedded) return visible ? panel : null;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={s.overlay}>
         <AppPressable accessibilityLabel="Close checkout" style={s.backdrop} onPress={onClose} />
-        <SafeAreaView
-          edges={['bottom']}
-          style={[s.sheet, { backgroundColor: c.surface, borderColor: c.outline }]}
-        >
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={[s.header, { borderBottomColor: c.outlineMuted }]}>
-              <View>
-                <Text style={[s.title, { color: c.text }]}>Checkout & payment</Text>
-                <Text style={[s.subtitle, { color: c.textSecondary }]}>{itemCount} items to complete</Text>
-              </View>
-              <AppPressable
-                accessibilityLabel="Close checkout"
-                onPress={onClose}
-                style={[s.close, { backgroundColor: c.surfaceMuted }]}
-              >
-                <X size={18} color={c.textSecondary} />
-              </AppPressable>
-            </View>
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.body}>
-              <View style={[s.amountCard, { backgroundColor: c.primarySoft }]}>
-                <Text style={[s.amountLabel, { color: c.textSecondary }]}>Amount due</Text>
-                <Text style={[s.amount, { color: c.primary }]}>{money(total)}</Text>
-              </View>
-              <Text style={[s.sectionLabel, { color: c.textSecondary }]}>Payment method</Text>
-              <View style={s.methods}>
-                {paymentMethods.map(({ code, name }) => {
-                  const selected = method === code;
-                  const Icon = code === 'CASH' ? Banknote : code === 'CARD' ? CreditCard : ScanLine;
-                  return (
-                    <AppPressable
-                      key={code}
-                      onPress={() => {
-                        setMethod(code);
-                        const configured = paymentMethods.find((item) => item.code === code);
-                        setBankAccountId(
-                          configured?.defaultBankAccountId ??
-                            configured?.bankAccounts.find((item) => item.isDefault)?.id,
-                        );
-                        if (code === 'CASH' && !cash) setCash(total.toFixed(2));
-                      }}
-                      style={[
-                        s.method,
-                        {
-                          borderColor: selected ? c.primary : c.outline,
-                          backgroundColor: selected ? c.primarySoft : c.background,
-                        },
-                      ]}
-                    >
-                      <Icon size={19} color={selected ? c.primary : c.textSecondary} />
-                      <Text
-                        numberOfLines={1}
-                        style={[s.methodText, { color: selected ? c.primary : c.text }]}
-                      >
-                        {name}
-                      </Text>
-                    </AppPressable>
-                  );
-                })}
-              </View>
-              {method === 'CASH' ? (
-                <View>
-                  <Text style={[s.inputLabel, { color: c.textSecondary }]}>Cash received</Text>
-                  <TextInput
-                    value={cash}
-                    onChangeText={setCash}
-                    keyboardType="decimal-pad"
-                    placeholder={total.toFixed(2)}
-                    placeholderTextColor={c.textSecondary}
-                    style={[
-                      s.input,
-                      { color: c.text, backgroundColor: c.background, borderColor: c.outline },
-                    ]}
-                  />
-                  <View style={[s.changeRow, { backgroundColor: cashShort ? c.errorSoft : c.surfaceMuted }]}>
-                    <Text style={[s.changeLabel, { color: cashShort ? c.error : c.textSecondary }]}>
-                      {cashShort ? 'Amount still due' : 'Change due'}
-                    </Text>
-                    <Text style={[s.changeValue, { color: cashShort ? c.error : c.text }]}>
-                      {money(cashShort ? total - tendered : changeDue)}
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View>
-                  {method === 'CARD' && (
-                    <>
-                      <Text style={[s.inputLabel, { color: c.textSecondary }]}>Card last 4 digits</Text>
-                      <TextInput
-                        value={cardLast4}
-                        onChangeText={(value) => setCardLast4(value.replace(/\D/g, '').slice(0, 4))}
-                        keyboardType="number-pad"
-                        placeholder="Optional"
-                        placeholderTextColor={c.textSecondary}
-                        style={[
-                          s.input,
-                          { color: c.text, backgroundColor: c.background, borderColor: c.outline },
-                        ]}
-                      />
-                    </>
-                  )}
-                  <Text style={[s.inputLabel, { color: c.textSecondary }]}>
-                    {method === 'UPI' ? 'UPI reference / UTR' : 'Authorization / reference'}
-                  </Text>
-                  <TextInput
-                    value={reference}
-                    onChangeText={setReference}
-                    placeholder="Optional"
-                    autoCapitalize="characters"
-                    placeholderTextColor={c.textSecondary}
-                    style={[
-                      s.input,
-                      { color: c.text, backgroundColor: c.background, borderColor: c.outline },
-                    ]}
-                  />
-                  {!!selectedMethod?.bankAccounts.filter((account) => account.isActive).length && (
-                    <>
-                      <Text style={[s.inputLabel, { color: c.textSecondary }]}>Deposit account</Text>
-                      <View style={s.accounts}>
-                        {selectedMethod.bankAccounts
-                          .filter((account) => account.isActive)
-                          .map((account) => (
-                            <AppPressable
-                              key={account.id}
-                              onPress={() => setBankAccountId(account.id)}
-                              style={[
-                                s.account,
-                                {
-                                  borderColor: bankAccountId === account.id ? c.primary : c.outline,
-                                  backgroundColor:
-                                    bankAccountId === account.id ? c.primarySoft : c.background,
-                                },
-                              ]}
-                            >
-                              <Text
-                                numberOfLines={1}
-                                style={[
-                                  s.accountName,
-                                  { color: bankAccountId === account.id ? c.primary : c.text },
-                                ]}
-                              >
-                                {account.accountName}
-                              </Text>
-                              <Text numberOfLines={1} style={[s.accountMeta, { color: c.textSecondary }]}>
-                                {account.upiId || account.bankName}
-                              </Text>
-                            </AppPressable>
-                          ))}
-                      </View>
-                    </>
-                  )}
-                  {upiPaymentUri && (
-                    <View style={[s.qrCard, { backgroundColor: c.surfaceMuted }]}>
-                      <View style={s.qr}>
-                        <QRCode value={upiPaymentUri} size={150} backgroundColor="#FFFFFF" color="#111111" />
-                      </View>
-                      <Text style={[s.qrTitle, { color: c.text }]}>Scan to pay {money(total)}</Text>
-                      <Text style={[s.qrHint, { color: c.textSecondary }]}>
-                        Payment goes to {selectedBankAccount?.upiId}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            </ScrollView>
-            <View style={[s.footer, { borderTopColor: c.outlineMuted }]}>
-              <AppPressable
-                disabled={blocked}
-                onPress={confirm}
-                style={[s.confirm, { backgroundColor: c.primary, opacity: blocked ? 0.5 : 1 }]}
-              >
-                <Text style={s.confirmText}>
-                  {submitting ? 'Saving sale…' : `Complete · ${money(total)}`}
-                </Text>
-              </AppPressable>
-            </View>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+        {panel}
       </View>
     </Modal>
   );
@@ -286,6 +294,15 @@ const s = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(8, 12, 22, 0.5)' },
   sheet: { maxHeight: '88%', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1 },
+  embedded: {
+    flex: 1,
+    maxHeight: '100%',
+    borderWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+  keyboardContainer: { flex: 1, minHeight: 0 },
+  scroll: { flex: 1, minHeight: 0 },
   header: {
     minHeight: 68,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -297,7 +314,7 @@ const s = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '900' },
   subtitle: { marginTop: 2, fontSize: 11 },
   close: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  body: { padding: 18, gap: 14 },
+  body: { padding: 18, paddingBottom: 28, gap: 14 },
   amountCard: { padding: 15, borderRadius: 16, alignItems: 'center' },
   amountLabel: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
   amount: { marginTop: 3, fontSize: 28, fontWeight: '900' },

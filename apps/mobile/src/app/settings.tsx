@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, Save, X } from 'lucide-react-native';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
+import { showSnackbar } from '../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
 import { BillingSettingsSection } from '../features/settings/BillingSettingsSection';
@@ -59,7 +59,7 @@ function SettingsContent() {
         if (saveHandlerRef.current) {
           void saveHandlerRef.current();
         } else {
-          Alert.alert('Settings', 'There are no editable changes in this section.');
+          showSnackbar('Settings', 'There are no editable changes in this section.');
         }
       },
     });

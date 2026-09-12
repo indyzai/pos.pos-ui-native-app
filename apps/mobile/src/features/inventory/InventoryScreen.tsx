@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,7 @@ import {
   X,
 } from 'lucide-react-native';
 import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { InventoryCard } from './components/InventoryCard';
 import { ReconcileStockModal } from './components/ReconcileStockModal';
@@ -106,7 +106,7 @@ export function InventoryScreen() {
       await data.refresh(controller.signal);
     } catch (error) {
       if (!controller.signal.aborted) {
-        Alert.alert('Inventory refresh failed', error instanceof Error ? error.message : 'Try again.');
+        showSnackbar('Inventory refresh failed', error instanceof Error ? error.message : 'Try again.');
       }
     } finally {
       if (refreshController.current === controller) {
@@ -208,9 +208,9 @@ export function InventoryScreen() {
           try {
             const job = await data.reconcile(input);
             setSelected(null);
-            Alert.alert('Stock reconciled', `Queue ${shortId(job.id)} completed.`);
+            showSnackbar('Stock reconciled', `Queue ${shortId(job.id)} completed.`);
           } catch (error) {
-            Alert.alert('Reconciliation failed', error instanceof Error ? error.message : 'Try again.');
+            showSnackbar('Reconciliation failed', error instanceof Error ? error.message : 'Try again.');
           }
         }}
       />
@@ -222,9 +222,9 @@ export function InventoryScreen() {
           try {
             const job = await data.create(input);
             setAddOpen(false);
-            Alert.alert('Item added', `${input.name} was added. Queue ${shortId(job.id)} completed.`);
+            showSnackbar('Item added', `${input.name} was added. Queue ${shortId(job.id)} completed.`);
           } catch (error) {
-            Alert.alert('Could not add item', error instanceof Error ? error.message : 'Try again.');
+            showSnackbar('Could not add item', error instanceof Error ? error.message : 'Try again.');
           }
         }}
       />

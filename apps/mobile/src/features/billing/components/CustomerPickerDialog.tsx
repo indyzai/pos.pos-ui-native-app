@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Search, UserRound, X } from 'lucide-react-native';
+import { ArrowLeft, Search, UserRound, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
@@ -13,6 +13,7 @@ export function CustomerPickerDialog({
   onSelect,
   onCreate,
   onClose,
+  embedded = false,
 }: {
   visible: boolean;
   customers: Customer[];
@@ -20,6 +21,7 @@ export function CustomerPickerDialog({
   onSelect: (customer?: Customer) => void;
   onCreate: (input: { name: string; phone?: string }) => Promise<Customer>;
   onClose: () => void;
+  embedded?: boolean;
 }) {
   const { themeColors: c } = useAppTheme();
   const [search, setSearch] = useState('');
@@ -48,91 +50,101 @@ export function CustomerPickerDialog({
       setCreating(false);
     }
   };
+  const panel = (
+    <SafeAreaView
+      edges={['bottom']}
+      style={[s.sheet, embedded && s.embedded, { backgroundColor: c.surface }]}
+    >
+      {!embedded && (
+        <View style={s.header}>
+          <View>
+            <Text style={[s.title, { color: c.text }]}>Select customer</Text>
+            <Text style={[s.subtitle, { color: c.textSecondary }]}>Cached for offline billing</Text>
+          </View>
+          <AppPressable
+            accessibilityLabel={embedded ? 'Back to cart' : 'Close customer selection'}
+            onPress={onClose}
+            style={[s.close, { backgroundColor: c.surfaceMuted }]}
+          >
+            {embedded ? (
+              <ArrowLeft size={18} color={c.textSecondary} />
+            ) : (
+              <X size={18} color={c.textSecondary} />
+            )}
+          </AppPressable>
+        </View>
+      )}
+      <View style={[s.search, { backgroundColor: c.background, borderColor: c.outline }]}>
+        <Search size={17} color={c.textSecondary} />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Name, phone, email or GSTIN"
+          placeholderTextColor={c.textSecondary}
+          style={[s.input, { color: c.text }]}
+        />
+      </View>
+      <AppPressable
+        onPress={() => choose(undefined)}
+        style={[
+          s.row,
+          { borderColor: c.outlineMuted, backgroundColor: !selected ? c.primarySoft : c.surface },
+        ]}
+      >
+        <View style={[s.avatar, { backgroundColor: c.surfaceMuted }]}>
+          <UserRound size={17} color={c.textSecondary} />
+        </View>
+        <View style={s.details}>
+          <Text style={[s.name, { color: c.text }]}>Walk-in customer</Text>
+          <Text style={[s.meta, { color: c.textSecondary }]}>No customer linked</Text>
+        </View>
+      </AppPressable>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.list}>
+        {visibleCustomers.map((customer) => (
+          <AppPressable
+            key={customer.id}
+            onPress={() => choose(customer)}
+            style={[
+              s.row,
+              {
+                borderColor: selected?.id === customer.id ? c.primary : c.outlineMuted,
+                backgroundColor: selected?.id === customer.id ? c.primarySoft : c.surface,
+              },
+            ]}
+          >
+            <View style={[s.avatar, { backgroundColor: c.surfaceMuted }]}>
+              <Text style={[s.initial, { color: c.primary }]}>{customer.name.slice(0, 1).toUpperCase()}</Text>
+            </View>
+            <View style={s.details}>
+              <Text style={[s.name, { color: c.text }]}>{customer.name}</Text>
+              <Text numberOfLines={1} style={[s.meta, { color: c.textSecondary }]}>
+                {[customer.phone, customer.email, customer.gstin].filter(Boolean).join(' · ') || 'Customer'}
+              </Text>
+            </View>
+          </AppPressable>
+        ))}
+        {!visibleCustomers.length && (
+          <Text style={[s.empty, { color: c.textSecondary }]}>No matching customers in local data.</Text>
+        )}
+        {!!search.trim() &&
+          !customers.some((item) => item.name.toLowerCase() === search.trim().toLowerCase()) && (
+            <AppPressable
+              disabled={creating}
+              onPress={() => void create()}
+              style={[s.create, { backgroundColor: c.primary }]}
+            >
+              <Text style={s.createText}>{creating ? 'Creating…' : `Create “${search.trim()}”`}</Text>
+            </AppPressable>
+          )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+  if (embedded) return visible ? panel : null;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={s.overlay}>
         <AppPressable accessibilityLabel="Close customer selection" style={s.backdrop} onPress={onClose} />
-        <SafeAreaView edges={['bottom']} style={[s.sheet, { backgroundColor: c.surface }]}>
-          <View style={s.header}>
-            <View>
-              <Text style={[s.title, { color: c.text }]}>Select customer</Text>
-              <Text style={[s.subtitle, { color: c.textSecondary }]}>Cached for offline billing</Text>
-            </View>
-            <AppPressable
-              accessibilityLabel="Close"
-              onPress={onClose}
-              style={[s.close, { backgroundColor: c.surfaceMuted }]}
-            >
-              <X size={18} color={c.textSecondary} />
-            </AppPressable>
-          </View>
-          <View style={[s.search, { backgroundColor: c.background, borderColor: c.outline }]}>
-            <Search size={17} color={c.textSecondary} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Name, phone, email or GSTIN"
-              placeholderTextColor={c.textSecondary}
-              style={[s.input, { color: c.text }]}
-            />
-          </View>
-          <AppPressable
-            onPress={() => choose(undefined)}
-            style={[
-              s.row,
-              { borderColor: c.outlineMuted, backgroundColor: !selected ? c.primarySoft : c.surface },
-            ]}
-          >
-            <View style={[s.avatar, { backgroundColor: c.surfaceMuted }]}>
-              <UserRound size={17} color={c.textSecondary} />
-            </View>
-            <View style={s.details}>
-              <Text style={[s.name, { color: c.text }]}>Walk-in customer</Text>
-              <Text style={[s.meta, { color: c.textSecondary }]}>No customer linked</Text>
-            </View>
-          </AppPressable>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.list}>
-            {visibleCustomers.map((customer) => (
-              <AppPressable
-                key={customer.id}
-                onPress={() => choose(customer)}
-                style={[
-                  s.row,
-                  {
-                    borderColor: selected?.id === customer.id ? c.primary : c.outlineMuted,
-                    backgroundColor: selected?.id === customer.id ? c.primarySoft : c.surface,
-                  },
-                ]}
-              >
-                <View style={[s.avatar, { backgroundColor: c.surfaceMuted }]}>
-                  <Text style={[s.initial, { color: c.primary }]}>
-                    {customer.name.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={s.details}>
-                  <Text style={[s.name, { color: c.text }]}>{customer.name}</Text>
-                  <Text numberOfLines={1} style={[s.meta, { color: c.textSecondary }]}>
-                    {[customer.phone, customer.email, customer.gstin].filter(Boolean).join(' · ') ||
-                      'Customer'}
-                  </Text>
-                </View>
-              </AppPressable>
-            ))}
-            {!visibleCustomers.length && (
-              <Text style={[s.empty, { color: c.textSecondary }]}>No matching customers in local data.</Text>
-            )}
-            {!!search.trim() &&
-              !customers.some((item) => item.name.toLowerCase() === search.trim().toLowerCase()) && (
-                <AppPressable
-                  disabled={creating}
-                  onPress={() => void create()}
-                  style={[s.create, { backgroundColor: c.primary }]}
-                >
-                  <Text style={s.createText}>{creating ? 'Creating…' : `Create “${search.trim()}”`}</Text>
-                </AppPressable>
-              )}
-          </ScrollView>
-        </SafeAreaView>
+        {panel}
       </View>
     </Modal>
   );
@@ -147,6 +159,13 @@ const s = StyleSheet.create({
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     padding: 16,
+  },
+  embedded: {
+    flex: 1,
+    maxHeight: '100%',
+    minHeight: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   title: { fontSize: 17, fontWeight: '900' },
