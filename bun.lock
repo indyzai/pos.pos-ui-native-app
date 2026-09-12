@@ -9,8 +9,8 @@
         "typescript": "~6.0.3",
       },
     },
-    "apps/mobile": {
-      "name": "@indyzai/pos-ui-app",
+    "apps/admin-mobile": {
+      "name": "@indyzai/pos-ui-admin-app",
       "version": "1.0.0",
       "dependencies": {
         "@indyzai/pos-database": "workspace:*",
@@ -53,8 +53,8 @@
         "typescript": "~6.0.3",
       },
     },
-    "apps/mobile-admin": {
-      "name": "@indyzai/pos-ui-admin-app",
+    "apps/mobile": {
+      "name": "@indyzai/pos-ui-app",
       "version": "1.0.0",
       "dependencies": {
         "@indyzai/pos-database": "workspace:*",
@@ -390,7 +390,7 @@
 
     "@indyzai/pos-ui": ["@indyzai/pos-ui@workspace:packages/ui"],
 
-    "@indyzai/pos-ui-admin-app": ["@indyzai/pos-ui-admin-app@workspace:apps/mobile-admin"],
+    "@indyzai/pos-ui-admin-app": ["@indyzai/pos-ui-admin-app@workspace:apps/admin-mobile"],
 
     "@indyzai/pos-ui-app": ["@indyzai/pos-ui-app@workspace:apps/mobile"],
 
