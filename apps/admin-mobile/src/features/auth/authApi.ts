@@ -399,7 +399,7 @@ export const authApi = {
         const redirectUri = AuthSession.makeRedirectUri(
             Platform.OS === 'web'
                 ? { path: 'auth/callback' }
-                : { scheme: 'indyzai-pos', path: 'auth/callback' },
+                : { scheme: 'indyzai-pos-admin', path: 'auth/callback' },
         );
         const state = new AuthSession.AuthRequest({
             clientId: authAppId,
