@@ -22,12 +22,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F8FAFF",
+          "backgroundColor": "#EEF2FF",
           "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 240,
           "resizeMode": "contain",
           "dark": {
-            "backgroundColor": "#111318",
+            "backgroundColor": "#111827",
             "image": "./assets/splash-icon.png"
           }
         }
@@ -42,7 +42,8 @@
       "package": "com.indyzai.pos.admin.app",
       "adaptiveIcon": {
         "backgroundColor": "#27378F",
-        "foregroundImage": "./assets/android-icon-foreground-safe.png"
+        "foregroundImage": "./assets/android-icon-foreground-safe.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
