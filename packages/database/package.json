@@ -11,7 +11,11 @@
     "./indexeddb": "./src/adapters/indexeddb/index.ts",
     "./admin": "./src/admin.ts",
     "./store": "./src/store.ts",
-    "./client": "./src/runtime/client.ts",
+    "./client": {
+      "browser": "./src/runtime/client.web.ts",
+      "react-native": "./src/runtime/client.ts",
+      "default": "./src/runtime/client.ts"
+    },
     "./maintenance": "./src/runtime/maintenance.ts",
     "./migrations": "./src/runtime/migrations.ts",
     "./react": "./src/react.tsx",
