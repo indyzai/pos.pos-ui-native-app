@@ -10,15 +10,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   EXPO_NO_TELEMETRY: "1"
 
 jobs:
-  mobile:
-    name: Mobile App
+  validate:
+    name: Code Quality & Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -45,6 +45,15 @@ jobs:
       - name: Format check
         run: bun run format:check
 
-      - name: TypeScript check
+      - name: Validate POS Mobile
         working-directory: apps/mobile
-        run: bunx tsc --noEmit
+        run: |
+          bunx tsc --noEmit
+          bun test tests
+
+      - name: Validate Admin Mobile
+        working-directory: apps/admin-mobile
+        run: |
+          bunx tsc --noEmit
+          bun test tests
+          bunx expo export --platform web --output-dir dist-web

@@ -19,8 +19,8 @@
     "admin:android": "bun run --filter @indyzai/pos-ui-admin-app android",
     "admin:ios": "bun run --filter @indyzai/pos-ui-admin-app ios",
     "admin:web": "bun run --filter @indyzai/pos-ui-admin-app web",
-    "format": "bun run --filter @indyzai/pos-ui-app format",
-    "format:check": "bun run --filter @indyzai/pos-ui-app format:check"
+    "format": "bun run --filter '*' format",
+    "format:check": "bun run --filter '*' format:check"
   },
   "private": true
 }

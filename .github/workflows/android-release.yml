@@ -85,16 +85,17 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Validate POS Mobile
+        working-directory: apps/mobile
         run: |
-          bun run format:check
-          cd apps/mobile && bunx tsc --noEmit
-          cd apps/mobile && bun test tests
+          bunx tsc --noEmit
+          bun test tests
 
       - name: Validate Admin Mobile
+        working-directory: apps/admin-mobile
         run: |
-          cd apps/admin-mobile && bunx tsc --noEmit
-          cd apps/admin-mobile && bun test tests
-          cd apps/admin-mobile && bunx expo export --platform web --output-dir dist-web
+          bunx tsc --noEmit
+          bun test tests
+          bunx expo export --platform web --output-dir dist-web
 
   metadata:
     name: Resolve release metadata
