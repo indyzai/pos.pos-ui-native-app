@@ -75,6 +75,7 @@ export type CartItem = Product & {
 export type Customer = {
   id: string;
   name: string;
+  type: 'CUSTOMER';
   phone?: string;
   email?: string;
   gstin?: string;

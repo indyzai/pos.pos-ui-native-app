@@ -97,7 +97,7 @@ async function read(c: Context): Promise<BillingCache> {
     return {
         ...snapshot,
         products: snapshot.products.filter((product) => product.categoryType === 'INVENTORY'),
-        customers,
+        customers: customers.filter((customer) => customer.type === 'CUSTOMER'),
         paymentMethods: paymentMethods.length ? paymentMethods : fallbackPaymentMethods,
         serviceUsers,
         productBatches,
@@ -149,7 +149,7 @@ export const billingApi = {
             const [customerData, paymentData, serviceUserData, taxData] = await Promise.all([
                 fetchAllParties(
                     c,
-                    `query BillingCustomers($skip: Int!, $take: Int!) { parties(type: CUSTOMER, skip: $skip, take: $take) { id name phone contactNumber email addressLine gstin creditLimit balance } }`,
+                    `query BillingCustomers($skip: Int!, $take: Int!) { parties(type: CUSTOMER, skip: $skip, take: $take) { id name type phone contactNumber email addressLine gstin creditLimit balance } }`,
                     signal,
                 ),
                 request<{ paymentTypes: Array<Record<string, unknown>> }>(
@@ -171,16 +171,19 @@ export const billingApi = {
                 ),
             ]);
             const organization = await loadOrganizationDetails(c.token, c.tenant, signal);
-            const customers = customerData.map((party) => ({
-                id: String(party.id),
-                name: String(party.name),
-                phone: String(party.phone || party.contactNumber || '') || undefined,
-                email: String(party.email || '') || undefined,
-                gstin: String(party.gstin || '') || undefined,
-                address: String(party.addressLine || '') || undefined,
-                creditLimit: party.creditLimit == null ? undefined : Number(party.creditLimit),
-                balance: party.balance == null ? undefined : Number(party.balance),
-            }));
+            const customers: Customer[] = customerData
+                .filter((party) => party.type === 'CUSTOMER')
+                .map((party) => ({
+                    id: String(party.id),
+                    name: String(party.name),
+                    type: 'CUSTOMER',
+                    phone: String(party.phone || party.contactNumber || '') || undefined,
+                    email: String(party.email || '') || undefined,
+                    gstin: String(party.gstin || '') || undefined,
+                    address: String(party.addressLine || '') || undefined,
+                    creditLimit: party.creditLimit == null ? undefined : Number(party.creditLimit),
+                    balance: party.balance == null ? undefined : Number(party.balance),
+                }));
             const paymentMethods = paymentData.paymentTypes
                 .filter((item) => item.isActive !== false)
                 .map((item) => ({
@@ -307,6 +310,7 @@ export const billingApi = {
             const customer: Customer = {
                 id: String(party.id),
                 name: String(party.name),
+                type: 'CUSTOMER',
                 phone: String(party.phone || '') || undefined,
                 email: String(party.email || '') || undefined,
                 gstin: String(party.gstin || '') || undefined,

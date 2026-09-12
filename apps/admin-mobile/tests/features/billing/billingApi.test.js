@@ -210,7 +210,17 @@ test('catalog refresh maps and persists products for offline billing', async () 
             };
         }
         if (query.includes('BillingCustomers')) {
-            return { ok: true, json: async () => ({ data: { parties: [] } }) };
+            return {
+                ok: true,
+                json: async () => ({
+                    data: {
+                        parties: [
+                            { id: 7, name: 'Customer A', type: 'CUSTOMER' },
+                            { id: 9, name: 'Supplier A', type: 'SUPPLIER' },
+                        ],
+                    },
+                }),
+            };
         }
         if (query.includes('BillingPaymentTypes')) {
             return { ok: true, json: async () => ({ data: { paymentTypes: [] } }) };
@@ -272,6 +282,9 @@ test('catalog refresh maps and persists products for offline billing', async () 
     ]);
     expect(cache.serviceUsers).toEqual([
         expect.objectContaining({ id: '8', name: 'Technician A', specialization: 'Repair' }),
+    ]);
+    expect(cache.customers).toEqual([
+        expect.objectContaining({ id: '7', name: 'Customer A', type: 'CUSTOMER' }),
     ]);
     expect(cache.productBatches).toEqual([]);
     expect(cache.taxRates).toEqual([{ id: '5', name: 'GST 5%', percentage: 5, isActive: true }]);
