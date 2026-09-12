@@ -1,10 +1,16 @@
 import { kvStore } from '../../storage/kvStore';
 import type { DenominationCounts } from './types';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 
 export type DenominationCountScope = 'opening' | 'closing';
 
 const key = (tenantId: string, counterId: string, currencyCode: string, scope: DenominationCountScope) =>
-  `indyz.counter-denominations.v1:${tenantId}:${counterId}:${currencyCode}${scope === 'opening' ? '' : `:${scope}`}`;
+  appStorageKeys.pos.counterDenominations(
+    tenantId,
+    counterId,
+    currencyCode,
+    scope === 'opening' ? undefined : scope,
+  );
 
 export async function loadDenominationCounts(
   tenantId: string,

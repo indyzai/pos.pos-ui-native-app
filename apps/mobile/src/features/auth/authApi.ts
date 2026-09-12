@@ -15,6 +15,7 @@ import type {
   LoginCredentials,
   RegistrationPayload,
 } from '@indyzai/pos-auth';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 export type {
   AuthTenant,
   AuthUser,
@@ -26,14 +27,16 @@ export type {
 WebBrowser.maybeCompleteAuthSession();
 
 const authAppId = env.authAppId ?? (Platform.OS === 'web' ? 'pos' : 'pos-app');
-const accessTokenKey = 'indyzai.access-token';
-const refreshTokenKey = 'indyzai.refresh-token';
-const userKey = 'indyzai.user';
-const selectedTenantKey = 'indyzai.selected-tenant';
-const deviceIdKey = 'indyzai.device-id';
-const deviceTokenKey = 'indyzai.device-token';
-const oauthStateKey = 'indyzai.oauth-state';
-const oauthVerifierKey = 'indyzai.oauth-verifier';
+const {
+  accessToken: accessTokenKey,
+  refreshToken: refreshTokenKey,
+  user: userKey,
+  selectedTenant: selectedTenantKey,
+  deviceId: deviceIdKey,
+  deviceToken: deviceTokenKey,
+  oauthState: oauthStateKey,
+  oauthVerifier: oauthVerifierKey,
+} = appStorageKeys.pos.auth;
 const sessionFallback = new Map<string, string>();
 let sessionUserPromise: Promise<AuthUser | null> | undefined;
 let authorizationCompletion: Promise<void> | undefined;

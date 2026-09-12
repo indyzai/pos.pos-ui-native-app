@@ -1,8 +1,9 @@
 import { development, env, productionApiUrls } from './env';
 import { kvStore } from '../storage/kvStore';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 
 export type ApiEnvironment = 'local' | 'production';
-const storageKey = 'indyz.api-environment.v1';
+const storageKey = appStorageKeys.pos.apiEnvironment;
 let cachedEnvironment: ApiEnvironment | undefined;
 let loading: Promise<ApiEnvironment> | undefined;
 

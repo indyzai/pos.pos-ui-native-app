@@ -6,6 +6,7 @@ import { AppPressable } from '../../shared/components/ui/AppPressable';
 import { showSnackbar } from '../../shared/providers/SnackbarProvider';
 import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { useAuthSession } from '../auth/AuthSessionContext';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { clearLocalUiData } from '@indyzai/pos-database/maintenance';
 import { useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
 import type { LocalRecord, SyncStatus } from '@indyzai/pos-database';
@@ -69,7 +70,7 @@ export function DataSettingsSection() {
 
     const loadCompatibilityJobs = async () => {
         if (!session || local.status !== 'ready') return;
-        const scope = `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`;
+        const scope = appStorageKeys.admin.billing(session.user.id, session.tenant.id);
         const [jobs, logistics] = await Promise.all([listSyncJobs(scope), waybillRepository.read(scope)]);
         setLegacyJobs(jobs);
         setWaybillJobs(logistics);

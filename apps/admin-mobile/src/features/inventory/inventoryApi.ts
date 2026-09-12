@@ -1,5 +1,6 @@
 import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
 import { createReconciliationVariables } from './reconciliation';
 import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
@@ -40,7 +41,7 @@ function context() {
 
 const scope = () => {
     const session = context();
-    return `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`;
+    return appStorageKeys.admin.billing(session.user.id, session.tenant.id);
 };
 
 async function runTracked(

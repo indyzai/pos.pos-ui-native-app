@@ -1,5 +1,6 @@
 import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { readRestaurantTables, replaceRestaurantTables } from './restaurantTableRepository';
 import type { RestaurantTable } from './types';
 const context = () => {
@@ -9,7 +10,7 @@ const context = () => {
 };
 const scope = () => {
     const session = context();
-    return `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`;
+    return appStorageKeys.admin.billing(session.user.id, session.tenant.id);
 };
 export const restaurantApi = {
     load: () => readRestaurantTables(scope()),

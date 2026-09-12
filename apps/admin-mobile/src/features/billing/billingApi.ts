@@ -2,6 +2,7 @@ import { requestPos } from '../../core/api/posApi';
 import { SerialQueue } from '../../sync/serialQueue';
 import { readBillingSnapshot, writeBillingSnapshot } from './data/billingRepository';
 import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { loadOrganizationDetails } from '../organization/organizationApi';
 import { fetchCatalog } from '../products/catalogApi';
 import {
@@ -79,7 +80,7 @@ async function context(): Promise<Context> {
     const session = getActiveAuthSession();
     if (!session) throw new Error('Your workspace is still initializing. Please try again.');
     return {
-        key: `indyz.admin.billing.v1:${session.user.id}:${session.tenant.id}`,
+        key: appStorageKeys.admin.billing(session.user.id, session.tenant.id),
         tenant: String(session.tenant.id),
         token: session.token,
     };

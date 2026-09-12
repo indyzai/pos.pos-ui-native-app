@@ -7,7 +7,8 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./icons": "./src/AuthIcons.tsx"
+    "./icons": "./src/AuthIcons.tsx",
+    "./storage-keys": "./src/storageKeys.ts"
   },
   "dependencies": {
     "lucide-react-native": "^1.41.0"

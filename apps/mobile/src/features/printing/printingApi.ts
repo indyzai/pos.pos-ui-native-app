@@ -1,5 +1,6 @@
 import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import type { CounterPrinter, PrintJob } from './types';
 import type { LocalPrintJob } from './types';
 import * as Crypto from 'expo-crypto';
@@ -15,7 +16,7 @@ const context = () => {
 
 const scope = () => {
   const session = context();
-  return `indyz.billing.v1:${session.user.id}:${session.tenant.id}`;
+  return appStorageKeys.pos.billing(session.user.id, session.tenant.id);
 };
 
 async function submit(job: LocalPrintJob) {

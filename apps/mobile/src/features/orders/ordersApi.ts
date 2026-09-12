@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { requestPos } from '../../core/api/posApi';
 import { SerialQueue } from '../../sync/serialQueue';
 import { getActiveAuthSession } from '../auth/AuthSessionContext';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { ordersRepository } from './ordersRepository';
 import type { RefundRecord, SalesOrder } from './types';
 import { buildPendingRefund, type RefundSelection } from './refundPolicy';
@@ -15,7 +16,7 @@ function context() {
   const session = getActiveAuthSession();
   if (!session) throw new Error('Your workspace is still initializing.');
   return {
-    scope: `indyz.orders.v1:${session.user.id}:${session.tenant.id}`,
+    scope: appStorageKeys.pos.orders(session.user.id, session.tenant.id),
     token: session.token,
     tenant: String(session.tenant.id),
   };
