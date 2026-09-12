@@ -45,11 +45,15 @@ function RootNavigator() {
   const router = useRouter();
   const { authenticated, initializing } = useAuthSession();
   useEffect(() => {
-    if (!initializing && !authenticated && !['/', '/login', '/signup', '/auth/callback'].includes(pathname)) {
+    if (
+      !initializing &&
+      !authenticated &&
+      !['/', '/login', '/signup', '/auth/callback', '/auth/handoff'].includes(pathname)
+    ) {
       router.replace('/login');
     }
   }, [authenticated, initializing, pathname, router]);
-  const headerHidden = ['/', '/login', '/signup', '/auth/callback'].includes(pathname);
+  const headerHidden = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff'].includes(pathname);
   const showLeftNavigation = !headerHidden && width >= 700 && width > height;
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>

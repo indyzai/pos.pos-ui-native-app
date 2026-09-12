@@ -15,7 +15,7 @@ import {
 export type AppNavigationItem = { label: string; icon: LucideIcon; href: Href };
 
 export const primaryNavigationItems: AppNavigationItem[] = [
-    { label: 'Billing', icon: LayoutGrid, href: '/billing' },
+    { label: 'POS Billing', icon: LayoutGrid, href: '/billing' },
     { label: 'Orders', icon: ReceiptText, href: '/orders' },
 ];
 

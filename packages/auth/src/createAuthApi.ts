@@ -306,6 +306,25 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
     const authApi = {
         getAccessToken: () => getSessionValue(accessTokenKey),
         completeAuthorizationCode,
+        async createAppHandoff(
+            tenantId: string,
+        ): Promise<{ code: string; tenantId: string }> {
+            const accessToken = await getSessionValue(accessTokenKey);
+            if (!accessToken)
+                throw new Error("Sign in before switching applications.");
+            return authenticatedRequest<{ code: string; tenantId: string }>(
+                "/auth/handoff",
+                { tenantId },
+                accessToken,
+            );
+        },
+        async completeAppHandoff(
+            code: string,
+            tenantId: string,
+        ): Promise<void> {
+            await exchangeCode(code, true);
+            await this.selectTenant(tenantId);
+        },
         async getDeviceRegistrationDetails(): Promise<DeviceRegistrationDetails> {
             const deviceId = await getSessionValue(deviceIdKey);
             let deviceIdentifier: string | undefined;
