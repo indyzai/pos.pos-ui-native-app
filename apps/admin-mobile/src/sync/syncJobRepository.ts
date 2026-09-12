@@ -1,9 +1,9 @@
 import * as Crypto from 'expo-crypto';
 import { desc, eq } from 'drizzle-orm';
-import { getDatabase, hasNativeDatabase } from '../db/client';
-import { initializeDatabase } from '../db/migrations';
-import { syncJobs, type SyncJobOperation, type SyncJobStatus } from '../db/schema/syncJobs';
-import { readWebSyncJobs, writeWebSyncJob } from '../db/webClient';
+import { getDatabase, hasNativeDatabase } from '@indyzai/pos-database/client';
+import { initializeDatabase } from '@indyzai/pos-database/migrations';
+import { syncJobs, type SyncJobOperation, type SyncJobStatus } from '@indyzai/pos-database/schema';
+import { readWebSyncJobs, writeWebSyncJob } from '@indyzai/pos-database/web-client';
 
 export type SyncJob = {
     id: string;

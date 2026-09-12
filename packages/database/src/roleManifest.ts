@@ -1,4 +1,9 @@
-import type { CollectionName, DatabaseScope, PosRole } from "./types";
+import type {
+    CollectionName,
+    DatabaseAppProfile,
+    DatabaseScope,
+    PosRole,
+} from "./types";
 
 const base: CollectionName[] = [
     "organizations",
@@ -84,6 +89,26 @@ const roleCollections: Record<PosRole, readonly CollectionName[]> = {
     superadmin: [...base, ...management, ...administration],
 };
 
+const appCollections: Record<DatabaseAppProfile, readonly CollectionName[]> = {
+    store: [...base, ...management],
+    admin: [...base, ...management, ...administration],
+};
+
+export function getAppCollections(
+    profile: DatabaseAppProfile,
+): ReadonlySet<CollectionName> {
+    return new Set(appCollections[profile]);
+}
+
+export function resolveAppProfile(scope: DatabaseScope): DatabaseAppProfile {
+    return (
+        scope.appProfile ??
+        (scope.role === "cashier" || scope.role === "manager"
+            ? "store"
+            : "admin")
+    );
+}
+
 export type RoleDataManifest = {
     role: PosRole;
     collections: ReadonlySet<CollectionName>;
@@ -91,6 +116,7 @@ export type RoleDataManifest = {
 };
 
 export function getRoleDataManifest(scope: DatabaseScope): RoleDataManifest {
+    const provisioned = getAppCollections(resolveAppProfile(scope));
     const detailMode =
         scope.role === "cashier"
             ? "own-shift"
@@ -101,7 +127,9 @@ export function getRoleDataManifest(scope: DatabaseScope): RoleDataManifest {
                 : "on-demand";
     return {
         role: scope.role,
-        collections: new Set(roleCollections[scope.role]),
+        collections: new Set(
+            roleCollections[scope.role].filter((name) => provisioned.has(name)),
+        ),
         detailMode,
     };
 }

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, test } from 'bun:test';
-import { createScopeKey } from '../../src/db/types';
+import { createScopeKey } from '@indyzai/pos-database';
 
 const scope = {
     tenantId: 'tenant-web',
@@ -18,7 +18,7 @@ afterEach(async () => {
 
 describe('IndexedDB local database adapter', () => {
     test('persists and observes scoped records through the shared repository contract', async () => {
-        const { IndexedDbLocalDatabase } = await import('../../src/db/adapters/indexeddb/indexeddb.database');
+        const { IndexedDbLocalDatabase } = await import('@indyzai/pos-database/indexeddb');
         const database = new IndexedDbLocalDatabase(scope);
         await database.initialize();
         const products = database.collection('products');
@@ -44,7 +44,7 @@ describe('IndexedDB local database adapter', () => {
     });
 
     test('rejects collections not provisioned for the role', async () => {
-        const { IndexedDbLocalDatabase } = await import('../../src/db/adapters/indexeddb/indexeddb.database');
+        const { IndexedDbLocalDatabase } = await import('@indyzai/pos-database/indexeddb');
         const database = new IndexedDbLocalDatabase(scope);
         await database.initialize();
         expect(() => database.collection('purchase_orders')).toThrow();
@@ -52,7 +52,7 @@ describe('IndexedDB local database adapter', () => {
     });
 
     test('clears all active database collections without closing the adapter', async () => {
-        const { IndexedDbLocalDatabase } = await import('../../src/db/adapters/indexeddb/indexeddb.database');
+        const { IndexedDbLocalDatabase } = await import('@indyzai/pos-database/indexeddb');
         const database = new IndexedDbLocalDatabase(scope);
         await database.initialize();
         const scopeKey = createScopeKey(scope);

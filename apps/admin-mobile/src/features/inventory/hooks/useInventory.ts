@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocalDatabase } from '../../../db/DatabaseProvider';
+import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { useAuthSession } from '../../auth/AuthSessionContext';
 import { inventoryApi } from '../inventoryApi';
 import type { CreateInventoryItemInput, StockReconciliationInput } from '../types';
-import { payloadsFromRecords, replaceLocalPayloads, useLocalProducts } from '../../../db';
-import type { LocalRecord } from '../../../db';
+import { payloadsFromRecords, replaceLocalPayloads, useLocalProducts } from '@indyzai/pos-database';
+import type { LocalRecord } from '@indyzai/pos-database';
 import type { Product } from '../../billing/types/billing';
 
 export function useInventory() {

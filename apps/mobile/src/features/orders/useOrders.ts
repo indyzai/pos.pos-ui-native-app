@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useAuthSession } from '../auth/AuthSessionContext';
-import { useLocalDatabase } from '../../db/DatabaseProvider';
+import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { ordersApi } from './ordersApi';
 import type { SalesOrder } from './types';
 import type { RefundSelection } from './refundPolicy';
-import { payloadsFromRecords, replaceLocalPayloads, useLocalCollection } from '../../db';
-import type { LocalRecord } from '../../db';
+import { payloadsFromRecords, replaceLocalPayloads, useLocalCollection } from '@indyzai/pos-database';
+import type { LocalRecord } from '@indyzai/pos-database';
 import type { RefundRecord } from './types';
 
 export function useOrders() {

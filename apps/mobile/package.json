@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@indyzai/pos-auth": "workspace:*",
+    "@indyzai/pos-backend": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
     "@indyzai/pos-ui": "workspace:*",
     "@tanstack/react-query": "^5.102.8",

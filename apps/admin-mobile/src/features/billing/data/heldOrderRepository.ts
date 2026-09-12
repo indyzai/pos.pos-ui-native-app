@@ -1,8 +1,8 @@
 import { desc, eq } from 'drizzle-orm';
-import { getDatabase, hasNativeDatabase } from '../../../db/client';
-import { initializeDatabase } from '../../../db/migrations';
-import { heldOrders } from '../../../db/schema';
-import { deleteWebHeldOrder, readWebHeldOrders, writeWebHeldOrder } from '../../../db/webClient';
+import { getDatabase, hasNativeDatabase } from '@indyzai/pos-database/client';
+import { initializeDatabase } from '@indyzai/pos-database/migrations';
+import { heldOrders } from '@indyzai/pos-database/schema';
+import { deleteWebHeldOrder, readWebHeldOrders, writeWebHeldOrder } from '@indyzai/pos-database/web-client';
 import type { HeldOrder } from '../types/billing';
 
 const storageId = (scope: string, id: string) => `${scope}:held-order:${id}`;

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { getRoleDataManifest } from '../../src/db/roleManifest';
-import { createScopeKey, normalizePosRole } from '../../src/db/types';
+import { getRoleDataManifest } from '@indyzai/pos-database';
+import { createScopeKey, normalizePosRole } from '@indyzai/pos-database';
+import { schemaSqlForProfile } from '@indyzai/pos-database';
 
 const scope = (role) => ({
   tenantId: 'tenant-1',
@@ -28,6 +29,19 @@ describe('role-scoped local database manifest', () => {
     expect(manifest.collections.has('stock_counts')).toBe(true);
     expect(manifest.collections.has('transfers')).toBe(true);
     expect(manifest.collections.has('purchase_orders')).toBe(false);
+  });
+
+  test('application profiles provision only their required tables', () => {
+    const store = getRoleDataManifest({ ...scope('admin'), appProfile: 'store' });
+    const admin = getRoleDataManifest({ ...scope('admin'), appProfile: 'admin' });
+    expect(store.collections.has('purchase_orders')).toBe(false);
+    expect(admin.collections.has('purchase_orders')).toBe(true);
+
+    const sql =
+      'CREATE TABLE `products` (`id` text);--> statement-breakpoint' +
+      'CREATE TABLE `purchase_orders` (`id` text);';
+    expect(schemaSqlForProfile(sql, 'store')).toContain('products');
+    expect(schemaSqlForProfile(sql, 'store')).not.toContain('purchase_orders');
   });
 
   test('admin receives purchasing data', () => {

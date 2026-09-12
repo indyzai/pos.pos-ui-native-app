@@ -1,5 +1,7 @@
-import { requestGraphQL } from './baseApi';
+import { createGraphQLClient } from '@indyzai/pos-backend';
 import { getRuntimeApiUrls } from '../../config/runtimeEnvironment';
+
+const graphql = createGraphQLClient(async () => (await getRuntimeApiUrls()).posApiUrl);
 
 export function requestPos<T>(
   token: string,
@@ -8,7 +10,5 @@ export function requestPos<T>(
   variables: Record<string, unknown> = {},
   signal?: AbortSignal,
 ) {
-  return getRuntimeApiUrls().then(({ posApiUrl }) =>
-    requestGraphQL<T>(posApiUrl, query, variables, { token, tenantId, signal }),
-  );
+  return graphql<T>(query, variables, { token, tenantId, signal });
 }

@@ -9,9 +9,31 @@
     ".": "./src/index.ts",
     "./role-manifest": "./src/roleManifest.ts",
     "./indexeddb": "./src/adapters/indexeddb/index.ts",
-    "./sqlite": "./src/adapters/sqlite.ts"
+    "./admin": "./src/admin.ts",
+    "./store": "./src/store.ts",
+    "./client": "./src/runtime/client.ts",
+    "./maintenance": "./src/runtime/maintenance.ts",
+    "./migrations": "./src/runtime/migrations.ts",
+    "./react": "./src/react.tsx",
+    "./react-hooks": "./src/hooks.ts",
+    "./schema": "./src/runtime/schema/index.ts",
+    "./sqlite": "./src/adapters/sqlite.ts",
+    "./web-client": "./src/runtime/webClient.ts"
   },
   "dependencies": {
-    "dexie": "^4.4.6"
+    "dexie": "^4.4.6",
+    "drizzle-orm": "^0.45.2",
+    "expo-sqlite": "~57.0.2"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:bundle": "bun scripts/generate-db-bundle.mjs"
   }
 }

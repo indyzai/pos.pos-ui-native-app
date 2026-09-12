@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
-import { createScopeKey, useLocalCollection, useLocalDatabase } from '../../../db';
-import type { LocalRecord } from '../../../db';
+import { createScopeKey, useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
+import type { LocalRecord } from '@indyzai/pos-database';
 import type { BillingOrderContext, CartItem, Customer, HeldOrder, ScrapExchange } from '../types/billing';
 
 export function useHeldOrders(enabledScope?: string) {

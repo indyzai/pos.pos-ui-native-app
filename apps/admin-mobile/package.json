@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@indyzai/pos-auth": "workspace:*",
+    "@indyzai/pos-backend": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
     "@indyzai/pos-ui": "workspace:*",
     "@tanstack/react-query": "^5.102.8",
@@ -37,7 +39,6 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "drizzle-kit": "^0.31.10",
     "fake-indexeddb": "^6.2.5",
     "prettier": "^3.9.6",
     "typescript": "~6.0.3"
@@ -47,8 +48,8 @@
     "android": "expo start --android --port 3512",
     "ios": "expo start --ios --port 3512",
     "web": "expo start --web --port 3512",
-    "db:generate": "drizzle-kit generate",
-    "db:bundle": "bun scripts/generate-db-bundle.mjs",
+    "db:generate": "bun run --cwd ../../packages/database db:generate",
+    "db:bundle": "bun run --cwd ../../packages/database db:bundle",
     "test": "bun test tests",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

@@ -1,0 +1,20 @@
+{
+  "name": "@indyzai/pos-auth",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./icons": "./src/AuthIcons.tsx"
+  },
+  "dependencies": {
+    "lucide-react-native": "^1.41.0"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-svg": "^15.15.5"
+  }
+}

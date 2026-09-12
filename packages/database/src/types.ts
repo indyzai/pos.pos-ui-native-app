@@ -6,11 +6,13 @@ export const posRoles = [
     "superadmin",
 ] as const;
 export type PosRole = (typeof posRoles)[number];
+export type DatabaseAppProfile = "store" | "admin";
 
 export type SyncStatus =
     "SYNCED" | "PENDING" | "RUNNING" | "FAILED" | "CONFLICT";
 
 export type DatabaseScope = {
+    appProfile?: DatabaseAppProfile;
     tenantId: string;
     userId: string;
     role: PosRole;

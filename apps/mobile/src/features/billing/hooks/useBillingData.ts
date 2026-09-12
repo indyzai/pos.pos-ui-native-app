@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { billingApi, type BillingCache } from '../billingApi';
 import { useAuthSession } from '../../auth/AuthSessionContext';
-import { useLocalDatabase } from '../../../db/DatabaseProvider';
+import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
 import {
   payloadsFromRecords,
@@ -10,8 +10,8 @@ import {
   useLocalCollection,
   useLocalCustomers,
   useLocalProducts,
-} from '../../../db';
-import type { LocalRecord } from '../../../db';
+} from '@indyzai/pos-database';
+import type { LocalRecord } from '@indyzai/pos-database';
 import type {
   BillingPaymentMethod,
   BillingTaxRate,

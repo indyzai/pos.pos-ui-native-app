@@ -31,7 +31,7 @@ import { AppPressable } from '../ui/AppPressable';
 import { PosLogo } from '../branding/PosLogo';
 import { authApi } from '../../../features/auth/authApi';
 import { useAuthSession } from '../../../features/auth/AuthSessionContext';
-import { useLocalDatabase } from '../../../db/DatabaseProvider';
+import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { useAppHeader } from '../../providers/AppHeaderProvider';
 import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
 import { CounterSessionSummaryDialog } from '../../../features/counter-session/components/CounterSessionSummaryDialog';

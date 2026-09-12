@@ -1,18 +1,14 @@
 import Dexie, { type Table } from "dexie";
-import {
-    collectionNames,
-    type CollectionName,
-    type LocalRecord,
-} from "../../types";
+import type { CollectionName, LocalRecord } from "../../types";
 
 const indexes =
     "id, scope, tenantId, storeId, remoteId, syncStatus, updatedAt, [scope+storeId], [scope+syncStatus]";
 
 export class PosIndexedDb extends Dexie {
-    constructor(databaseName = "indyz-pos-local-v1") {
+    constructor(databaseName: string, collections: readonly CollectionName[]) {
         super(databaseName);
         this.version(1).stores(
-            Object.fromEntries(collectionNames.map((name) => [name, indexes])),
+            Object.fromEntries(collections.map((name) => [name, indexes])),
         );
     }
 
@@ -23,8 +19,11 @@ export class PosIndexedDb extends Dexie {
     }
 }
 
-export async function clearIndexedDbLocalData(): Promise<void> {
-    const database = new PosIndexedDb();
+export async function clearIndexedDbLocalData(
+    databaseName: string,
+    collections: readonly CollectionName[],
+): Promise<void> {
+    const database = new PosIndexedDb(databaseName, collections);
     await database.open();
     await database.transaction("rw", database.tables, async () => {
         await Promise.all(database.tables.map((table) => table.clear()));

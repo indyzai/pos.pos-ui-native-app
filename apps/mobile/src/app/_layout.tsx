@@ -6,7 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../shared/query/queryClient';
 import { ThemeProvider, useAppTheme } from '../shared/providers/ThemeProvider';
 import { AuthSessionProvider, useAuthSession } from '../features/auth/AuthSessionContext';
-import { DatabaseProvider } from '../db/DatabaseProvider';
+import { DatabaseProvider } from '../providers/DatabaseProvider';
 import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';

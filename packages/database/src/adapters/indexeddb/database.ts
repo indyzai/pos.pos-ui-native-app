@@ -1,10 +1,11 @@
 import { liveQuery } from "dexie";
 import {
     assertCollectionAllowed,
+    getAppCollections,
     getRoleDataManifest,
+    resolveAppProfile,
 } from "../../roleManifest";
 import {
-    collectionNames,
     createScopeKey,
     type CollectionName,
     type CollectionRepository,
@@ -100,9 +101,11 @@ export class IndexedDbLocalDatabase implements LocalDatabase {
 
     constructor(
         readonly scope: DatabaseScope,
-        databaseName?: string,
+        databaseName = "indyz-pos-local-v1",
     ) {
-        this.database = new PosIndexedDb(databaseName);
+        this.database = new PosIndexedDb(databaseName, [
+            ...getAppCollections(resolveAppProfile(scope)),
+        ]);
     }
 
     async initialize() {
@@ -144,9 +147,11 @@ export class IndexedDbLocalDatabase implements LocalDatabase {
         const scopeKey = createScopeKey(this.scope);
         await this.database.transaction(
             "rw",
-            collectionNames.map((name) => this.database.records(name)),
+            this.database.tables,
             async () => {
-                for (const name of collectionNames) {
+                for (const name of getAppCollections(
+                    resolveAppProfile(this.scope),
+                )) {
                     const table = this.database.records(name);
                     const rows = await table
                         .where("tenantId")

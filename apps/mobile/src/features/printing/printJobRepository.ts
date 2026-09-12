@@ -1,8 +1,8 @@
 import { and, eq, ne } from 'drizzle-orm';
-import { getDatabase, hasNativeDatabase } from '../../db/client';
-import { initializeDatabase } from '../../db/migrations';
-import { printJobs } from '../../db/schema';
-import { readWebPrintJobs, writeWebPrintJob } from '../../db/webClient';
+import { getDatabase, hasNativeDatabase } from '@indyzai/pos-database/client';
+import { initializeDatabase } from '@indyzai/pos-database/migrations';
+import { printJobs } from '@indyzai/pos-database/schema';
+import { readWebPrintJobs, writeWebPrintJob } from '@indyzai/pos-database/web-client';
 import type { LocalPrintJob } from './types';
 
 const storageId = (scope: string, id: string) => `${scope}:print-job:${id}`;

@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getRoleDataManifest } from '../../src/db/roleManifest';
-import { createScopeKey, normalizePosRole } from '../../src/db/types';
+import { createScopeKey, getRoleDataManifest, normalizePosRole } from '@indyzai/pos-database';
 
 const scope = (role) => ({
     tenantId: 'tenant-1',

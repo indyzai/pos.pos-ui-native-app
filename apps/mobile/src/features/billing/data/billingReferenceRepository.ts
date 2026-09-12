@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { getDatabase, hasNativeDatabase } from '../../../db/client';
-import { initializeDatabase } from '../../../db/migrations';
-import { customers, paymentMethods, serviceUsers, taxRates } from '../../../db/schema';
-import { readWebScopedRecords, replaceWebScopedRecords, webStores } from '../../../db/webClient';
+import { getDatabase, hasNativeDatabase } from '@indyzai/pos-database/client';
+import { initializeDatabase } from '@indyzai/pos-database/migrations';
+import { customers, paymentMethods, serviceUsers, taxRates } from '@indyzai/pos-database/schema';
+import { readWebScopedRecords, replaceWebScopedRecords, webStores } from '@indyzai/pos-database/web-client';
 import type { BillingPaymentMethod, BillingTaxRate, Customer, ServiceUser } from '../types/billing';
 
 type ReferenceRecord = Customer | BillingPaymentMethod | ServiceUser | BillingTaxRate;

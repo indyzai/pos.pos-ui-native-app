@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import type { Product } from '../types/billing';
 import type { CounterSession, PendingSale } from '../../sales/salesOutbox';
-import { getDatabase, hasNativeDatabase } from '../../../db/client';
-import { initializeDatabase } from '../../../db/migrations';
-import { billingMetadata, products, sales } from '../../../db/schema';
-import { readWebBillingSnapshot, writeWebBillingSnapshot } from '../../../db/webClient';
+import { getDatabase, hasNativeDatabase } from '@indyzai/pos-database/client';
+import { initializeDatabase } from '@indyzai/pos-database/migrations';
+import { billingMetadata, products, sales } from '@indyzai/pos-database/schema';
+import { readWebBillingSnapshot, writeWebBillingSnapshot } from '@indyzai/pos-database/web-client';
 
 export type BillingSnapshot = {
     products: Product[];
@@ -79,7 +79,13 @@ function parseMetadata(
 
 export async function readBillingSnapshot(scope: string): Promise<BillingSnapshot> {
     if (!hasNativeDatabase) {
-        return (await readWebBillingSnapshot(scope)) ?? { products: [], session: null, queue: [] };
+        return (
+            (await readWebBillingSnapshot<BillingSnapshot>(scope)) ?? {
+                products: [],
+                session: null,
+                queue: [],
+            }
+        );
     }
     initializeDatabase();
     const nativeDatabase = getDatabase();

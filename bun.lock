@@ -13,6 +13,8 @@
       "name": "@indyzai/pos-ui-admin-app",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/pos-auth": "workspace:*",
+        "@indyzai/pos-backend": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-ui": "workspace:*",
         "@tanstack/react-query": "^5.102.8",
@@ -47,7 +49,6 @@
       },
       "devDependencies": {
         "@types/react": "~19.2.2",
-        "drizzle-kit": "^0.31.10",
         "fake-indexeddb": "^6.2.5",
         "prettier": "^3.9.6",
         "typescript": "~6.0.3",
@@ -57,6 +58,8 @@
       "name": "@indyzai/pos-ui-app",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/pos-auth": "workspace:*",
+        "@indyzai/pos-backend": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-ui": "workspace:*",
         "@tanstack/react-query": "^5.102.8",
@@ -97,11 +100,36 @@
         "typescript": "~6.0.3",
       },
     },
+    "packages/auth": {
+      "name": "@indyzai/pos-auth",
+      "version": "1.0.0",
+      "dependencies": {
+        "lucide-react-native": "^1.41.0",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
+        "react-native-svg": "^15.15.5",
+      },
+    },
+    "packages/backend": {
+      "name": "@indyzai/pos-backend",
+      "version": "1.0.0",
+    },
     "packages/database": {
       "name": "@indyzai/pos-database",
       "version": "1.0.0",
       "dependencies": {
         "dexie": "^4.4.6",
+        "drizzle-orm": "^0.45.2",
+        "expo-sqlite": "~57.0.2",
+      },
+      "devDependencies": {
+        "drizzle-kit": "^0.31.10",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
       },
     },
     "packages/ui": {
@@ -385,6 +413,10 @@
     "@expo/ws-tunnel": ["@expo/ws-tunnel@2.0.0", "", { "peerDependencies": { "ws": "^8.0.0" } }, "sha512-j+JfTRdCk820J9dU0sA2SqshQIKFOMo7ED84w9MJFcebfbNQgsLztEY/SABDkGnjatrW4xGqnUhVRxSBVyCkXw=="],
 
     "@expo/xcpretty": ["@expo/xcpretty@4.4.4", "", { "dependencies": { "@babel/code-frame": "^7.20.0", "chalk": "^4.1.0", "js-yaml": "^4.1.0" }, "bin": { "excpretty": "build/cli.js" } }, "sha512-4aQzz9vgxcNXFfo/iyNgDDYfsU5XGKKxWxZopw0cVotHiW+U8IJbIxMaxsINs6bHhtkG3StKNPcOrn3eBuxKPw=="],
+
+    "@indyzai/pos-auth": ["@indyzai/pos-auth@workspace:packages/auth"],
+
+    "@indyzai/pos-backend": ["@indyzai/pos-backend@workspace:packages/backend"],
 
     "@indyzai/pos-database": ["@indyzai/pos-database@workspace:packages/database"],
 

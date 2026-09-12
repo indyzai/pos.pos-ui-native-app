@@ -8,6 +8,20 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { env } from '../../config/env';
 import { getRuntimeApiUrls } from '../../config/runtimeEnvironment';
+import type {
+    AuthTenant,
+    AuthUser,
+    DeviceRegistrationDetails,
+    LoginCredentials,
+    RegistrationPayload,
+} from '@indyzai/pos-auth';
+export type {
+    AuthTenant,
+    AuthUser,
+    DeviceRegistrationDetails,
+    LoginCredentials,
+    RegistrationPayload,
+} from '@indyzai/pos-auth';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,28 +39,6 @@ let sessionUserPromise: Promise<AuthUser | null> | undefined;
 let authorizationCompletion: Promise<void> | undefined;
 
 type Tokens = { accessToken?: string; refreshToken?: string; user?: AuthUser };
-export type AuthTenant = { id: string; name: string; role: string };
-export type AuthUser = {
-    id: string;
-    email: string;
-    firstName?: string | null;
-    lastName?: string | null;
-    avatarUrl?: string | null;
-    role?: string;
-    tenants?: AuthTenant[];
-};
-export type DeviceRegistrationDetails = {
-    registered: boolean;
-    deviceId?: string;
-    deviceIdentifier?: string;
-    deviceName: string;
-    platform: string;
-    platformVersion: string;
-    applicationId: string;
-    applicationVersion: string;
-    buildVersion: string;
-    executionEnvironment: string;
-};
 type AuthResponse = Tokens & { tokens?: Tokens; user?: AuthUser };
 type CodeResponse = AuthResponse & { code?: string; applicationCode?: string };
 
@@ -248,17 +240,6 @@ async function completeAuthorizationCode(code: string, returnedState?: string): 
         authorizationCompletion = undefined;
     }
 }
-
-export type LoginCredentials = { email: string; password: string };
-export type RegistrationPayload = {
-    fullName: string;
-    email: string;
-    password: string;
-    companyName: string;
-    domainName: string;
-    organizationType: string;
-    industry: string;
-};
 
 export const authApi = {
     getAccessToken: () => getSessionValue(accessTokenKey),

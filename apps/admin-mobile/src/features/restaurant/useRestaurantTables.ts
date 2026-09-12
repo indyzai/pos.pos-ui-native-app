@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { replaceLocalPayloads, useLocalCollection, useLocalDatabase } from '../../db';
-import type { LocalRecord } from '../../db';
+import { replaceLocalPayloads, useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
+import type { LocalRecord } from '@indyzai/pos-database';
 import { restaurantApi } from './restaurantApi';
 import type { RestaurantTable } from './types';
 
