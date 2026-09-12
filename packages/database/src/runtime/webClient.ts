@@ -5,7 +5,8 @@ type BillingSnapshot = {
     updated?: string;
 };
 
-const databaseName = "indyz-pos-web";
+type DatabaseAppProfile = "store" | "admin";
+let databaseName = "indyz-pos-web";
 const legacyStore = "billing-snapshots";
 export const webStores = {
     products: "products",
@@ -39,6 +40,15 @@ export type WebSyncJob = {
     updatedAt: string;
 };
 let databasePromise: Promise<IDBDatabase> | undefined;
+
+export function configureWebDatabaseProfile(profile: DatabaseAppProfile): void {
+    const nextName =
+        profile === "admin" ? "indyz-pos-admin-web" : "indyz-pos-web";
+    if (databaseName === nextName) return;
+    void databasePromise?.then((database) => database.close());
+    databasePromise = undefined;
+    databaseName = nextName;
+}
 
 type ScopedProduct = BillingSnapshot["products"][number] & {
     storageId: string;
