@@ -95,6 +95,7 @@ async function read(c: Context): Promise<BillingCache> {
   ]);
   return {
     ...snapshot,
+    products: snapshot.products.filter((product) => product.categoryType === 'INVENTORY'),
     customers,
     paymentMethods: paymentMethods.length ? paymentMethods : fallbackPaymentMethods,
     serviceUsers,
@@ -113,6 +114,22 @@ async function request<T>(
   return requestPos<T>(c.token, c.tenant, query, variables, signal);
 }
 
+const PARTY_PAGE_SIZE = 200;
+
+async function fetchAllParties(c: Context, query: string, signal?: AbortSignal) {
+  const parties: Array<Record<string, unknown>> = [];
+  while (true) {
+    const page = await request<{ parties: Array<Record<string, unknown>> }>(
+      c,
+      query,
+      { skip: parties.length, take: PARTY_PAGE_SIZE },
+      signal,
+    );
+    parties.push(...page.parties);
+    if (page.parties.length < PARTY_PAGE_SIZE) return parties;
+  }
+}
+
 export const billingApi = {
   load: () =>
     syncQueue.run(async () => {
@@ -125,10 +142,9 @@ export const billingApi = {
       const cache = await read(c);
       const products = await fetchCatalog((query, variables) => request(c, query, variables, signal));
       const [customerData, paymentData, serviceUserData, taxData] = await Promise.all([
-        request<{ parties: Array<Record<string, unknown>> }>(
+        fetchAllParties(
           c,
           `query BillingCustomers($skip: Int!, $take: Int!) { parties(type: CUSTOMER, skip: $skip, take: $take) { id name phone contactNumber email addressLine gstin creditLimit balance } }`,
-          { skip: 0, take: 500 },
           signal,
         ),
         request<{ paymentTypes: Array<Record<string, unknown>> }>(
@@ -137,10 +153,9 @@ export const billingApi = {
           {},
           signal,
         ),
-        request<{ parties: Array<Record<string, unknown>> }>(
+        fetchAllParties(
           c,
           `query BillingTechnicians($skip: Int!, $take: Int!) { parties(type: TECHNICIAN, skip: $skip, take: $take) { id name phone email details } }`,
-          { skip: 0, take: 500 },
           signal,
         ),
         request<{ taxes: Array<Record<string, unknown>> }>(
@@ -151,7 +166,7 @@ export const billingApi = {
         ),
       ]);
       const organization = await loadOrganizationDetails(c.token, c.tenant, signal);
-      const customers = customerData.parties.map((party) => ({
+      const customers = customerData.map((party) => ({
         id: String(party.id),
         name: String(party.name),
         phone: String(party.phone || party.contactNumber || '') || undefined,
@@ -185,7 +200,7 @@ export const billingApi = {
               }))
             : [],
         }));
-      const serviceUsers: ServiceUser[] = serviceUserData.parties.map((party) => {
+      const serviceUsers: ServiceUser[] = serviceUserData.map((party) => {
         const details = (party.details || {}) as Record<string, unknown>;
         return {
           id: String(party.id),

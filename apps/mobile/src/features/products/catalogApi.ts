@@ -17,7 +17,7 @@ export type ProductRequest = <T>(query: string, variables?: Record<string, unkno
 
 const catalogQuery = `
   query Catalog($skip: Int!, $take: Int!) {
-    products(skip: $skip, take: $take) {
+    products(categoryType: INVENTORY, skip: $skip, take: $take) {
       id name skuCode imageUrl price quantity barcode details category { name type } tax { percentage rate }
     }
   }
@@ -49,6 +49,7 @@ export async function fetchCatalog(request: ProductRequest): Promise<Product[]> 
   for (let skip = 0; ; skip += 100) {
     const data = await request<{ products: CatalogRow[] }>(catalogQuery, { skip, take: 100 });
     rows.push(...data.products);
-    if (data.products.length < 100) return rows.map(toProduct);
+    if (data.products.length < 100)
+      return rows.filter((row) => row.category?.type === 'INVENTORY').map(toProduct);
   }
 }

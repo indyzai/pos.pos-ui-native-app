@@ -94,6 +94,13 @@ export function useBillingData() {
       running.current = false;
     }
   };
+  const initialRefreshKey = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const key = query.data?.key;
+    if (!ready || !key || initialRefreshKey.current === key) return;
+    initialRefreshKey.current = key;
+    void refresh();
+  }, [query.data?.key, ready]);
   const error = syncMutation.error ?? query.error;
   const data = useMemo(() => {
     if (!ready || !query.data) return undefined;
