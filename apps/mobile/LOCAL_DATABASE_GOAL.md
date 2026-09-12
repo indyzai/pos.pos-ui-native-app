@@ -27,9 +27,9 @@ The signed-in role determines which server collections are pulled and retained l
 
 The application already has:
 
-- Expo SQLite and Drizzle schemas under `src/db/schema`.
-- A platform-resolved `src/db/client.web.ts` that prevents SQLite from entering the web bundle.
-- Raw IndexedDB storage in `src/db/webClient.ts`.
+- Expo SQLite and Drizzle schemas under `packages/database/src/runtime/schema`.
+- A platform-resolved `@indyzai/pos-database/client` export that prevents SQLite from entering the web bundle.
+- Raw IndexedDB storage in `packages/database/src/runtime/webClient.ts`.
 - Separate local collections for products, sales, customers, payment methods, held orders, printers, print jobs, restaurant tables, service users, product batches, tax rates, orders, refunds, waybill jobs, scrap purchase jobs, and sync jobs.
 - Feature repositories that frequently select IndexedDB or SQLite themselves using `hasNativeDatabase`.
 - Storage scopes based on user and tenant, but no centralized role-aware database manifest.
@@ -51,10 +51,10 @@ This goal replaces platform branching inside feature repositories with adapters 
 
 ## Target Source Layout
 
-The existing one-file-per-collection Drizzle schemas remain valid. Introduce contracts and platform adapters without forcing unrelated feature code into `src/db`.
+The existing one-file-per-collection Drizzle schemas remain valid. Contracts and platform adapters live in `packages/database`, keeping persistence code out of the app.
 
 ```text
-src/db/
+packages/database/src/runtime/
 ├── index.ts
 ├── LocalDatabase.ts
 ├── DatabaseProvider.tsx

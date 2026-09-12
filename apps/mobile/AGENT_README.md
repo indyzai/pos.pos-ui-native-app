@@ -50,9 +50,9 @@ Local storage initializes through DatabaseProvider (IndexedDB on web, lazy SQLit
 
 Native builds use `expo-sqlite` through Drizzle ORM. Drizzle's Expo driver uses synchronous SQLite calls, so keep catalog writes bounded and do not add large processing loops on the UI thread. No WatermelonDB Babel transform or Expo config plugin is needed.
 
-Expo web resolves `src/db/client.web.ts` and therefore never imports `expo-sqlite`; this avoids its `SharedArrayBuffer`/WASM requirements. Web repositories use IndexedDB and native repositories use Expo SQLite. Keep persistence behind feature repositories so UI and domain code remain platform-neutral.
+Expo web resolves the platform-safe `@indyzai/pos-database/client` export and therefore never imports `expo-sqlite`; this avoids its `SharedArrayBuffer`/WASM requirements. Web repositories use IndexedDB and native repositories use Expo SQLite. Keep persistence behind feature repositories so UI and domain code remain platform-neutral.
 
-Schema changes belong in `src/db/schema` and `src/db/migrations.ts`, with generated SQL checked into `drizzle/`. Do not have feature UI call Drizzle directly; keep persistence behind a feature repository and invalidate the related TanStack Query key after a mutation.
+Schema changes belong in `packages/database/src/runtime/schema` and `packages/database/src/runtime/migrations.ts`, with generated SQL checked into `packages/database/drizzle/`. Do not have feature UI call Drizzle directly; keep persistence behind a feature repository and invalidate the related TanStack Query key after a mutation.
 
 The API endpoint defaults to `https://api.indyzai.com/pos/api/graphql`. Override it with `EXPO_PUBLIC_POS_API_URL` for non-production environments.
 

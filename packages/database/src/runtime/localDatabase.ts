@@ -1,5 +1,5 @@
 import { SqliteLocalDatabase } from "./adapters/sqlite/sqlite.database";
-import type { DatabaseScope, LocalDatabase } from "./types";
+import type { DatabaseScope, LocalDatabase } from "../types";
 import { createSqliteLocalDatabase } from "@indyzai/pos-database/sqlite";
 
 export async function createLocalDatabase(

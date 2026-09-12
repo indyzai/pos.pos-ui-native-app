@@ -4,7 +4,7 @@ import { initializeDatabase } from "../../migrations";
 import {
     assertCollectionAllowed,
     getRoleDataManifest,
-} from "../../roleManifest";
+} from "../../../roleManifest";
 import {
     collectionNames,
     createScopeKey,
@@ -14,7 +14,7 @@ import {
     type LocalDatabase,
     type LocalQuery,
     type LocalRecord,
-} from "../../types";
+} from "../../../types";
 
 type Column = {
     name: string;

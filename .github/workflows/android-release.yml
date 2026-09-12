@@ -29,7 +29,7 @@ on:
         default: true
         type: boolean
   pull_request:
-    branches: [main, master]
+    branches: [main]
     paths:
       - ".github/workflows/android-release.yml"
       - "apps/mobile/**"
@@ -39,9 +39,9 @@ on:
       - "bun.lock"
       - ".bun-version"
   push:
-    branches: [main, master]
+    branches: [main]
     tags:
-      - 'v*'
+      - "v*"
     paths:
       - ".github/workflows/android-release.yml"
       - "apps/mobile/**"
@@ -134,15 +134,16 @@ jobs:
             if [[ -n "$LATEST_TAG" ]]; then
               BASE_POS="${LATEST_TAG#v}"
             else
-              BASE_POS="$(jq -r '.expo.version' apps/mobile/app.json | sed 's/\.[0-9]*$//; s/\.[0-9]*-alpha$//; s/-alpha\..*//')"
+              BASE_POS="$(jq -r '.expo.version' apps/mobile/app.json | sed 's/-alpha\..*//; s/-alpha$//')"
             fi
-            BASE_ADMIN="$(jq -r '.expo.version' apps/admin-mobile/app.json | sed 's/\.[0-9]*$//; s/\.[0-9]*-alpha$//; s/-alpha\..*//')"
+            BASE_ADMIN="$(jq -r '.expo.version' apps/admin-mobile/app.json | sed 's/-alpha\..*//; s/-alpha$//')"
+            ALPHA_ID="${GITHUB_SHA:0:8}"
 
-            POS_VERSION="${BASE_POS}.${GITHUB_RUN_NUMBER}"
-            ADMIN_VERSION="${BASE_ADMIN}.${GITHUB_RUN_NUMBER}"
+            POS_VERSION="${BASE_POS}-alpha.${ALPHA_ID}"
+            ADMIN_VERSION="${BASE_ADMIN}-alpha.${ALPHA_ID}"
             TAG="v${POS_VERSION}"
             PRERELEASE=true
-            RELEASE_NAME="IndyzAI POS ${POS_VERSION}"
+            RELEASE_NAME="IndyzAI POS Alpha ${POS_VERSION}"
           fi
 
           {
@@ -241,8 +242,8 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS:         ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD:      ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           KEYSTORE_PATH="$GITHUB_WORKSPACE/apps/mobile/android/app/upload-keystore.jks"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
@@ -428,8 +429,8 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS:         ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD:      ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           KEYSTORE_PATH="$GITHUB_WORKSPACE/apps/admin-mobile/android/app/upload-keystore.jks"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"

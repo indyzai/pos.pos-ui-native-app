@@ -1,4 +1,4 @@
-import type { LocalDatabase } from "./types";
+import type { LocalDatabase } from "../types";
 import { getSQLiteClient, hasNativeDatabase } from "./client";
 import { initializeDatabase } from "./migrations";
 
@@ -10,15 +10,7 @@ export async function clearLocalUiData(
 ): Promise<void> {
     if (!hasNativeDatabase) {
         const { clearWebLocalData } = await import("./webClient");
-        await Promise.all([
-            clearWebLocalData(),
-            database
-                ? database.clear()
-                : import("./adapters/indexeddb/indexeddb.client").then(
-                      ({ clearIndexedDbLocalData }) =>
-                          clearIndexedDbLocalData(),
-                  ),
-        ]);
+        await Promise.all([clearWebLocalData(), database?.clear()]);
         return;
     }
     initializeDatabase();
