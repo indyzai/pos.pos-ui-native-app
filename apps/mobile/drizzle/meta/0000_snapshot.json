@@ -39,9 +39,7 @@
       "indexes": {
         "billing_metadata_scope_idx": {
           "name": "billing_metadata_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -85,9 +83,7 @@
       "indexes": {
         "customers_scope_idx": {
           "name": "customers_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -131,10 +127,7 @@
       "indexes": {
         "held_orders_scope_held_at_idx": {
           "name": "held_orders_scope_held_at_idx",
-          "columns": [
-            "scope",
-            "held_at"
-          ],
+          "columns": ["scope", "held_at"],
           "isUnique": false
         }
       },
@@ -178,9 +171,7 @@
       "indexes": {
         "orders_scope_idx": {
           "name": "orders_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -224,9 +215,7 @@
       "indexes": {
         "payment_methods_scope_idx": {
           "name": "payment_methods_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -277,10 +266,7 @@
       "indexes": {
         "print_jobs_scope_status_idx": {
           "name": "print_jobs_scope_status_idx",
-          "columns": [
-            "scope",
-            "status"
-          ],
+          "columns": ["scope", "status"],
           "isUnique": false
         }
       },
@@ -324,9 +310,7 @@
       "indexes": {
         "printers_scope_idx": {
           "name": "printers_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -370,9 +354,7 @@
       "indexes": {
         "product_batches_scope_product_idx": {
           "name": "product_batches_scope_product_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -487,9 +469,7 @@
       "indexes": {
         "products_scope_idx": {
           "name": "products_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -533,9 +513,7 @@
       "indexes": {
         "refunds_scope_idx": {
           "name": "refunds_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -579,9 +557,7 @@
       "indexes": {
         "restaurant_tables_scope_idx": {
           "name": "restaurant_tables_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -646,10 +622,7 @@
       "indexes": {
         "sales_scope_status_idx": {
           "name": "sales_scope_status_idx",
-          "columns": [
-            "scope",
-            "status"
-          ],
+          "columns": ["scope", "status"],
           "isUnique": false
         }
       },
@@ -714,10 +687,7 @@
       "indexes": {
         "scrap_purchase_jobs_scope_status_idx": {
           "name": "scrap_purchase_jobs_scope_status_idx",
-          "columns": [
-            "scope",
-            "status"
-          ],
+          "columns": ["scope", "status"],
           "isUnique": false
         }
       },
@@ -761,9 +731,7 @@
       "indexes": {
         "service_users_scope_idx": {
           "name": "service_users_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -835,10 +803,7 @@
       "indexes": {
         "sync_jobs_scope_updated_idx": {
           "name": "sync_jobs_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -882,9 +847,7 @@
       "indexes": {
         "tax_rates_scope_idx": {
           "name": "tax_rates_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         }
       },
@@ -949,10 +912,7 @@
       "indexes": {
         "waybill_jobs_scope_status_idx": {
           "name": "waybill_jobs_scope_status_idx",
-          "columns": [
-            "scope",
-            "status"
-          ],
+          "columns": ["scope", "status"],
           "isUnique": false
         }
       },
@@ -1041,25 +1001,17 @@
       "indexes": {
         "app_settings_scope_idx": {
           "name": "app_settings_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "app_settings_tenant_store_idx": {
           "name": "app_settings_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "app_settings_scope_updated_idx": {
           "name": "app_settings_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1148,25 +1100,17 @@
       "indexes": {
         "brands_scope_idx": {
           "name": "brands_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "brands_tenant_store_idx": {
           "name": "brands_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "brands_scope_updated_idx": {
           "name": "brands_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1262,18 +1206,12 @@
       "indexes": {
         "cart_lines_scope_parent_idx": {
           "name": "cart_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "cart_id"
-          ],
+          "columns": ["scope", "cart_id"],
           "isUnique": false
         },
         "cart_lines_tenant_store_idx": {
           "name": "cart_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -1362,25 +1300,17 @@
       "indexes": {
         "carts_scope_idx": {
           "name": "carts_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "carts_tenant_store_idx": {
           "name": "carts_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "carts_scope_updated_idx": {
           "name": "carts_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1469,25 +1399,17 @@
       "indexes": {
         "cash_drawers_scope_idx": {
           "name": "cash_drawers_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "cash_drawers_tenant_store_idx": {
           "name": "cash_drawers_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "cash_drawers_scope_updated_idx": {
           "name": "cash_drawers_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1576,25 +1498,17 @@
       "indexes": {
         "cash_transactions_scope_idx": {
           "name": "cash_transactions_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "cash_transactions_tenant_store_idx": {
           "name": "cash_transactions_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "cash_transactions_scope_updated_idx": {
           "name": "cash_transactions_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1683,25 +1597,17 @@
       "indexes": {
         "categories_scope_idx": {
           "name": "categories_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "categories_tenant_store_idx": {
           "name": "categories_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "categories_scope_updated_idx": {
           "name": "categories_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1790,25 +1696,17 @@
       "indexes": {
         "counters_scope_idx": {
           "name": "counters_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "counters_tenant_store_idx": {
           "name": "counters_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "counters_scope_updated_idx": {
           "name": "counters_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -1897,25 +1795,17 @@
       "indexes": {
         "currency_denominations_scope_idx": {
           "name": "currency_denominations_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "currency_denominations_tenant_store_idx": {
           "name": "currency_denominations_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "currency_denominations_scope_updated_idx": {
           "name": "currency_denominations_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2011,18 +1901,12 @@
       "indexes": {
         "customer_addresses_scope_parent_idx": {
           "name": "customer_addresses_scope_parent_idx",
-          "columns": [
-            "scope",
-            "customer_id"
-          ],
+          "columns": ["scope", "customer_id"],
           "isUnique": false
         },
         "customer_addresses_tenant_store_idx": {
           "name": "customer_addresses_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -2111,25 +1995,17 @@
       "indexes": {
         "customer_credit_summaries_scope_idx": {
           "name": "customer_credit_summaries_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "customer_credit_summaries_tenant_store_idx": {
           "name": "customer_credit_summaries_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "customer_credit_summaries_scope_updated_idx": {
           "name": "customer_credit_summaries_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2218,25 +2094,17 @@
       "indexes": {
         "customer_loyalty_summaries_scope_idx": {
           "name": "customer_loyalty_summaries_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "customer_loyalty_summaries_tenant_store_idx": {
           "name": "customer_loyalty_summaries_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "customer_loyalty_summaries_scope_updated_idx": {
           "name": "customer_loyalty_summaries_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2325,25 +2193,17 @@
       "indexes": {
         "devices_scope_idx": {
           "name": "devices_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "devices_tenant_store_idx": {
           "name": "devices_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "devices_scope_updated_idx": {
           "name": "devices_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2432,25 +2292,17 @@
       "indexes": {
         "expense_categories_scope_idx": {
           "name": "expense_categories_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "expense_categories_tenant_store_idx": {
           "name": "expense_categories_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "expense_categories_scope_updated_idx": {
           "name": "expense_categories_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2539,25 +2391,17 @@
       "indexes": {
         "expenses_scope_idx": {
           "name": "expenses_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "expenses_tenant_store_idx": {
           "name": "expenses_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "expenses_scope_updated_idx": {
           "name": "expenses_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2646,25 +2490,17 @@
       "indexes": {
         "feature_flags_scope_idx": {
           "name": "feature_flags_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "feature_flags_tenant_store_idx": {
           "name": "feature_flags_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "feature_flags_scope_updated_idx": {
           "name": "feature_flags_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2760,18 +2596,12 @@
       "indexes": {
         "goods_receipt_lines_scope_parent_idx": {
           "name": "goods_receipt_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "goods_receipt_id"
-          ],
+          "columns": ["scope", "goods_receipt_id"],
           "isUnique": false
         },
         "goods_receipt_lines_tenant_store_idx": {
           "name": "goods_receipt_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -2860,25 +2690,17 @@
       "indexes": {
         "goods_receipts_scope_idx": {
           "name": "goods_receipts_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "goods_receipts_tenant_store_idx": {
           "name": "goods_receipts_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "goods_receipts_scope_updated_idx": {
           "name": "goods_receipts_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -2974,18 +2796,12 @@
       "indexes": {
         "held_order_lines_scope_parent_idx": {
           "name": "held_order_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "held_order_id"
-          ],
+          "columns": ["scope", "held_order_id"],
           "isUnique": false
         },
         "held_order_lines_tenant_store_idx": {
           "name": "held_order_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -3074,25 +2890,17 @@
       "indexes": {
         "modifier_groups_scope_idx": {
           "name": "modifier_groups_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "modifier_groups_tenant_store_idx": {
           "name": "modifier_groups_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "modifier_groups_scope_updated_idx": {
           "name": "modifier_groups_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -3181,25 +2989,17 @@
       "indexes": {
         "organizations_scope_idx": {
           "name": "organizations_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "organizations_tenant_store_idx": {
           "name": "organizations_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "organizations_scope_updated_idx": {
           "name": "organizations_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -3288,25 +3088,17 @@
       "indexes": {
         "payments_scope_idx": {
           "name": "payments_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "payments_tenant_store_idx": {
           "name": "payments_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "payments_scope_updated_idx": {
           "name": "payments_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -3395,25 +3187,17 @@
       "indexes": {
         "prescription_contexts_scope_idx": {
           "name": "prescription_contexts_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "prescription_contexts_tenant_store_idx": {
           "name": "prescription_contexts_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "prescription_contexts_scope_updated_idx": {
           "name": "prescription_contexts_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -3502,25 +3286,17 @@
       "indexes": {
         "price_lists_scope_idx": {
           "name": "price_lists_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "price_lists_tenant_store_idx": {
           "name": "price_lists_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "price_lists_scope_updated_idx": {
           "name": "price_lists_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -3609,25 +3385,17 @@
       "indexes": {
         "print_templates_scope_idx": {
           "name": "print_templates_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "print_templates_tenant_store_idx": {
           "name": "print_templates_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "print_templates_scope_updated_idx": {
           "name": "print_templates_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -3723,18 +3491,12 @@
       "indexes": {
         "product_barcodes_scope_parent_idx": {
           "name": "product_barcodes_scope_parent_idx",
-          "columns": [
-            "scope",
-            "product_id"
-          ],
+          "columns": ["scope", "product_id"],
           "isUnique": false
         },
         "product_barcodes_tenant_store_idx": {
           "name": "product_barcodes_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -3830,18 +3592,12 @@
       "indexes": {
         "product_modifiers_scope_parent_idx": {
           "name": "product_modifiers_scope_parent_idx",
-          "columns": [
-            "scope",
-            "product_id"
-          ],
+          "columns": ["scope", "product_id"],
           "isUnique": false
         },
         "product_modifiers_tenant_store_idx": {
           "name": "product_modifiers_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -3937,18 +3693,12 @@
       "indexes": {
         "product_prices_scope_parent_idx": {
           "name": "product_prices_scope_parent_idx",
-          "columns": [
-            "scope",
-            "product_id"
-          ],
+          "columns": ["scope", "product_id"],
           "isUnique": false
         },
         "product_prices_tenant_store_idx": {
           "name": "product_prices_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -4044,18 +3794,12 @@
       "indexes": {
         "product_uoms_scope_parent_idx": {
           "name": "product_uoms_scope_parent_idx",
-          "columns": [
-            "scope",
-            "product_id"
-          ],
+          "columns": ["scope", "product_id"],
           "isUnique": false
         },
         "product_uoms_tenant_store_idx": {
           "name": "product_uoms_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -4151,18 +3895,12 @@
       "indexes": {
         "purchase_order_lines_scope_parent_idx": {
           "name": "purchase_order_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "purchase_order_id"
-          ],
+          "columns": ["scope", "purchase_order_id"],
           "isUnique": false
         },
         "purchase_order_lines_tenant_store_idx": {
           "name": "purchase_order_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -4251,25 +3989,17 @@
       "indexes": {
         "purchase_orders_scope_idx": {
           "name": "purchase_orders_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "purchase_orders_tenant_store_idx": {
           "name": "purchase_orders_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "purchase_orders_scope_updated_idx": {
           "name": "purchase_orders_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -4365,18 +4095,12 @@
       "indexes": {
         "refund_lines_scope_parent_idx": {
           "name": "refund_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "refund_id"
-          ],
+          "columns": ["scope", "refund_id"],
           "isUnique": false
         },
         "refund_lines_tenant_store_idx": {
           "name": "refund_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -4465,25 +4189,17 @@
       "indexes": {
         "role_permissions_scope_idx": {
           "name": "role_permissions_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "role_permissions_tenant_store_idx": {
           "name": "role_permissions_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "role_permissions_scope_updated_idx": {
           "name": "role_permissions_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -4579,18 +4295,12 @@
       "indexes": {
         "sale_lines_scope_parent_idx": {
           "name": "sale_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "sale_id"
-          ],
+          "columns": ["scope", "sale_id"],
           "isUnique": false
         },
         "sale_lines_tenant_store_idx": {
           "name": "sale_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -4710,25 +4420,17 @@
       "indexes": {
         "serialized_item_assignments_scope_idx": {
           "name": "serialized_item_assignments_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "serialized_item_assignments_tenant_store_idx": {
           "name": "serialized_item_assignments_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "serialized_item_assignments_scope_updated_idx": {
           "name": "serialized_item_assignments_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -4817,25 +4519,17 @@
       "indexes": {
         "shifts_scope_idx": {
           "name": "shifts_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "shifts_tenant_store_idx": {
           "name": "shifts_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "shifts_scope_updated_idx": {
           "name": "shifts_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -4924,25 +4618,17 @@
       "indexes": {
         "stock_balances_scope_idx": {
           "name": "stock_balances_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "stock_balances_tenant_store_idx": {
           "name": "stock_balances_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "stock_balances_scope_updated_idx": {
           "name": "stock_balances_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5038,18 +4724,12 @@
       "indexes": {
         "stock_count_lines_scope_parent_idx": {
           "name": "stock_count_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "stock_count_id"
-          ],
+          "columns": ["scope", "stock_count_id"],
           "isUnique": false
         },
         "stock_count_lines_tenant_store_idx": {
           "name": "stock_count_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -5138,25 +4818,17 @@
       "indexes": {
         "stock_counts_scope_idx": {
           "name": "stock_counts_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "stock_counts_tenant_store_idx": {
           "name": "stock_counts_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "stock_counts_scope_updated_idx": {
           "name": "stock_counts_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5245,25 +4917,17 @@
       "indexes": {
         "stock_locations_scope_idx": {
           "name": "stock_locations_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "stock_locations_tenant_store_idx": {
           "name": "stock_locations_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "stock_locations_scope_updated_idx": {
           "name": "stock_locations_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5352,25 +5016,17 @@
       "indexes": {
         "stock_movements_scope_idx": {
           "name": "stock_movements_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "stock_movements_tenant_store_idx": {
           "name": "stock_movements_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "stock_movements_scope_updated_idx": {
           "name": "stock_movements_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5459,25 +5115,17 @@
       "indexes": {
         "stores_scope_idx": {
           "name": "stores_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "stores_tenant_store_idx": {
           "name": "stores_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "stores_scope_updated_idx": {
           "name": "stores_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5566,25 +5214,17 @@
       "indexes": {
         "suppliers_scope_idx": {
           "name": "suppliers_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "suppliers_tenant_store_idx": {
           "name": "suppliers_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "suppliers_scope_updated_idx": {
           "name": "suppliers_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5673,25 +5313,17 @@
       "indexes": {
         "sync_conflicts_scope_idx": {
           "name": "sync_conflicts_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "sync_conflicts_tenant_store_idx": {
           "name": "sync_conflicts_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "sync_conflicts_scope_updated_idx": {
           "name": "sync_conflicts_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5735,10 +5367,7 @@
       "indexes": {
         "sync_dependencies_job_idx": {
           "name": "sync_dependencies_job_idx",
-          "columns": [
-            "scope",
-            "job_id"
-          ],
+          "columns": ["scope", "job_id"],
           "isUnique": false
         }
       },
@@ -5827,25 +5456,17 @@
       "indexes": {
         "sync_errors_scope_idx": {
           "name": "sync_errors_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "sync_errors_tenant_store_idx": {
           "name": "sync_errors_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "sync_errors_scope_updated_idx": {
           "name": "sync_errors_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -5982,25 +5603,17 @@
       "indexes": {
         "sync_outbox_scope_status_idx": {
           "name": "sync_outbox_scope_status_idx",
-          "columns": [
-            "scope",
-            "status"
-          ],
+          "columns": ["scope", "status"],
           "isUnique": false
         },
         "sync_outbox_scope_next_attempt_idx": {
           "name": "sync_outbox_scope_next_attempt_idx",
-          "columns": [
-            "scope",
-            "next_attempt_at"
-          ],
+          "columns": ["scope", "next_attempt_at"],
           "isUnique": false
         },
         "sync_outbox_idempotency_idx": {
           "name": "sync_outbox_idempotency_idx",
-          "columns": [
-            "idempotency_key"
-          ],
+          "columns": ["idempotency_key"],
           "isUnique": false
         }
       },
@@ -6058,10 +5671,7 @@
       "indexes": {
         "sync_state_scope_collection_idx": {
           "name": "sync_state_scope_collection_idx",
-          "columns": [
-            "scope",
-            "collection"
-          ],
+          "columns": ["scope", "collection"],
           "isUnique": false
         }
       },
@@ -6150,25 +5760,17 @@
       "indexes": {
         "tombstones_scope_idx": {
           "name": "tombstones_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "tombstones_tenant_store_idx": {
           "name": "tombstones_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "tombstones_scope_updated_idx": {
           "name": "tombstones_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -6264,18 +5866,12 @@
       "indexes": {
         "transfer_lines_scope_parent_idx": {
           "name": "transfer_lines_scope_parent_idx",
-          "columns": [
-            "scope",
-            "transfer_id"
-          ],
+          "columns": ["scope", "transfer_id"],
           "isUnique": false
         },
         "transfer_lines_tenant_store_idx": {
           "name": "transfer_lines_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         }
       },
@@ -6364,25 +5960,17 @@
       "indexes": {
         "transfers_scope_idx": {
           "name": "transfers_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "transfers_tenant_store_idx": {
           "name": "transfers_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "transfers_scope_updated_idx": {
           "name": "transfers_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
@@ -6471,25 +6059,17 @@
       "indexes": {
         "users_scope_idx": {
           "name": "users_scope_idx",
-          "columns": [
-            "scope"
-          ],
+          "columns": ["scope"],
           "isUnique": false
         },
         "users_tenant_store_idx": {
           "name": "users_tenant_store_idx",
-          "columns": [
-            "tenant_id",
-            "store_id"
-          ],
+          "columns": ["tenant_id", "store_id"],
           "isUnique": false
         },
         "users_scope_updated_idx": {
           "name": "users_scope_updated_idx",
-          "columns": [
-            "scope",
-            "updated_at"
-          ],
+          "columns": ["scope", "updated_at"],
           "isUnique": false
         }
       },
