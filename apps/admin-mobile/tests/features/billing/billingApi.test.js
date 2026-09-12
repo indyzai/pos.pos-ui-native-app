@@ -48,14 +48,6 @@ mock.module('../../../src/features/scrap/scrapPurchaseRepository', () => ({
     },
 }));
 mock.module('expo-crypto', () => ({ randomUUID: () => crypto.randomUUID() }));
-mock.module('../../../src/features/auth/authApi', () => ({
-    authApi: {
-        getStoredUser: async () => ({ id: 'user' }),
-        getSessionUser: async () => ({ id: 'user' }),
-        getSelectedTenant: async () => ({ id: tenant }),
-        getAccessToken: async () => 'test-token',
-    },
-}));
 mock.module('../../../src/features/auth/AuthSessionContext', () => ({
     getActiveAuthSession: () => ({
         user: { id: 'user' },
