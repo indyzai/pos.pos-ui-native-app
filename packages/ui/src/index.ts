@@ -30,5 +30,4 @@ export {
     type DropdownOption,
     type DropdownValue,
 } from "./components/AppDropdown";
-export { PosLogo } from "./branding/PosLogo";
-
+export { AdminLogo, PosLogo } from "./branding/PosLogo";

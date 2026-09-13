@@ -23,7 +23,7 @@ export default function AuthCallbackRoute() {
                 await authApi.completeAuthorizationCode(code, state);
                 const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
                 await refreshSession();
-                router.replace(needsDeviceSetup ? '/device-setup' : '/billing');
+                router.replace(needsDeviceSetup ? '/device-setup' : '/reports');
             }}
             onSuccess={() => {}}
         />

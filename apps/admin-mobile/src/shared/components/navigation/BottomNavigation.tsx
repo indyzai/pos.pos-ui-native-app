@@ -12,7 +12,7 @@ import {
     isNavigationItemActive,
     moreNavigationItems,
     primaryNavigationItems,
-    reportNavigationItem,
+    orderNavigationItem,
 } from '../../navigation/routes';
 
 /** Global Material navigation shell. Modules populate its raised center action. */
@@ -51,9 +51,9 @@ export function BottomNavigation() {
                 ))}
                 <View style={s.centerSpacer} />
                 <NavigationItem
-                    {...reportNavigationItem}
-                    active={isNavigationItemActive(pathname, reportNavigationItem.href)}
-                    onPress={() => router.replace(reportNavigationItem.href)}
+                    {...orderNavigationItem}
+                    active={isNavigationItemActive(pathname, orderNavigationItem.href)}
+                    onPress={() => router.replace(orderNavigationItem.href)}
                 />
                 <NavigationItem
                     label="More"

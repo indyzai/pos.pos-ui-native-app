@@ -1,6 +1,7 @@
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
-export function PosLogo({ size = 40 }: { size?: number }) {
+export function PosLogo({ size = 40, variant = 'pos' }: { size?: number; variant?: 'pos' | 'admin' }) {
+  const admin = variant === 'admin';
   return (
     <Svg
       width={size}
@@ -8,13 +9,13 @@ export function PosLogo({ size = 40 }: { size?: number }) {
       viewBox="0 0 1024 1024"
       fill="none"
       accessibilityRole="image"
-      accessibilityLabel="IndyzAI POS"
+      accessibilityLabel={admin ? 'IndyzAI POS Admin' : 'IndyzAI POS'}
     >
       <Defs>
         <LinearGradient id="posBackground" x1="145" y1="100" x2="879" y2="924" gradientUnits="userSpaceOnUse">
-          <Stop stopColor="#6677E8" />
-          <Stop offset="0.5" stopColor="#3F51B5" />
-          <Stop offset="1" stopColor="#263782" />
+          <Stop stopColor={admin ? '#6377F2' : '#6677E8'} />
+          <Stop offset="0.5" stopColor={admin ? '#4052C2' : '#3F51B5'} />
+          <Stop offset="1" stopColor={admin ? '#22327F' : '#263782'} />
         </LinearGradient>
         <LinearGradient id="posPaper" x1="285" y1="215" x2="770" y2="795" gradientUnits="userSpaceOnUse">
           <Stop stopColor="#FFFFFF" />
@@ -27,27 +28,34 @@ export function PosLogo({ size = 40 }: { size?: number }) {
         fill="#1D2B76"
         fillOpacity="0.28"
       />
-      <Path
-        d="M292 188C272 188 256 204 256 224V773C256 793 272 809 292 809H343L387 850L431 809L475 850L519 809L563 850L607 809L651 850L695 809H733C753 809 769 793 769 773V224C769 204 753 188 733 188H292Z"
-        fill="url(#posPaper)"
-      />
-      <Path d="M295 188H730C752 188 769 206 769 228V327H256V227C256 205 273 188 295 188Z" fill="#D7DCFF" />
-      <Path d="M348 244H676" stroke="#3F51B5" strokeWidth="48" strokeLinecap="round" />
-      <Path
-        d="M348 426H680M348 509H598M348 592H507"
-        stroke="#C0C8F9"
-        strokeWidth="38"
-        strokeLinecap="round"
-      />
-      <Circle cx="673" cy="632" r="110" fill="#3F51B5" />
-      <Path
-        d="M621 633L657 670L729 594"
-        stroke="white"
-        strokeWidth="38"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Circle cx="826" cy="198" r="34" fill="#9DAAFF" fillOpacity="0.8" />
+      {admin ? (
+        <>
+          <Path d="M292 188C272 188 256 204 256 224V773C256 793 272 809 292 809H343L387 850L431 809L475 850L519 809L563 850L607 809L651 850L695 809H733C753 809 769 793 769 773V224C769 204 753 188 733 188H292Z" fill="url(#posPaper)" />
+          <Path d="M295 188H730C752 188 769 206 769 228V327H256V227C256 205 273 188 295 188Z" fill="#D7DCFF" />
+          <Path d="M348 244H676" stroke="#4052C2" strokeWidth="48" strokeLinecap="round" />
+          <Path d="M348 426H680M348 509H598M348 592H507" stroke="#B7C1FA" strokeWidth="38" strokeLinecap="round" />
+          <Circle cx="673" cy="632" r="110" fill="#4052C2" />
+          <Path d="M621 633L657 670L729 594" stroke="white" strokeWidth="38" strokeLinecap="round" strokeLinejoin="round" />
+          <Path d="M756 130C789 155 824 172 864 181V282C864 365 820 426 756 461C692 426 648 365 648 282V181C688 172 723 155 756 130Z" fill="#FFD84D" />
+          <Path d="M756 174C779 191 803 202 831 209V279C831 337 801 379 756 405C711 379 681 337 681 279V209C709 202 733 191 756 174Z" fill="#F2AA18" />
+          <Circle cx="756" cy="267" r="35" fill="white" />
+          <Path d="M738 286H774L790 342H722L738 286Z" fill="white" stroke="white" strokeLinejoin="round" />
+        </>
+      ) : (
+        <>
+          <Path d="M292 188C272 188 256 204 256 224V773C256 793 272 809 292 809H343L387 850L431 809L475 850L519 809L563 850L607 809L651 850L695 809H733C753 809 769 793 769 773V224C769 204 753 188 733 188H292Z" fill="url(#posPaper)" />
+          <Path d="M295 188H730C752 188 769 206 769 228V327H256V227C256 205 273 188 295 188Z" fill="#D7DCFF" />
+          <Path d="M348 244H676" stroke="#3F51B5" strokeWidth="48" strokeLinecap="round" />
+          <Path d="M348 426H680M348 509H598M348 592H507" stroke="#C0C8F9" strokeWidth="38" strokeLinecap="round" />
+          <Circle cx="673" cy="632" r="110" fill="#3F51B5" />
+          <Path d="M621 633L657 670L729 594" stroke="white" strokeWidth="38" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
+      {!admin && <Circle cx="826" cy="198" r="34" fill="#9DAAFF" fillOpacity="0.8" />}
     </Svg>
   );
+}
+
+export function AdminLogo({ size = 40 }: { size?: number }) {
+  return <PosLogo size={size} variant="admin" />;
 }

@@ -1,12 +1,12 @@
 import { configureAuthUi, LoginScreen, SignupScreen } from '@indyzai/pos-auth/ui';
-import { PosLogo } from '@indyzai/pos-ui';
+import { AdminLogo } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui';
 
 configureAuthUi({
     useTheme: useAppTheme,
     showSnackbar,
-    Logo: PosLogo,
+    Logo: AdminLogo,
     loginTitle: 'IndyzAI POS Admin',
     loginSubtitle: 'Manage your organization, users, inventory, and operations.',
     signupTitle: 'Join IndyzAI POS Admin',

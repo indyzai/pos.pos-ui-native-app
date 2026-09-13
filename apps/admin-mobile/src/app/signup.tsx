@@ -27,8 +27,8 @@ export default function SignupRoute() {
                     try {
                         await authApi.register(payload);
                         await refreshSession();
-                        logger.info('Registration completed, redirecting to billing');
-                        router.replace('/billing');
+                        logger.info('Registration completed, redirecting to reports');
+                        router.replace('/reports');
                     } catch (error) {
                         logger.error('Registration failed', {
                             error: error instanceof Error ? error.message : String(error),

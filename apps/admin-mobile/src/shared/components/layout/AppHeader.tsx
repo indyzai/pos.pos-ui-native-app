@@ -28,7 +28,7 @@ import type { ReactNode } from 'react';
 import { colors } from '@indyzai/pos-ui/tokens';
 import { useAppTheme } from '@indyzai/pos-ui';
 import { AppPressable } from '@indyzai/pos-ui';
-import { PosLogo } from '@indyzai/pos-ui';
+import { AdminLogo } from '@indyzai/pos-ui';
 import { authApi } from '../../../auth/authApi';
 import { useAuthSession } from '../../../auth/AuthSessionContext';
 import { useLocalDatabase } from '../../../providers/DatabaseProvider';
@@ -160,7 +160,7 @@ export function AppHeader({
                         </View>
                     </AppPressable>
                 )}
-                <PosLogo size={isPhone ? 29 : 34} />
+                <AdminLogo size={isPhone ? 29 : 34} />
                 <View style={s.brandCopy}>
                     <Text
                         numberOfLines={1}

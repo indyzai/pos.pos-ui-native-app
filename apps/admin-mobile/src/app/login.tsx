@@ -21,14 +21,14 @@ export default function LoginRoute() {
         logger.info('Main-window session refresh completed', { hasToken, needsDeviceSetup });
         if (!hasToken) throw new Error('The authentication session was not available in the main window.');
         if (Platform.OS === 'web') {
-            logger.info('Reloading authenticated billing route');
-            window.location.replace('/billing');
+            logger.info('Reloading authenticated reports route');
+            window.location.replace('/reports');
             return;
         }
-        router.replace(needsDeviceSetup ? '/device-setup' : '/billing');
+        router.replace(needsDeviceSetup ? '/device-setup' : '/reports');
     };
     if (initializing) return null;
-    if (authenticated) return <Redirect href="/billing" />;
+    if (authenticated) return <Redirect href="/reports" />;
     return (
         <SafeAreaView
             style={[styles.screen, { backgroundColor: themeColors.background }]}
@@ -50,7 +50,7 @@ export default function LoginRoute() {
                 onDeviceLogin={async () => {
                     await authApi.authenticateWithDevice();
                     await refreshSession();
-                    router.replace('/billing');
+                    router.replace('/reports');
                 }}
             />
         </SafeAreaView>

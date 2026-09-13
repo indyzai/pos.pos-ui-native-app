@@ -20,7 +20,7 @@ export default function DeviceSetup() {
                 await refreshSession();
             }}
             onSuccess={() => {
-                router.replace('/billing');
+                router.replace('/reports');
             }}
         />
     );
