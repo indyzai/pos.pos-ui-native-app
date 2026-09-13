@@ -1,5 +1,5 @@
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
-import { BottomNavigationProvider } from '../shared/providers/BottomNavigationProvider';
+import { BottomNavigationProvider } from '@indyzai/pos-ui';
 import { InventoryScreen } from '../features/inventory/InventoryScreen';
 
 export default function InventoryRoute() {

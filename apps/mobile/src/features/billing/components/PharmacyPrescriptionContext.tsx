@@ -1,6 +1,6 @@
 import { FileText, Stethoscope } from 'lucide-react-native';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 
 export function PharmacyPrescriptionContext({
   doctorName,

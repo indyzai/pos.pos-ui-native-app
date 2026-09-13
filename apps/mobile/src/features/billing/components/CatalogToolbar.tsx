@@ -1,8 +1,8 @@
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BarChart3, Plus, ScanBarcode, Search, X } from 'lucide-react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { colors, radii } from '../../../config/theme';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { colors, radii } from '@indyzai/pos-ui/tokens';
+import { useAppTheme } from '@indyzai/pos-ui';
 
 type Props = {
   categories: string[];

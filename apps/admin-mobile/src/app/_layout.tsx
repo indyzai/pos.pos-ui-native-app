@@ -3,17 +3,17 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '../shared/query/queryClient';
-import { ThemeProvider, useAppTheme } from '../shared/providers/ThemeProvider';
+import { queryClient } from '@indyzai/pos-core/query';
+import { ThemeProvider, useAppTheme } from '@indyzai/pos-ui';
 import { AuthSessionProvider, useAuthSession } from '../auth/AuthSessionContext';
 import { DatabaseProvider } from '../providers/DatabaseProvider';
 import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';
-import { AppHeaderProvider } from '../shared/providers/AppHeaderProvider';
+import { AppHeaderProvider } from '@indyzai/pos-ui';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '@indyzai/pos-ui/snackbar';
-import { AppPaperProvider } from '../shared/providers/AppPaperProvider';
+import { AppPaperProvider } from '@indyzai/pos-ui';
 
 export default function RootLayout() {
     return (

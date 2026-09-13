@@ -16,9 +16,9 @@ import {
   Recycle,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { colors, radii } from '../../../config/theme';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { colors, radii } from '@indyzai/pos-ui/tokens';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { SwipeableCartRow } from './SwipeableCartRow';
 import { ProductIcon } from './productIcons';
 import type {
@@ -28,7 +28,7 @@ import type {
   Customer,
   PaymentMethod,
 } from '../types/billing';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 
 type Props = {
   items: CartItem[];

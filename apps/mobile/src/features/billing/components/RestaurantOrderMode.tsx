@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { MapPin, ShoppingBag, UtensilsCrossed } from 'lucide-react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 
 export type RestaurantOrderMode = 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
 const options = [

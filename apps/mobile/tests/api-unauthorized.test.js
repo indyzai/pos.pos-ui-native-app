@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { requestJson, requestGraphQL, setUnauthorizedHandler } from '../src/core/api/baseApi';
+import { requestJson, requestGraphQL, setUnauthorizedHandler } from '@indyzai/pos-backend';
 const originalFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = originalFetch;

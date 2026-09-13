@@ -1,6 +1,6 @@
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Banknote, CreditCard, IndianRupee, UploadCloud } from 'lucide-react-native';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { CounterSession } from '../../sales/salesOutbox';
 
 export function BillingSessionStats({

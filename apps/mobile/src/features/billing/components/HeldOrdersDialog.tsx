@@ -1,10 +1,10 @@
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, Clock3, Play, Trash2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { HeldOrder } from '../types/billing';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 
 const total = (order: HeldOrder) =>
   Math.max(

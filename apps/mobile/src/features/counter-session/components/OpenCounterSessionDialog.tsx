@@ -10,11 +10,11 @@ import {
   View,
 } from 'react-native';
 import { Calculator, ChevronDown, ChevronUp, Play, X } from 'lucide-react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
+import { AppPressable } from '@indyzai/pos-ui';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { createLogger } from '@indyzai/pos-core';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';
 import type { CurrencyDenomination, DenominationCounts } from '../types';

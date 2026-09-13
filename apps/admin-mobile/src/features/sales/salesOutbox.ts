@@ -1,5 +1,5 @@
 import * as Crypto from 'expo-crypto';
-import type { QueuedMutation } from '../../sync/types';
+import type { QueuedMutation } from '@indyzai/pos-database/sync-jobs';
 import type {
     BillingOrderContext,
     CartItem,

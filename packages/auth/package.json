@@ -11,7 +11,10 @@
     "./icons": "./src/AuthIcons.tsx",
     "./session": "./src/createAuthSession.tsx",
     "./ui": "./src/authUiExports.ts",
-    "./storage-keys": "./src/storageKeys.ts"
+    "./storage-keys": "./src/storageKeys.ts",
+    "./access": "./src/appAccess.ts",
+    "./callback": "./src/AuthCallbackScreen.tsx",
+    "./device-setup": "./src/DeviceSetupScreen.tsx"
   },
   "dependencies": {
     "@indyzai/pos-backend": "workspace:*",
@@ -23,11 +26,13 @@
     "expo-linear-gradient": "~57.0.1",
     "expo-local-authentication": "~57.0.2",
     "expo-secure-store": "~57.0.3",
+    "expo-web-browser": "~57.0.2",
     "lucide-react-native": "^1.41.0"
   },
   "peerDependencies": {
     "react": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-svg": "^15.15.5"
   }
 }

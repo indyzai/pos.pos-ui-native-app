@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ArrowLeft, Search, UserRound, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { Customer } from '../types/billing';
 
 export function CustomerPickerDialog({

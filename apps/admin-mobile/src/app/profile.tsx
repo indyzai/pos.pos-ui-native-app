@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Building2, Mail, ShieldCheck } from 'lucide-react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../shared/components/ui/AppPressable';
-import { useAppTheme } from '../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { authApi, type AuthTenant, type AuthUser } from '../auth/authApi';
 
 export default function ProfileRoute() {

@@ -38,3 +38,8 @@ export function createLogger(scope: string) {
     error: (message: string, details?: unknown) => write('error', message, details),
   };
 }
+
+export { SerialQueue } from './sync/serialQueue';
+export { syncEventBus, type SyncListener } from './sync/eventBus';
+
+

@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Armchair } from 'lucide-react-native';
-import { AppPressable } from '../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { RestaurantTable } from './types';
 export function RestaurantTableSelector({
     tables,

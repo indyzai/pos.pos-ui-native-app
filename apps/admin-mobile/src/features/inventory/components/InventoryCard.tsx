@@ -1,8 +1,8 @@
 import { AlertTriangle, Barcode, PackageX } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { InventoryProduct } from '../types';
 
 export function InventoryCard({ product, onPress }: { product: InventoryProduct; onPress: () => void }) {

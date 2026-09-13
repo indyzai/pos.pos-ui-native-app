@@ -7,6 +7,11 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./http": "./src/http.ts"
+    "./http": "./src/http.ts",
+    "./pos-api": "./src/posApi.ts",
+    "./runtime-env": "./src/runtimeEnvironment.ts"
+  },
+  "dependencies": {
+    "@indyzai/pos-core": "workspace:*"
   }
 }

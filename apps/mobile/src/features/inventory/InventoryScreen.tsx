@@ -21,17 +21,17 @@ import {
   Search,
   X,
 } from 'lucide-react-native';
-import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { AppPressable } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { InventoryCard } from './components/InventoryCard';
 import { ReconcileStockModal } from './components/ReconcileStockModal';
 import { useInventory } from './hooks/useInventory';
 import type { InventoryFilter, InventoryProduct } from './types';
-import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
-import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
+import { useAppHeader } from '@indyzai/pos-ui';
+import { useBottomNavigation } from '@indyzai/pos-ui';
 import { AddInventoryItemModal } from './components/AddInventoryItemModal';
-import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
+import { useBottomNavigationClearance } from '@indyzai/pos-ui';
 import { createLogger } from '@indyzai/pos-core';
 
 const logger = createLogger('Inventory');

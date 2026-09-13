@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Minus, Plus, RotateCcw, X } from 'lucide-react-native';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { AppPressable } from '@indyzai/pos-ui';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import { refundableQuantity, type RefundSelection } from '../refundPolicy';
 import type { RefundRecord, SalesOrder } from '../types';
 

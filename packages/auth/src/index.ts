@@ -23,3 +23,11 @@ export type {
     LoginCredentials,
     RegistrationPayload,
 } from "./types";
+export {
+    canAccessStoreApp,
+    canAccessAdminApp,
+    canPerformManagerActions,
+    normalizeRole,
+} from "./appAccess";
+
+

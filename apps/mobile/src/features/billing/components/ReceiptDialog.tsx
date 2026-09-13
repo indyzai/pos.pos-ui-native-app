@@ -1,11 +1,11 @@
 import { Modal, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { CheckCircle2, Printer, Share2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { BillingOrderContext, CartItem, CheckoutPayment, Customer } from '../types/billing';
 import type { BillingTotals } from '../domain/billingTotals';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 
 export type ReceiptData = {
   id: string;

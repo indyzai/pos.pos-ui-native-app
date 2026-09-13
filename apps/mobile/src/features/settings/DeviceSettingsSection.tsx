@@ -9,12 +9,12 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react-native';
-import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { AppPressable } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { authApi, type DeviceRegistrationDetails } from '../../auth/authApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { development, env } from '../../config/env';
+import { development, env } from '@indyzai/pos-core/env';
 import { getRuntimeApiUrls, setApiEnvironment, type ApiEnvironment } from '../../config/runtimeEnvironment';
 import { DeviceLogViewer } from '@indyzai/pos-ui/device-logs';
 

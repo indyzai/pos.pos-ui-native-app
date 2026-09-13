@@ -11,7 +11,7 @@ import { useAuthSession } from '../auth/AuthSessionContext';
 import { createAdminLocalDatabase } from '@indyzai/pos-database/admin';
 import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { kvStore } from '../storage/kvStore';
+import { kvStore } from '@indyzai/pos-core/storage';
 
 const logger = createLogger('Database:admin');
 

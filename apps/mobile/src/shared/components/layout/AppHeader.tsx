@@ -25,14 +25,14 @@ import {
   X,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { colors } from '../../../config/theme';
-import { useAppTheme } from '../../providers/ThemeProvider';
-import { AppPressable } from '../ui/AppPressable';
-import { PosLogo } from '../branding/PosLogo';
+import { colors } from '@indyzai/pos-ui/tokens';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui';
+import { PosLogo } from '@indyzai/pos-ui';
 import { authApi } from '../../../auth/authApi';
 import { useAuthSession } from '../../../auth/AuthSessionContext';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
-import { useAppHeader } from '../../providers/AppHeaderProvider';
+import { useAppHeader } from '@indyzai/pos-ui';
 import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
 import { CounterSessionSummaryDialog } from '../../../features/counter-session/components/CounterSessionSummaryDialog';
 

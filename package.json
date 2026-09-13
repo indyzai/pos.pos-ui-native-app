@@ -12,13 +12,18 @@
   },
   "scripts": {
     "start": "bun run --filter @indyzai/pos-ui-app start",
+    "start:both": "bun run --filter @indyzai/pos-ui-app --filter @indyzai/pos-ui-admin-app start",
     "android": "bun run --filter @indyzai/pos-ui-app android",
     "ios": "bun run --filter @indyzai/pos-ui-app ios",
     "web": "bun run --filter @indyzai/pos-ui-app web",
+    "web:both": "bun run --filter @indyzai/pos-ui-app --filter @indyzai/pos-ui-admin-app web",
     "admin:start": "bun run --filter @indyzai/pos-ui-admin-app start",
     "admin:android": "bun run --filter @indyzai/pos-ui-admin-app android",
     "admin:ios": "bun run --filter @indyzai/pos-ui-admin-app ios",
     "admin:web": "bun run --filter @indyzai/pos-ui-admin-app web",
+    "both": "bun run --filter @indyzai/pos-ui-app --filter @indyzai/pos-ui-admin-app start",
+    "test": "bun test",
+    "typecheck": "bun x tsc -p apps/mobile/tsconfig.json --noEmit && bun x tsc -p apps/admin-mobile/tsconfig.json --noEmit",
     "format": "bun run --filter '*' format",
     "format:check": "bun run --filter '*' format:check"
   },

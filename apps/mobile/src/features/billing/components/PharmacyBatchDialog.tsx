@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Boxes, CalendarDays, Check, X } from 'lucide-react-native';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import { batchStatus, preferredProductBatch } from '../domain/productBatches';
 import type { CartCustomization, Product, ProductBatch } from '../types/billing';
 

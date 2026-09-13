@@ -8,13 +8,13 @@ import {
     ShoppingBag,
 } from 'lucide-react-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { AppPressable } from '../../shared/components/ui/AppPressable';
-import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
-import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
-import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useBottomNavigationClearance } from '@indyzai/pos-ui';
+import { useBottomNavigation } from '@indyzai/pos-ui';
+import { useAppHeader } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../../shared/providers/ThemeProvider';
-import { formatCurrency } from '../../shared/utils/currency';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import { useOrders } from '../orders/useOrders';
 import { buildReportMetrics, type ReportPeriod } from './reportMetrics';
 import { createLogger } from '@indyzai/pos-core';

@@ -4,7 +4,7 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
 import { createReconciliationVariables } from './reconciliation';
 import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
-import { createSyncJob, listSyncJobs, updateSyncJob, type SyncJob } from '../../sync/syncJobRepository';
+import { createSyncJob, listSyncJobs, updateSyncJob, type SyncJob } from '@indyzai/pos-database/sync-jobs';
 
 const reconciliationMutation = `
   mutation RecordInventoryReconciliation($input: InventoryReconciliationInput!) {

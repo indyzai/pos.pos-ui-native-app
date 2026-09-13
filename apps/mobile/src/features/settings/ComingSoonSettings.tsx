@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Construction } from 'lucide-react-native';
-import { useAppTheme } from '../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 
 export function ComingSoonSettings({ title }: { title: string }) {
   const { themeColors: c } = useAppTheme();

@@ -30,7 +30,8 @@
     "./react-hooks": "./src/hooks.ts",
     "./schema": "./src/runtime/schema/index.ts",
     "./sqlite": "./src/adapters/sqlite.ts",
-    "./web-client": "./src/runtime/webClient.ts"
+    "./web-client": "./src/runtime/webClient.ts",
+    "./sync-jobs": "./src/syncJobs.ts"
   },
   "dependencies": {
     "dexie": "^4.4.6",

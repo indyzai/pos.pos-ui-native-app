@@ -1,0 +1,53 @@
+import type { ComponentType } from 'react';
+import type { LucideIcon } from 'lucide-react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BottomNavigationProvider } from '../navigation/BottomNavigationProvider';
+import { useAppTheme } from '../theme/ThemeProvider';
+import { useBottomNavigationClearance } from '../navigation/useBottomNavigationClearance';
+
+export function ModulePlaceholder({
+  title,
+  icon: Icon,
+  bottomNavigation: BottomNavigation,
+}: {
+  title: string;
+  icon: LucideIcon;
+  bottomNavigation?: ComponentType;
+}) {
+  return (
+    <BottomNavigationProvider>
+      <ModuleContent title={title} icon={Icon} />
+      {BottomNavigation ? <BottomNavigation /> : null}
+    </BottomNavigationProvider>
+  );
+}
+
+export function ModuleContent({ title, icon: Icon }: { title: string; icon: LucideIcon }) {
+  const { themeColors: c } = useAppTheme();
+  const bottomClearance = useBottomNavigationClearance();
+  return (
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: c.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
+      <View style={[styles.content, { paddingBottom: bottomClearance }]}>
+        <View style={[styles.icon, { backgroundColor: c.primarySoft }]}>
+          <Icon size={32} color={c.primary} />
+        </View>
+        <Text style={[styles.title, { color: c.text }]}>{title}</Text>
+        <Text style={[styles.description, { color: c.textSecondary }]}>
+          This module is ready for implementation.
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  icon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  title: { marginTop: 16, fontSize: 24, fontWeight: '900' },
+  description: { marginTop: 8, fontSize: 14, textAlign: 'center' },
+});

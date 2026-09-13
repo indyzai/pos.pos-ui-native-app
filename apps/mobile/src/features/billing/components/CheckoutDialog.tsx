@@ -12,11 +12,11 @@ import {
 import { ArrowLeft, Banknote, CreditCard, ScanLine, X } from 'lucide-react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { BillingPaymentMethod, CheckoutPayment, PaymentMethod } from '../types/billing';
 import { buildUpiPaymentUri } from '../domain/upiPayment';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 
 type Props = {
   visible: boolean;

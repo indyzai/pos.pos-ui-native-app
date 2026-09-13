@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { formatCurrency } from '../../src/shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 
 test('formats configured currencies without assuming rupees', () => {
     expect(formatCurrency(12.5, 'USD')).toContain('$');

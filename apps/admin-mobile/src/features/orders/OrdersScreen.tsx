@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AlertCircle, CheckCircle2, Clock3, ReceiptText, RotateCcw, Search } from 'lucide-react-native';
-import { AppPressable } from '../../shared/components/ui/AppPressable';
+import { AppPressable } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../../shared/providers/ThemeProvider';
-import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
-import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { useBottomNavigationClearance } from '@indyzai/pos-ui';
+import { useAppHeader } from '@indyzai/pos-ui';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { formatCurrency } from '../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import { RefundDialog } from './components/RefundDialog';
 import { useOrders } from './useOrders';
 import type { SalesOrder } from './types';

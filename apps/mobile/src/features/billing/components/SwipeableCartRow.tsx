@@ -1,7 +1,7 @@
 import { useMemo, useRef, type ReactNode } from 'react';
 import { Animated, PanResponder, Platform, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../config/theme';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { colors } from '@indyzai/pos-ui/tokens';
+import { useAppTheme } from '@indyzai/pos-ui';
 
 const useNativeAnimationDriver = Platform.OS !== 'web';
 

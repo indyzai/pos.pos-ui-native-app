@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, X } from 'lucide-react-native';
-import { AppDropdown } from '../../../shared/components/ui/AppDropdown';
-import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
+import { AppDropdown } from '@indyzai/pos-ui';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
-import { AppPaperProvider } from '../../../shared/providers/AppPaperProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPaperProvider } from '@indyzai/pos-ui';
 import { ProductIcon, productIconOptions, type ProductIconKey } from '../../billing/components/productIcons';
 import { inventoryApi } from '../inventoryApi';
 import type { CreateInventoryItemInput, ProductReferenceData } from '../types';

@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { AlertTriangle, PackageSearch, Pill, Plus } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { colors } from '../../../config/theme';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
-import { useBottomNavigationClearance } from '../../../shared/hooks/useBottomNavigationClearance';
+import { AppPressable } from '@indyzai/pos-ui';
+import { colors } from '@indyzai/pos-ui/tokens';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { useBottomNavigationClearance } from '@indyzai/pos-ui';
 import type { Product } from '../types/billing';
 import { pharmacyProductStatus } from '../domain/pharmacyProduct';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import { ProductIcon } from './productIcons';
 
 type Props = {

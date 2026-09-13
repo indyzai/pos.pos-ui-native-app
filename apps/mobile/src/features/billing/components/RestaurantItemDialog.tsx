@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Minus, Plus, UtensilsCrossed, X } from 'lucide-react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { AppPressable } from '@indyzai/pos-ui';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { CartCustomization, Product } from '../types/billing';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import { restaurantModifiers, toggleRestaurantModifier } from '../domain/restaurantModifiers';
 
 export function RestaurantItemDialog({

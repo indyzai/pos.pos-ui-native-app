@@ -11,17 +11,17 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '../shared/components/ui/AppPressable';
+import { AppPressable } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
 import { BillingSettingsSection } from '../features/settings/BillingSettingsSection';
 import { DeviceSettingsSection } from '../features/settings/DeviceSettingsSection';
 import { GeneralSettingsSection } from '../features/settings/GeneralSettingsSection';
 import { DataSettingsSection } from '../features/settings/DataSettingsSection';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
-import { BottomNavigationProvider, useBottomNavigation } from '../shared/providers/BottomNavigationProvider';
-import { useBottomNavigationClearance } from '../shared/hooks/useBottomNavigationClearance';
+import { BottomNavigationProvider, useBottomNavigation } from '@indyzai/pos-ui';
+import { useBottomNavigationClearance } from '@indyzai/pos-ui';
 
 type SectionId =
     | 'general'

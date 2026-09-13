@@ -6,9 +6,9 @@ import {
   type AuthSession,
 } from '@indyzai/pos-auth/session';
 import { canAccessApp } from '../config/appAccess';
-import { setUnauthorizedHandler } from '../core/api/baseApi';
+import { setUnauthorizedHandler } from '@indyzai/pos-backend';
 import { loadOrganizationDetails } from '../features/organization/organizationApi';
-import { useAppTheme } from '../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import { authApi } from './authApi';
 
 export { getActiveAuthSession, useAuthSession };

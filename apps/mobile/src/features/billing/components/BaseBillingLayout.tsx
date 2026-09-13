@@ -11,10 +11,10 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useBottomNavigation } from '../../../shared/providers/BottomNavigationProvider';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { AppBottomSheetShell } from '../../../shared/components/ui/AppBottomSheetShell';
+import { useBottomNavigation } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui';
+import { AppBottomSheetShell } from '@indyzai/pos-ui';
 import { CatalogToolbar } from './CatalogToolbar';
 import { OrderCart } from './OrderCart';
 import { ProductCatalog } from './ProductCatalog';
@@ -33,7 +33,7 @@ import type {
   Product,
   ScrapExchange,
 } from '../types/billing';
-import { useAppHeader } from '../../../shared/providers/AppHeaderProvider';
+import { useAppHeader } from '@indyzai/pos-ui';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useFeatureToggles } from '../../organization/useFeatureToggles';
 import { billingPolicy } from '../domain/billingTotals';
@@ -51,7 +51,7 @@ import { ScrapExchangeDialog } from './ScrapExchangeDialog';
 import { canManageScrap } from '../../scrap/permissions';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { canPerformManagerActions } from '../../../config/appAccess';
-import { formatCurrency } from '../../../shared/utils/currency';
+import { formatCurrency } from '@indyzai/pos-ui/currency';
 import type { BillingModeConfig } from '../domain/billingMode';
 import { createLogger } from '@indyzai/pos-core';
 

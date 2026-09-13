@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Check, X } from 'lucide-react-native';
-import { AppPressable } from '../../../shared/components/ui/AppPressable';
-import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
+import { AppPressable } from '@indyzai/pos-ui';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '../../../shared/providers/ThemeProvider';
+import { useAppTheme } from '@indyzai/pos-ui';
 import type { InventoryProduct, StockReconciliationInput } from '../types';
 
 export function ReconcileStockModal({
