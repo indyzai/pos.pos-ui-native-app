@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, RefreshCw, Search, UserRound } from 'lucide-react-native';
 import { AppPressable, showSnackbar, useAppTheme, useBottomNavigation } from '@indyzai/pos-ui';
 import { payloadsFromRecords, useLocalCustomers, type LocalRecord } from '@indyzai/pos-database';
@@ -102,9 +102,14 @@ export function CustomersScreen() {
           </View>
         )}
         ListEmptyComponent={
-          <Text style={[s.empty, { color: c.textSecondary }]}>
-            {loading ? 'Loading local customers…' : error || 'No customers found.'}
-          </Text>
+          loading ? (
+            <View style={s.emptyLoader}>
+              <ActivityIndicator color={c.primary} />
+              <Text style={{ color: c.textSecondary }}>Loading local customers…</Text>
+            </View>
+          ) : (
+            <Text style={[s.empty, { color: c.textSecondary }]}>{error || 'No customers found.'}</Text>
+          )
         }
       />
       <Modal transparent visible={modal} animationType="fade" onRequestClose={() => setModal(false)}>
@@ -189,6 +194,7 @@ const s = StyleSheet.create({
   meta: { fontSize: 12, marginTop: 5 },
   pending: { fontSize: 10, fontWeight: '900' },
   empty: { textAlign: 'center', marginTop: 48 },
+  emptyLoader: { marginTop: 48, alignItems: 'center', gap: 10 },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,.35)',

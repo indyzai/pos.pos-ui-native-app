@@ -1,5 +1,5 @@
 import { ExternalLink, ShoppingCart } from 'lucide-react-native';
-import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 import { AppPressable } from '@indyzai/pos-ui';
@@ -75,8 +75,9 @@ export default function BillingRoute() {
                         onPress={() => void switchToPos()}
                         style={[styles.button, { backgroundColor: c.primary }]}
                     >
+                        {switching ? <ActivityIndicator size="small" color="#FFFFFF" /> : null}
                         <Text style={styles.buttonText}>{switching ? 'Switching…' : 'Open POS app'}</Text>
-                        <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.3} />
+                        {!switching ? <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.3} /> : null}
                     </AppPressable>
                     {!!error && <Text style={[styles.error, { color: c.error }]}>{error}</Text>}
                 </View>

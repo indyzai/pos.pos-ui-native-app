@@ -67,34 +67,34 @@ export function BottomNavigation() {
                 />
             </View>
             <AppPressable
-                    accessibilityLabel={centerItem?.label ?? 'Center action unavailable'}
-                    accessibilityState={{ disabled: !centerItem }}
-                    disabled={!centerItem}
-                    onPress={centerItem?.onPress}
-                    style={s.centerAction}
+                accessibilityLabel={centerItem?.label ?? 'Center action unavailable'}
+                accessibilityState={{ disabled: !centerItem }}
+                disabled={!centerItem}
+                onPress={centerItem?.onPress}
+                style={s.centerAction}
+            >
+                <View
+                    style={[
+                        s.centerCircle,
+                        {
+                            backgroundColor: centerItem ? c.primarySoft : c.outlineMuted,
+                            borderColor: c.background,
+                            opacity: centerItem ? 1 : 0.72,
+                        },
+                        isDark && { boxShadow: '0px 5px 14px rgba(0, 0, 0, 0.38)' },
+                    ]}
                 >
-                    <View
-                        style={[
-                            s.centerCircle,
-                            {
-                                backgroundColor: centerItem ? c.primarySoft : c.outlineMuted,
-                                borderColor: c.background,
-                                opacity: centerItem ? 1 : 0.72,
-                            },
-                            isDark && { boxShadow: '0px 5px 14px rgba(0, 0, 0, 0.38)' },
-                        ]}
-                    >
-                        <CenterIcon size={27} color={centerItem ? c.primary : c.textSecondary} strokeWidth={2} />
-                        <Text style={[s.centerLabel, { color: centerItem ? c.primary : c.textSecondary }]}>
-                            {centerItem?.label ?? 'Disabled'}
-                        </Text>
-                        {(centerItem?.badge ?? 0) > 0 && (
-                            <View style={[s.badge, { backgroundColor: c.error, borderColor: c.surface }]}>
-                                <Text style={s.badgeText}>{centerItem?.badge}</Text>
-                            </View>
-                        )}
-                    </View>
-                </AppPressable>
+                    <CenterIcon size={27} color={centerItem ? c.primary : c.textSecondary} strokeWidth={2} />
+                    <Text style={[s.centerLabel, { color: centerItem ? c.primary : c.textSecondary }]}>
+                        {centerItem?.label ?? 'Disabled'}
+                    </Text>
+                    {(centerItem?.badge ?? 0) > 0 && (
+                        <View style={[s.badge, { backgroundColor: c.error, borderColor: c.surface }]}>
+                            <Text style={s.badgeText}>{centerItem?.badge}</Text>
+                        </View>
+                    )}
+                </View>
+            </AppPressable>
             <MoreMenu
                 visible={moreOpen}
                 onClose={() => setMoreOpen(false)}

@@ -14,6 +14,7 @@ export {
     useLocalRecord,
     useLocalSales,
     useLocalStockBalances,
+    useOfflineQueueCount,
     usePendingSync,
 } from "./hooks";
 export { useLocalDatabase, useRequiredLocalDatabase } from "./react";
@@ -69,5 +70,3 @@ export type {
     PosRole,
     SyncStatus,
 } from "./types";
-
-

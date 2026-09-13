@@ -10,6 +10,7 @@ import { DatabaseProvider } from '../providers/DatabaseProvider';
 import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';
+import { GlobalDataLoader } from '../shared/components/layout/GlobalDataLoader';
 import { AppHeaderProvider } from '@indyzai/pos-ui';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '@indyzai/pos-ui/snackbar';
@@ -33,6 +34,7 @@ export default function RootLayout() {
                 <DatabaseProvider>
                   <AppHeaderProvider>
                     <RootNavigator />
+                    <GlobalDataLoader />
                   </AppHeaderProvider>
                 </DatabaseProvider>
               </AuthSessionProvider>

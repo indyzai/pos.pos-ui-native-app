@@ -168,10 +168,10 @@ export const billingApi = {
   refresh: (signal?: AbortSignal, database?: LocalDatabase | null, forceBootstrap = false) =>
     syncQueue.run(async () => {
       const c = await context();
-      await customersApi.sync(signal);
+      const targetDb = database ?? getActiveDatabase();
+      await customersApi.sync(signal, targetDb).catch(() => undefined);
       const cache = await read(c);
       const targetCollections = getTargetBootstrapCollections();
-      const targetDb = database ?? getActiveDatabase();
       const collections =
         targetDb && !forceBootstrap
           ? await updatedBootstrapCollections(c, targetDb, signal, targetCollections)

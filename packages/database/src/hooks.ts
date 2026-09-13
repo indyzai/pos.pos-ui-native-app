@@ -108,3 +108,23 @@ export const useLocalStockBalances = <T extends LocalRecord = LocalRecord>(
 ) => useLocalCollection<T>("stock_balances", query);
 export const usePendingSync = <T extends LocalRecord = LocalRecord>() =>
     useLocalCollection<T>("sync_outbox", { syncStatus: "PENDING" });
+
+/** Pending durable writes shown globally in the application header. */
+export function useOfflineQueueCount(): number {
+    const outbox = useLocalCollection("sync_outbox", { syncStatus: "PENDING" });
+    const customers = useLocalCollection("customers", {
+        syncStatus: "PENDING",
+    });
+    const sales = useLocalCollection("sales", { syncStatus: "PENDING" });
+    const refunds = useLocalCollection("refunds", { syncStatus: "PENDING" });
+    const printJobs = useLocalCollection("print_jobs", {
+        syncStatus: "PENDING",
+    });
+    return (
+        outbox.records.length +
+        customers.records.length +
+        sales.records.length +
+        refunds.records.length +
+        printJobs.records.length
+    );
+}

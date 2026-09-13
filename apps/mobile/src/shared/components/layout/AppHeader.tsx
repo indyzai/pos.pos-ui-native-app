@@ -11,17 +11,22 @@ import {
 } from 'react-native';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import {
+  Building2,
   ChevronLeft,
   ChevronRight,
-  Database,
+  LockKeyhole,
   LogOut,
   Menu,
   Moon,
   RefreshCw,
   Repeat2,
   Settings,
+  Store,
   Sun,
   UserRound,
+  UnlockKeyhole,
+  Wifi,
+  WifiOff,
   X,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
@@ -32,6 +37,8 @@ import { PosLogo } from '@indyzai/pos-ui';
 import { authApi } from '../../../auth/authApi';
 import { useAuthSession } from '../../../auth/AuthSessionContext';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
+import { useOfflineQueueCount } from '@indyzai/pos-database';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { useAppHeader } from '@indyzai/pos-ui';
 import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
 import { CounterSessionSummaryDialog } from '../../../features/counter-session/components/CounterSessionSummaryDialog';
@@ -59,6 +66,8 @@ export function AppHeader({
   const [counterOpen, setCounterOpen] = useState(false);
   const [sessionSummaryOpen, setSessionSummaryOpen] = useState(false);
   const local = useLocalDatabase();
+  const pendingQueueCount = useOfflineQueueCount();
+  const network = useNetInfo();
   const { counterDialogRequest, featureRefresh, refreshJob } = useAppHeader();
   const router = useRouter();
   const { isDark, mode, setMode, themeColors } = useAppTheme();
@@ -66,7 +75,6 @@ export function AppHeader({
   const selectedTenant = session?.tenant ?? null;
   const organization = session?.organization;
   const businessName = organization?.name || selectedTenant?.name;
-  const headerTitle = businessName ? `${title} (${businessName})` : title;
   const activeCounterSession = organization?.activeSession;
   const fallbackBranch =
     organization?.branches.find((branch) => branch.counters.length) ?? organization?.branches[0];
@@ -101,6 +109,43 @@ export function AppHeader({
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'User';
   const role = selectedTenant?.role ?? user?.tenants?.[0]?.role ?? user?.role;
   const userRole = role ? `${role[0]?.toUpperCase()}${role.slice(1)}` : 'Team member';
+  const isOnline = network.isConnected !== false && network.isInternetReachable !== false;
+
+  const counterColors = isCounterOpen
+    ? {
+        bg: isDark ? 'rgba(16, 185, 129, 0.16)' : '#ECFDF5',
+        border: isDark ? '#059669' : '#10B981',
+        text: isDark ? '#34D399' : '#047857',
+      }
+    : {
+        bg: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEF2F2',
+        border: isDark ? '#DC2626' : '#EF4444',
+        text: isDark ? '#F87171' : '#B91C1C',
+      };
+
+  const storageColors = refreshJob
+    ? {
+        bg: themeColors.surfaceMuted,
+        border: themeColors.primary,
+        text: themeColors.primary,
+      }
+    : local.status === 'error'
+      ? {
+          bg: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEF2F2',
+          border: themeColors.error,
+          text: themeColors.error,
+        }
+      : !isOnline
+        ? {
+            bg: isDark ? 'rgba(245, 158, 11, 0.16)' : '#FFFBEB',
+            border: isDark ? '#D97706' : '#F59E0B',
+            text: isDark ? '#FBBF24' : '#B45309',
+          }
+        : {
+            bg: isDark ? 'rgba(14, 165, 233, 0.14)' : '#F0F9FF',
+            border: isDark ? '#0284C7' : '#0EA5E9',
+            text: isDark ? '#38BDF8' : '#0284C7',
+          };
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -157,15 +202,44 @@ export function AppHeader({
             </View>
           </AppPressable>
         )}
-        <PosLogo size={isPhone ? 29 : 34} />
-        <View style={s.brandCopy}>
-          <Text numberOfLines={1} style={[s.title, isPhone && s.phoneTitle, { color: themeColors.text }]}>
-            {headerTitle}
-          </Text>
+        <PosLogo size={isPhone ? 28 : 34} />
+        <View style={[s.brandCopy, isPhone ? s.phoneBrandCopy : s.desktopBrandCopy]}>
+          {isPhone ? (
+            <Text numberOfLines={1} style={[s.title, s.phoneTitle, { color: themeColors.text }]}>
+              {businessName || title}
+            </Text>
+          ) : (
+            <View style={s.titleRow}>
+              <Text numberOfLines={1} style={[s.title, { color: themeColors.text }]}>
+                {title}
+              </Text>
+              {Boolean(businessName) && (
+                <View
+                  style={[
+                    s.businessTag,
+                    {
+                      backgroundColor: themeColors.primarySoft,
+                      borderColor: themeColors.primary + '28',
+                    },
+                  ]}
+                >
+                  <Building2 size={10} color={themeColors.primary} strokeWidth={2.4} />
+                  <Text numberOfLines={1} style={[s.businessTagText, { color: themeColors.primary }]}>
+                    {businessName}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
           <View style={s.branchRow}>
-            <Text numberOfLines={1} style={[s.subtitle, { color: themeColors.textSecondary }]}>
+            <Store size={isPhone ? 11 : 12} color={themeColors.textSecondary} strokeWidth={2.2} />
+            <Text
+              numberOfLines={1}
+              style={[s.branchText, isPhone && s.phoneBranchText, { color: themeColors.textSecondary }]}
+            >
               {branchName}
             </Text>
+            {!isPhone && <Text style={[s.dotSeparator, { color: themeColors.outline }]}>·</Text>}
             <AppPressable
               accessibilityLabel={
                 isCounterOpen ? `View ${counterName} session` : `Open ${counterName} session`
@@ -175,24 +249,22 @@ export function AppHeader({
                 s.counterStatus,
                 isPhone && s.phoneCounterStatus,
                 {
-                  backgroundColor: isCounterOpen ? themeColors.success + '18' : themeColors.error + '18',
+                  backgroundColor: counterColors.bg,
+                  borderColor: counterColors.border,
                 },
               ]}
             >
-              <View
-                style={[
-                  s.statusDot,
-                  { backgroundColor: isCounterOpen ? themeColors.success : themeColors.error },
-                ]}
-              />
-              <Text
-                numberOfLines={1}
-                style={[
-                  s.counterStatusText,
-                  { color: isCounterOpen ? themeColors.success : themeColors.error },
-                ]}
-              >
-                {counterName}
+              {isCounterOpen ? (
+                <UnlockKeyhole size={isPhone ? 10 : 12} color={counterColors.text} strokeWidth={2.5} />
+              ) : (
+                <LockKeyhole size={isPhone ? 10 : 12} color={counterColors.text} strokeWidth={2.5} />
+              )}
+              <Text numberOfLines={1} style={[s.counterStatusText, { color: counterColors.text }]}>
+                {isPhone
+                  ? isCounterOpen
+                    ? 'Open'
+                    : 'Closed'
+                  : `${counterName} · ${isCounterOpen ? 'Open' : 'Closed'}`}
               </Text>
             </AppPressable>
           </View>
@@ -205,44 +277,55 @@ export function AppHeader({
               ? `Cancel ${refreshJob.text}, job ${refreshJob.id}`
               : local.status === 'error'
                 ? local.error || 'Retry local storage'
-                : featureRefresh
-                  ? 'Pull down to refresh'
-                  : 'Local storage ' + local.status
+                : `${isOnline ? 'Online' : 'Offline'}; ${pendingQueueCount} changes queued; local storage ${local.status}`
           }
           disabled={!refreshJob && local.status !== 'error'}
           onPress={() => void (refreshJob ? refreshJob.cancel() : local.retry())}
           style={[
             s.themeToggle,
             !showActionLabels && s.iconAction,
-            { backgroundColor: themeColors.surfaceMuted },
+            {
+              backgroundColor: storageColors.bg,
+              borderWidth: 1,
+              borderColor: storageColors.border,
+            },
           ]}
         >
           {refreshJob ? (
-            <ActivityIndicator size="small" color={themeColors.primary} />
+            isPhone ? (
+              <View style={s.cancelProgress}>
+                <ActivityIndicator size={28} color={themeColors.primary} />
+                <X size={12} color={themeColors.primary} strokeWidth={3} style={s.cancelProgressIcon} />
+              </View>
+            ) : (
+              <ActivityIndicator size="small" color={themeColors.primary} />
+            )
           ) : local.status === 'error' ? (
-            <RefreshCw size={14} color={themeColors.error} />
+            <RefreshCw size={14} color={storageColors.text} />
+          ) : isOnline ? (
+            <Wifi size={14} color={storageColors.text} />
           ) : (
-            <Database size={14} color={themeColors.textSecondary} />
+            <WifiOff size={14} color={storageColors.text} />
+          )}
+          {!refreshJob && pendingQueueCount > 0 && (
+            <View style={[s.queueBadge, { backgroundColor: storageColors.border }]}>
+              <Text style={s.queueBadgeText}>{pendingQueueCount > 99 ? '99+' : pendingQueueCount}</Text>
+            </View>
           )}
           {showActionLabels && (
-            <Text
-              style={[
-                s.toggleText,
-                { color: local.status === 'error' ? themeColors.error : themeColors.textSecondary },
-              ]}
-            >
+            <Text style={[s.toggleText, { color: storageColors.text }]}>
               {refreshJob
                 ? `${refreshJob.text} · ${refreshJob.id.slice(-6).toUpperCase()}`
                 : local.status === 'ready'
-                  ? featureRefresh
-                    ? 'Pull to refresh'
-                    : 'Storage ready'
+                  ? pendingQueueCount > 0
+                    ? `${isOnline ? 'Online' : 'Offline'} · ${pendingQueueCount} queued`
+                    : `${isOnline ? 'Online' : 'Offline'} · Storage ready`
                   : local.status === 'error'
                     ? '↻ Storage'
                     : '◌ Preparing'}
             </Text>
           )}
-          {refreshJob && <X size={13} color={themeColors.textSecondary} />}
+          {refreshJob && !isPhone && <X size={13} color={themeColors.textSecondary} />}
         </AppPressable>
         <AppPressable
           onPress={() => setMode(mode === 'light' ? 'dark' : 'light')}
@@ -386,7 +469,9 @@ const s = StyleSheet.create({
   },
   phoneHeader: { height: 64, paddingHorizontal: 12 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
-  brandCopy: { minWidth: 0, maxWidth: 240, flexShrink: 1 },
+  brandCopy: { minWidth: 0, flexShrink: 1 },
+  phoneBrandCopy: { maxWidth: 240 },
+  desktopBrandCopy: { maxWidth: 440 },
   burger: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   navigationState: {
     position: 'absolute',
@@ -398,22 +483,68 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 16, fontWeight: '800' },
-  phoneTitle: { fontSize: 13 },
-  branchRow: { minWidth: 0, marginTop: 2, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  subtitle: { minWidth: 0, flexShrink: 1, fontSize: 11 },
-  online: { fontSize: 10 },
-  counterStatus: {
-    height: 22,
-    paddingHorizontal: 7,
-    borderRadius: 11,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 0,
+  },
+  title: { fontSize: 15, fontWeight: '800' },
+  phoneTitle: { fontSize: 14, fontWeight: '800' },
+  businessTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    borderWidth: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  businessTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  branchRow: {
+    minWidth: 0,
+    marginTop: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
-  phoneCounterStatus: { maxWidth: 88 },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  counterStatusText: { fontSize: 10, fontWeight: '900' },
+  branchText: {
+    fontSize: 11,
+    fontWeight: '500',
+    flexShrink: 1,
+    maxWidth: 160,
+  },
+  phoneBranchText: {
+    maxWidth: 100,
+  },
+  dotSeparator: {
+    fontSize: 10,
+    marginHorizontal: 1,
+  },
+  counterStatus: {
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3.5,
+    flexShrink: 0,
+  },
+  phoneCounterStatus: {
+    paddingHorizontal: 5,
+    gap: 3,
+  },
+  counterStatusText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
   avatar: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
   themeToggle: {
@@ -428,6 +559,17 @@ const s = StyleSheet.create({
   iconAction: { width: 32, paddingHorizontal: 0 },
   phoneControl: { width: 32, height: 32, borderRadius: 16 },
   toggleText: { fontSize: 11, fontWeight: '900' },
+  queueBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  queueBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '900' },
+  cancelProgress: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  cancelProgressIcon: { position: 'absolute' },
   avatarText: { fontSize: 12, fontWeight: '800' },
   themeMenu: {
     position: 'absolute',

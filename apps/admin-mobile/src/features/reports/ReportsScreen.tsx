@@ -34,6 +34,7 @@ export function ReportsScreen() {
     const [period, setPeriod] = useState<ReportPeriod>(30);
     const controller = useRef<AbortController | undefined>(undefined);
     const featureRefreshRef = useRef<() => Promise<void>>(async () => undefined);
+    const initialRefresh = useRef<string | undefined>(undefined);
     const currency = String(session?.organization?.settings.currency || 'INR');
     const metrics = useMemo(
         () => buildReportMetrics(data.orders, data.refunds, period),
@@ -69,6 +70,12 @@ export function ReportsScreen() {
         }
     };
     featureRefreshRef.current = refresh;
+    useEffect(() => {
+        const key = session ? `${session.tenant.id}:${session.user.id}` : undefined;
+        if (!key || initialRefresh.current === key) return;
+        initialRefresh.current = key;
+        void featureRefreshRef.current();
+    }, [session]);
     useEffect(() => {
         setFeatureRefresh(() => featureRefreshRef.current());
         return () => setFeatureRefresh(undefined);

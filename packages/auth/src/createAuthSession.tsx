@@ -11,6 +11,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import type { AuthTenant, AuthUser } from "./types";
 import type { createAuthApi } from "./createAuthApi";
 import { createLogger } from "@indyzai/pos-core";
+import { AuthBranding } from "./AuthBranding";
 
 const sessionLogger = createLogger("Auth:session");
 
@@ -233,10 +234,23 @@ function StartupLoader({
 }) {
     return (
         <View style={[s.loader, { backgroundColor: c.background }]}>
-            <ActivityIndicator size="large" color={c.primary} />
-            <Text style={[s.loaderText, { color: c.textSecondary }]}>
-                Preparing your workspace…
-            </Text>
+            <AuthBranding
+                fullScreen
+                title="Welcome back"
+                subtitle="Your business is ready wherever the day takes you."
+            />
+            <View style={[s.loaderCard, { backgroundColor: c.background }]}>
+                <ActivityIndicator size="large" color={c.primary} />
+                <View style={s.loaderCopy}>
+                    <Text style={[s.loaderTitle, { color: c.primary }]}>
+                        Opening your workspace
+                    </Text>
+                    <Text style={[s.loaderText, { color: c.textSecondary }]}>
+                        Loading your secure local data for a smooth,
+                        offline-ready start.
+                    </Text>
+                </View>
+            </View>
         </View>
     );
 }
@@ -244,9 +258,34 @@ function StartupLoader({
 const s = StyleSheet.create({
     loader: {
         flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 14,
+        overflow: "hidden",
     },
-    loaderText: { fontSize: 14, fontWeight: "700" },
+    loaderCard: {
+        position: "absolute",
+        left: 24,
+        right: 24,
+        bottom: 46,
+        maxWidth: 520,
+        alignSelf: "center",
+        minHeight: 92,
+        borderRadius: 24,
+        paddingHorizontal: 22,
+        paddingVertical: 18,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 16,
+        shadowColor: "#050A18",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.24,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    loaderCopy: { flex: 1 },
+    loaderTitle: { fontSize: 16, fontWeight: "900" },
+    loaderText: {
+        marginTop: 4,
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: "600",
+    },
 });

@@ -4,6 +4,7 @@ import {
   getActiveDatabase,
   localRecordsFromPayloads,
   mapBootstrapCustomer,
+  type LocalDatabase,
   type LocalRecord,
 } from '@indyzai/pos-database';
 import { requestPos } from '../../core/api/posApi';
@@ -17,15 +18,15 @@ const customersQuery = `query PosCustomers($type: PartyType, $skip: Int!, $take:
   }
 }`;
 
-function context() {
+function context(databaseOverride?: LocalDatabase | null) {
   const session = getActiveAuthSession();
-  const database = getActiveDatabase();
+  const database = databaseOverride ?? getActiveDatabase();
   if (!session || !database) throw new Error('Your local workspace is still initializing.');
   return { session, database, repository: database.collection<LocalRecord<LocalCustomer>>('customers') };
 }
 
-async function pushPending() {
-  const { session, database, repository } = context();
+async function pushPending(databaseOverride?: LocalDatabase | null) {
+  const { session, database, repository } = context(databaseOverride);
   const pending = await repository.list({ syncStatus: 'PENDING', includeDeleted: true });
   for (const record of pending) {
     try {
@@ -71,9 +72,9 @@ export const customersApi = {
     return customer;
   },
 
-  async sync(signal?: AbortSignal) {
-    await pushPending();
-    const { session, database, repository } = context();
+  async sync(signal?: AbortSignal, databaseOverride?: LocalDatabase | null) {
+    await pushPending(databaseOverride);
+    const { session, database, repository } = context(databaseOverride);
     const parties: Record<string, unknown>[] = [];
     for (let skip = 0; ; skip += customerPageSize) {
       const data = await requestPos<{ parties: Record<string, unknown>[] }>(
