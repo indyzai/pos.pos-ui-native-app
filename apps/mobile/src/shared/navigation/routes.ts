@@ -16,7 +16,7 @@ export type AppNavigationItem = { label: string; icon: LucideIcon; href: Href };
 
 export const primaryNavigationItems: AppNavigationItem[] = [
   { label: 'Billing', icon: LayoutGrid, href: '/billing' },
-  { label: 'Orders', icon: ReceiptText, href: '/orders' },
+  { label: 'Inventory', icon: Package, href: '/inventory' },
 ];
 
 export const reportNavigationItem: AppNavigationItem = {
@@ -27,7 +27,7 @@ export const reportNavigationItem: AppNavigationItem = {
 
 export const moreNavigationItems: AppNavigationItem[] = [
   { label: 'Customers', icon: Users, href: '/customers' },
-  { label: 'Inventory', icon: Package, href: '/inventory' },
+  { label: 'Orders', icon: ReceiptText, href: '/orders' },
   { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers' },
   { label: 'Expenses', icon: Wallet, href: '/expenses' },
   { label: 'Shifts', icon: Clock, href: '/shifts' },
