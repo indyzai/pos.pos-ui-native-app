@@ -25,3 +25,7 @@ export function getAuthUi(): AuthUiConfiguration {
         throw new Error("Auth UI must be configured before rendering.");
     return configuration;
 }
+
+export function getOptionalAuthUi(): AuthUiConfiguration | undefined {
+    return configuration;
+}

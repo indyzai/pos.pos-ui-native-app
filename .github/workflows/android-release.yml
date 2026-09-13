@@ -343,6 +343,7 @@ jobs:
           releaseFiles: apps/mobile/release/indyz-pos-${{ needs.metadata.outputs.pos_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
+          releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.pos_version }})
           whatsNewDirectory: distribution/whatsnew
 
       - name: Google Play publish skipped notice
@@ -531,6 +532,7 @@ jobs:
           releaseFiles: apps/admin-mobile/release/indyz-pos-admin-${{ needs.metadata.outputs.admin_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
+          releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.admin_version }})
           whatsNewDirectory: distribution/whatsnew
 
       - name: Google Play publish skipped notice

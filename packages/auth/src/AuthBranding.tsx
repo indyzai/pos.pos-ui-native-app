@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Moon, Sparkles, Sun } from "lucide-react-native";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { AppPressable } from "@indyzai/pos-ui";
-import { getAuthUi } from "./authUi";
+import { getOptionalAuthUi } from "./authUi";
 
 export function AuthBranding({
     title,
@@ -14,7 +14,8 @@ export function AuthBranding({
     fullScreen?: boolean;
 }) {
     const { width, height } = useWindowDimensions();
-    const { isDark } = getAuthUi().useTheme();
+    const authUi = getOptionalAuthUi();
+    const isDark = authUi ? authUi.useTheme().isDark : false;
     const isWide = width >= 768 && height >= 600 && width > height;
     const isCompactLandscape = width > height && height < 600;
     const mobileColors = isDark
@@ -155,7 +156,9 @@ export function AuthBranding({
 }
 
 function ThemeToggle() {
-    const { mode, setMode } = getAuthUi().useTheme();
+    const authUi = getOptionalAuthUi();
+    if (!authUi) return null;
+    const { mode, setMode } = authUi.useTheme();
     const Icon = mode === "light" ? Moon : Sun;
     return (
         <AppPressable
@@ -181,10 +184,11 @@ function ValuePill({ label }: { label: string }) {
 }
 
 function BrandLockup({ compact = false }: { compact?: boolean }) {
-    const { Logo } = getAuthUi();
+    const authUi = getOptionalAuthUi();
+    const Logo = authUi?.Logo;
     return (
         <View style={[s.brand, compact && s.mobileBrand]}>
-            <Logo size={compact ? 34 : 43} />
+            {Logo ? <Logo size={compact ? 34 : 43} /> : null}
             <View>
                 <Text style={[s.brandName, compact && s.mobileBrandName]}>
                     INDYZAI POS

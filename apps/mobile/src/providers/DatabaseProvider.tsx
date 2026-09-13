@@ -9,7 +9,12 @@ import { createLogger } from '@indyzai/pos-core';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
-import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
+import {
+  normalizePosRole,
+  setActiveDatabase,
+  type DatabaseScope,
+  type LocalDatabase,
+} from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-core/storage';
 import { queryClient } from '@indyzai/pos-core/query';
@@ -20,7 +25,7 @@ const logger = createLogger('Database:store');
 export function DatabaseProvider({ children }: { children: ReactNode }) {
   const { session, initializing: authInitializing } = useAuthSession();
   const [state, setState] = useState<Omit<DatabaseState, 'retry'>>({
-    status: 'initializing',
+    status: session ? 'initializing' : 'ready',
     error: '',
     database: null,
     scope: null,
@@ -31,6 +36,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     const current = ++generation.current;
     if (authInitializing) return;
     if (!session) {
+      setActiveDatabase(null);
       setState({ status: 'ready', error: '', database: null, scope: null });
       return;
     }
@@ -73,7 +79,9 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       }
       logger.info('Store database ready', { tenantId: scope.tenantId, role: scope.role });
       setState((previous) => {
-        void previous.database?.close();
+        if (previous.database && previous.database !== database) {
+          void previous.database.close();
+        }
         return { status: 'ready', error: '', database, scope };
       });
       // Network is an optional synchronization source. The bootstrap writes to

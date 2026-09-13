@@ -2,12 +2,18 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { useLocalDatabase } from '../../../providers/DatabaseProvider';
 import { useAppTheme } from '@indyzai/pos-ui';
+import { useAuthSession } from '../../../auth/AuthSessionContext';
 
 export function GlobalDataLoader() {
-    const fetching = useIsFetching();
+    const { authenticated, session } = useAuthSession();
+    const fetching = useIsFetching({
+        predicate: (query) => query.state.status === 'pending',
+    });
     const mutating = useIsMutating();
     const local = useLocalDatabase();
     const { themeColors: c } = useAppTheme();
+
+    if (!authenticated || !session) return null;
     if (local.status !== 'initializing' && fetching === 0 && mutating === 0) return null;
     return (
         <View pointerEvents="none" style={s.overlay} accessibilityLiveRegion="polite">

@@ -29,6 +29,8 @@ export type AuthApiConfiguration = {
     getRuntimeApiUrls: () => Promise<{ authApiUrl: string }>;
 };
 
+export type AuthApi = ReturnType<typeof createAuthApi>;
+
 export function createAuthApi(configuration: AuthApiConfiguration) {
     const authAppId = configuration.appId;
     const webAuthChannel = `indyzai-auth:${authAppId}`;
@@ -689,6 +691,33 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
                 new URL(result.url).searchParams.get("state") || undefined,
             );
             return true;
+        },
+        async checkHealth(signal?: AbortSignal, timeoutMs = 10000): Promise<boolean> {
+            try {
+                const { authApiUrl: runtimeAuthApiUrl } = await configuration.getRuntimeApiUrls();
+                const healthUrl = runtimeAuthApiUrl.replace(/\/api\/v1\/?$/, '/api/health');
+                let timer: any = null;
+                let effectiveSignal = signal;
+                if (!signal) {
+                    const controller = new AbortController();
+                    timer = setTimeout(() => controller.abort(), timeoutMs);
+                    effectiveSignal = controller.signal;
+                }
+                try {
+                    const res = await fetch(healthUrl, {
+                        method: 'GET',
+                        signal: effectiveSignal,
+                    });
+                    return res.status > 0 && res.status < 500;
+                } finally {
+                    if (timer) clearTimeout(timer);
+                }
+            } catch {
+                return false;
+            }
+        },
+        async getHealthStatus(signal?: AbortSignal, timeoutMs = 10000): Promise<boolean> {
+            return this.checkHealth(signal, timeoutMs);
         },
     };
     return authApi;

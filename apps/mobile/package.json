@@ -8,7 +8,6 @@
     "@indyzai/pos-core": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
     "@indyzai/pos-ui": "workspace:*",
-    "@react-native-community/netinfo": "^12.0.1",
     "@tanstack/react-query": "^5.102.8",
     "dexie": "^4.4.6",
     "dexie-react-hooks": "^4.4.0",

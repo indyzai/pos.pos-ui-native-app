@@ -52,6 +52,7 @@ export {
     getActiveWebDatabaseSafe,
     setActiveDatabase,
     setActiveWebDatabase,
+    waitForActiveDatabase,
 } from "./runtime/activeDatabase";
 export {
     collectionNames,

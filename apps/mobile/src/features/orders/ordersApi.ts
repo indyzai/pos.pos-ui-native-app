@@ -30,15 +30,14 @@ const request = <T>(
 ) => requestPos<T>(c.token, c.tenant, query, variables, signal);
 
 export const ordersApi = {
-  load: () =>
-    queue.run(async () => {
-      const c = context();
-      const [orders, refunds] = await Promise.all([
-        ordersRepository.readOrders(c.scope),
-        ordersRepository.readRefunds(c.scope),
-      ]);
-      return { scope: c.scope, orders, refunds };
-    }),
+  load: async () => {
+    const c = context();
+    const [orders, refunds] = await Promise.all([
+      ordersRepository.readOrders(c.scope),
+      ordersRepository.readRefunds(c.scope),
+    ]);
+    return { scope: c.scope, orders, refunds };
+  },
   refresh: (signal?: AbortSignal) =>
     queue.run(async () => {
       const c = context();

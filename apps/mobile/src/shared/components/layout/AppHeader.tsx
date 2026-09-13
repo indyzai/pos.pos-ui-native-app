@@ -38,8 +38,7 @@ import { authApi } from '../../../auth/authApi';
 import { useAuthSession } from '../../../auth/AuthSessionContext';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { useOfflineQueueCount } from '@indyzai/pos-database';
-import { useNetInfo } from '@react-native-community/netinfo';
-import { useAppHeader } from '@indyzai/pos-ui';
+import { useAppHeader, useNetworkStatus } from '@indyzai/pos-ui';
 import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
 import { CounterSessionSummaryDialog } from '../../../features/counter-session/components/CounterSessionSummaryDialog';
 
@@ -67,7 +66,7 @@ export function AppHeader({
   const [sessionSummaryOpen, setSessionSummaryOpen] = useState(false);
   const local = useLocalDatabase();
   const pendingQueueCount = useOfflineQueueCount();
-  const network = useNetInfo();
+  const isOnline = useNetworkStatus(authApi);
   const { counterDialogRequest, featureRefresh, refreshJob } = useAppHeader();
   const router = useRouter();
   const { isDark, mode, setMode, themeColors } = useAppTheme();
@@ -109,7 +108,6 @@ export function AppHeader({
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'User';
   const role = selectedTenant?.role ?? user?.tenants?.[0]?.role ?? user?.role;
   const userRole = role ? `${role[0]?.toUpperCase()}${role.slice(1)}` : 'Team member';
-  const isOnline = network.isConnected !== false && network.isInternetReachable !== false;
 
   const counterColors = isCounterOpen
     ? {

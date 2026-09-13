@@ -51,7 +51,7 @@ export function ReportsScreen() {
   const currency = String(session?.organization?.settings.currency || 'INR');
   const money = (value: number) => formatCurrency(value, currency);
   const refresh = async () => {
-    if (controller.current) return;
+    if (controller.current || !data.ready) return;
     const next = new AbortController();
     controller.current = next;
     setRefreshJob({
@@ -74,11 +74,11 @@ export function ReportsScreen() {
   };
   refreshRef.current = refresh;
   useEffect(() => {
-    const key = session ? `${session.tenant.id}:${session.user.id}` : undefined;
+    const key = session && data.ready ? `${session.tenant.id}:${session.user.id}` : undefined;
     if (!key || initialRefresh.current === key) return;
     initialRefresh.current = key;
     void refreshRef.current();
-  }, [session]);
+  }, [data.ready, session]);
   useEffect(() => {
     setFeatureRefresh(() => refreshRef.current());
     return () => setFeatureRefresh(undefined);

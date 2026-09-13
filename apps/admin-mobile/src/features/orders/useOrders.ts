@@ -42,6 +42,7 @@ export function useOrders() {
     }, [local.database, query.data]);
     const refreshMutation = useMutation({
         mutationFn: async (signal?: AbortSignal) => {
+            if (!ready) return;
             await ordersApi.sync(signal);
             await ordersApi.refresh(signal);
         },
@@ -62,6 +63,7 @@ export function useOrders() {
         onSuccess: () => client.invalidateQueries({ queryKey: key }),
     });
     return {
+        ready,
         orders: payloadsFromRecords(localOrders.records),
         refunds: payloadsFromRecords(localRefunds.records),
         loading: query.isFetching,

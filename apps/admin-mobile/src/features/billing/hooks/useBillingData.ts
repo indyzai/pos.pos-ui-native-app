@@ -88,10 +88,12 @@ export function useBillingData() {
         return () => clearInterval(timer);
     }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready]);
     const initialRefreshKey = useRef<string | undefined>(undefined);
+    const attemptedBootstrap = useRef(false);
     useEffect(() => {
         const key = query.data?.key;
         if (!ready || !key || !local.database || initialRefreshKey.current === key) return;
         initialRefreshKey.current = key;
+        if (attemptedBootstrap.current) return;
         void local.database
             .collection('sync_state')
             .list({ includeDeleted: true })
@@ -101,15 +103,11 @@ export function useBillingData() {
                         String((state.payload as { collection?: string }).collection ?? state.remoteId),
                     ),
                 );
-                const hasBootstrap = [
-                    'products',
-                    'customers',
-                    'payment_methods',
-                    'service_users',
-                    'tax_rates',
-                    'shifts',
-                ].every((collection) => loaded.has(collection));
+                const hasBootstrap = ['products', 'customers', 'payment_methods', 'tax_rates'].every(
+                    (collection) => loaded.has(collection),
+                );
                 if (!hasBootstrap) {
+                    attemptedBootstrap.current = true;
                     running.current = true;
                     return billingApi
                         .refresh(undefined, local.database, true)

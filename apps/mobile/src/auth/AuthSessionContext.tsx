@@ -10,6 +10,7 @@ import { setUnauthorizedHandler } from '@indyzai/pos-backend';
 import { loadOrganizationDetails } from '../features/organization/organizationApi';
 import { useAppTheme } from '@indyzai/pos-ui';
 import { authApi } from './authApi';
+import './ui';
 
 export { getActiveAuthSession, useAuthSession };
 export type { AuthSession };

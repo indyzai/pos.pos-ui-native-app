@@ -91,10 +91,12 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
     return () => clearInterval(timer);
   }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready]);
   const initialRefreshKey = useRef<string | undefined>(undefined);
+  const attemptedBootstrap = useRef(false);
   useEffect(() => {
     const key = query.data?.key;
     if (!ready || !key || !local.database || initialRefreshKey.current === key) return;
     initialRefreshKey.current = key;
+    if (attemptedBootstrap.current) return;
     void local.database
       .collection('sync_state')
       .list({ includeDeleted: true })
@@ -109,6 +111,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
         if (currentMode === 'service') required.push('service_users');
         const hasBootstrap = required.every((collection) => loaded.has(collection));
         if (!hasBootstrap) {
+          attemptedBootstrap.current = true;
           running.current = true;
           return billingApi
             .refresh(undefined, local.database, true)
