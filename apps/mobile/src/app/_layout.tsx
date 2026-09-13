@@ -14,6 +14,13 @@ import { AppHeaderProvider } from '@indyzai/pos-ui';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '@indyzai/pos-ui/snackbar';
 import { AppPaperProvider } from '@indyzai/pos-ui';
+import {
+  moreNavigationItems,
+  navigationItemsForRole,
+  primaryNavigationItems,
+  reportNavigationItem,
+  resolveStoreAccessRole,
+} from '../shared/navigation/routes';
 
 export default function RootLayout() {
   return (
@@ -48,16 +55,31 @@ function RootNavigator() {
   const [navigationCollapsed, setNavigationCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { authenticated, initializing } = useAuthSession();
+  const { authenticated, initializing, session } = useAuthSession();
   useEffect(() => {
+    const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff', '/device-setup'];
+    if (!initializing && !authenticated && !publicRoutes.includes(pathname)) {
+      router.replace('/login');
+      return;
+    }
     if (
       !initializing &&
-      !authenticated &&
-      !['/', '/login', '/signup', '/auth/callback', '/auth/handoff'].includes(pathname)
+      authenticated &&
+      session &&
+      !publicRoutes.includes(pathname) &&
+      pathname !== '/profile'
     ) {
-      router.replace('/login');
+      const role = resolveStoreAccessRole(session.tenant.role, session.user.role);
+      const allowed = navigationItemsForRole(
+        [...primaryNavigationItems, ...moreNavigationItems, reportNavigationItem],
+        role,
+      ).some((item) => {
+        const href = typeof item.href === 'string' ? item.href : item.href.pathname;
+        return pathname === href || pathname.startsWith(`${href}/`);
+      });
+      if (!allowed) router.replace('/billing');
     }
-  }, [authenticated, initializing, pathname, router]);
+  }, [authenticated, initializing, pathname, router, session]);
   const headerHidden = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff'].includes(pathname);
   const showLeftNavigation = !headerHidden && width >= 700 && width > height;
   return (

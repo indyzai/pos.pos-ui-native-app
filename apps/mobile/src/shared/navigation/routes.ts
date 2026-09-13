@@ -11,12 +11,23 @@ import {
   Users,
   Wallet,
 } from 'lucide-react-native';
+import { permitsManagerMenu, type StoreAccessRole } from './access';
 
-export type AppNavigationItem = { label: string; icon: LucideIcon; href: Href };
+export { resolveStoreAccessRole } from './access';
+export type AppNavigationItem = {
+  label: string;
+  icon: LucideIcon;
+  href: Href;
+  minimumRole?: StoreAccessRole;
+};
+
+export function navigationItemsForRole(items: readonly AppNavigationItem[], role: StoreAccessRole) {
+  return items.filter((item) => !item.minimumRole || permitsManagerMenu(role));
+}
 
 export const primaryNavigationItems: AppNavigationItem[] = [
   { label: 'Billing', icon: LayoutGrid, href: '/billing' },
-  { label: 'Inventory', icon: Package, href: '/inventory' },
+  { label: 'Inventory', icon: Package, href: '/inventory', minimumRole: 'manager' },
 ];
 
 export const reportNavigationItem: AppNavigationItem = {
@@ -28,13 +39,13 @@ export const reportNavigationItem: AppNavigationItem = {
 export const moreNavigationItems: AppNavigationItem[] = [
   { label: 'Customers', icon: Users, href: '/customers' },
   { label: 'Orders', icon: ReceiptText, href: '/orders' },
-  { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers' },
-  { label: 'Expenses', icon: Wallet, href: '/expenses' },
+  { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers', minimumRole: 'manager' },
+  { label: 'Expenses', icon: Wallet, href: '/expenses', minimumRole: 'manager' },
   { label: 'Shifts', icon: Clock, href: '/shifts' },
   { label: 'Settings', icon: Settings, href: '/settings' },
 ];
 
-export const tabletNavigationItems = [
+export const tabletNavigationItems: AppNavigationItem[] = [
   ...primaryNavigationItems,
   moreNavigationItems[0],
   moreNavigationItems[1],

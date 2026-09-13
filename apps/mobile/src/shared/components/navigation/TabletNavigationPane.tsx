@@ -2,17 +2,28 @@ import { StyleSheet, Text, View } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useAppTheme } from '@indyzai/pos-ui';
 import { AppPressable } from '@indyzai/pos-ui';
-import { isNavigationItemActive, tabletNavigationItems } from '../../navigation/routes';
+import {
+  isNavigationItemActive,
+  navigationItemsForRole,
+  resolveStoreAccessRole,
+  tabletNavigationItems,
+} from '../../navigation/routes';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 
 export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {
   const { themeColors: c } = useAppTheme();
   const pathname = usePathname();
   const router = useRouter();
+  const { session } = useAuthSession();
+  const items = navigationItemsForRole(
+    tabletNavigationItems,
+    resolveStoreAccessRole(session?.tenant.role, session?.user.role),
+  );
   return (
     <View
       style={[s.pane, collapsed && s.collapsed, { backgroundColor: c.surface, borderRightColor: c.outline }]}
     >
-      {tabletNavigationItems.map(({ icon: Icon, label, href }) => {
+      {items.map(({ icon: Icon, label, href }) => {
         const active = isNavigationItemActive(pathname, href);
         return (
           <AppPressable

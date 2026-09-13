@@ -1,6 +1,12 @@
-import { Users } from 'lucide-react-native';
-import { ModulePlaceholder } from '../shared/components/layout/ModulePlaceholder';
+import { BottomNavigationProvider } from '@indyzai/pos-ui';
+import { CustomersScreen } from '../features/customers/CustomersScreen';
+import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 
 export default function CustomersRoute() {
-  return <ModulePlaceholder title="Customers" icon={Users} />;
+  return (
+    <BottomNavigationProvider>
+      <CustomersScreen />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

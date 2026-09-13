@@ -37,6 +37,7 @@ import {
   type LocalDatabase,
 } from '@indyzai/pos-database';
 import { getBillingBootstrapCollections, resolveBillingMode } from './domain/billingMode';
+import { customersApi } from '../customers/customersApi';
 
 type Context = { key: string; tenant: string; token: string };
 export type BillingCache = {
@@ -167,6 +168,7 @@ export const billingApi = {
   refresh: (signal?: AbortSignal, database?: LocalDatabase | null, forceBootstrap = false) =>
     syncQueue.run(async () => {
       const c = await context();
+      await customersApi.sync(signal);
       const cache = await read(c);
       const targetCollections = getTargetBootstrapCollections();
       const targetDb = database ?? getActiveDatabase();
@@ -275,23 +277,7 @@ export const billingApi = {
     syncQueue.run(async () => {
       const c = await context();
       if (c.key !== key) throw new Error('Business changed. Please retry.');
-      const data = await request<{ saveParty: Record<string, unknown> }>(
-        c,
-        `mutation CreateBillingCustomer($input: NewPartyInput!) { saveParty(input: $input) { id name phone email addressLine gstin creditLimit balance } }`,
-        { input: { ...input, type: 'CUSTOMER' } },
-      );
-      const party = data.saveParty;
-      const customer: Customer = {
-        id: String(party.id),
-        name: String(party.name),
-        type: 'CUSTOMER',
-        phone: String(party.phone || '') || undefined,
-        email: String(party.email || '') || undefined,
-        gstin: String(party.gstin || '') || undefined,
-        address: String(party.addressLine || '') || undefined,
-        creditLimit: party.creditLimit == null ? undefined : Number(party.creditLimit),
-        balance: party.balance == null ? undefined : Number(party.balance),
-      };
+      const customer = await customersApi.create(input);
       const current = await billingReferenceRepository.readCustomers(c.key);
       await billingReferenceRepository.replaceCustomers(c.key, [customer, ...current]);
       return customer;

@@ -9,11 +9,15 @@ import { useAppTheme } from '@indyzai/pos-ui';
 import { AppPressable } from '@indyzai/pos-ui';
 import { BOTTOM_NAVIGATION_HEIGHT } from '@indyzai/pos-ui';
 import {
+  type AppNavigationItem,
   isNavigationItemActive,
   moreNavigationItems,
+  navigationItemsForRole,
   primaryNavigationItems,
   reportNavigationItem,
+  resolveStoreAccessRole,
 } from '../../navigation/routes';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 
 /** Global Material navigation shell. Modules populate its raised center action. */
 export function BottomNavigation() {
@@ -24,6 +28,10 @@ export function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { session } = useAuthSession();
+  const role = resolveStoreAccessRole(session?.tenant.role, session?.user.role);
+  const primaryItems = navigationItemsForRole(primaryNavigationItems, role);
+  const moreItems = navigationItemsForRole(moreNavigationItems, role);
   const CenterIcon = centerItem?.icon ?? CircleOff;
   if (width >= 700 && width > height) return null;
   return (
@@ -40,7 +48,7 @@ export function BottomNavigation() {
       ]}
     >
       <View style={s.items}>
-        {primaryNavigationItems.map((item) => (
+        {primaryItems.map((item) => (
           <NavigationItem
             key={item.label}
             {...item}
@@ -57,43 +65,44 @@ export function BottomNavigation() {
         <NavigationItem
           label="More"
           icon={Menu}
-          active={moreOpen || moreNavigationItems.some((item) => isNavigationItemActive(pathname, item.href))}
+          active={moreOpen || moreItems.some((item) => isNavigationItemActive(pathname, item.href))}
           onPress={() => setMoreOpen(true)}
         />
       </View>
       <AppPressable
-          accessibilityLabel={centerItem?.label ?? 'Center action unavailable'}
-          accessibilityState={{ disabled: !centerItem }}
-          disabled={!centerItem}
-          onPress={centerItem?.onPress}
-          style={s.centerAction}
+        accessibilityLabel={centerItem?.label ?? 'Center action unavailable'}
+        accessibilityState={{ disabled: !centerItem }}
+        disabled={!centerItem}
+        onPress={centerItem?.onPress}
+        style={s.centerAction}
+      >
+        <View
+          style={[
+            s.centerCircle,
+            {
+              backgroundColor: centerItem ? c.primarySoft : c.outlineMuted,
+              borderColor: c.background,
+              opacity: centerItem ? 1 : 0.72,
+            },
+            isDark && { boxShadow: '0px 5px 14px rgba(0, 0, 0, 0.38)' },
+          ]}
         >
-          <View
-            style={[
-              s.centerCircle,
-              {
-                backgroundColor: centerItem ? c.primarySoft : c.outlineMuted,
-                borderColor: c.background,
-                opacity: centerItem ? 1 : 0.72,
-              },
-              isDark && { boxShadow: '0px 5px 14px rgba(0, 0, 0, 0.38)' },
-            ]}
-          >
-            <CenterIcon size={27} color={centerItem ? c.primary : c.textSecondary} strokeWidth={2} />
-            <Text style={[s.centerLabel, { color: centerItem ? c.primary : c.textSecondary }]}>
-              {centerItem?.label ?? 'Disabled'}
-            </Text>
-            {(centerItem?.badge ?? 0) > 0 && (
-              <View style={[s.badge, { backgroundColor: c.error, borderColor: c.surface }]}>
-                <Text style={s.badgeText}>{centerItem?.badge}</Text>
-              </View>
-            )}
-          </View>
-        </AppPressable>
+          <CenterIcon size={27} color={centerItem ? c.primary : c.textSecondary} strokeWidth={2} />
+          <Text style={[s.centerLabel, { color: centerItem ? c.primary : c.textSecondary }]}>
+            {centerItem?.label ?? 'Disabled'}
+          </Text>
+          {(centerItem?.badge ?? 0) > 0 && (
+            <View style={[s.badge, { backgroundColor: c.error, borderColor: c.surface }]}>
+              <Text style={s.badgeText}>{centerItem?.badge}</Text>
+            </View>
+          )}
+        </View>
+      </AppPressable>
       <MoreMenu
         visible={moreOpen}
         onClose={() => setMoreOpen(false)}
         bottomOffset={BOTTOM_NAVIGATION_HEIGHT + insets.bottom}
+        items={moreItems}
       />
     </View>
   );
@@ -126,10 +135,12 @@ function MoreMenu({
   visible,
   onClose,
   bottomOffset,
+  items,
 }: {
   visible: boolean;
   onClose: () => void;
   bottomOffset: number;
+  items: AppNavigationItem[];
 }) {
   const router = useRouter();
   const { themeColors: c } = useAppTheme();
@@ -150,7 +161,7 @@ function MoreMenu({
             </AppPressable>
           </View>
           <ScrollView contentContainerStyle={s.menuGrid} showsVerticalScrollIndicator={false}>
-            {moreNavigationItems.map(({ icon: Icon, label, href }) => (
+            {items.map(({ icon: Icon, label, href }) => (
               <AppPressable
                 key={label}
                 onPress={() => {
