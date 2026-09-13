@@ -15,6 +15,7 @@
     "./tokens": "./src/theme/tokens.ts",
     "./paper": "./src/theme/AppPaperProvider.tsx",
     "./layout": "./src/layout/AppHeaderProvider.tsx",
+    "./app-header": "./src/layout/AppHeader.tsx",
     "./placeholder": "./src/layout/ModulePlaceholder.tsx",
     "./navigation": "./src/navigation/BottomNavigationProvider.tsx",
     "./components": "./src/components/AppBottomSheetShell.tsx",

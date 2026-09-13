@@ -12,6 +12,12 @@ export { colors, darkColors, radii, type ThemeColors } from "./theme/tokens";
 export { ThemeProvider, useAppTheme, type ThemeMode, type ThemeContextValue } from "./theme/ThemeProvider";
 export { AppPaperProvider } from "./theme/AppPaperProvider";
 export { AppHeaderProvider, useAppHeader, type HeaderContextValue } from "./layout/AppHeaderProvider";
+export {
+    AppHeader,
+    type AppHeaderRefreshJob,
+    type AppHeaderStorageState,
+    type SharedAppHeaderProps,
+} from "./layout/AppHeader";
 export { ModulePlaceholder, ModuleContent } from "./layout/ModulePlaceholder";
 export {
     BottomNavigationProvider,
