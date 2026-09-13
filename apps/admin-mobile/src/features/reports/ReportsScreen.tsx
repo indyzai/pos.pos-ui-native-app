@@ -17,6 +17,9 @@ import { useAppTheme } from '../../shared/providers/ThemeProvider';
 import { formatCurrency } from '../../shared/utils/currency';
 import { useOrders } from '../orders/useOrders';
 import { buildReportMetrics, type ReportPeriod } from './reportMetrics';
+import { createLogger } from '@indyzai/pos-core';
+
+const logger = createLogger('Reports');
 
 const periods: ReportPeriod[] = [7, 30, 90];
 
@@ -46,11 +49,18 @@ export function ReportsScreen() {
             text: 'Refreshing reports',
             cancel: () => next.abort(),
         });
+        logger.info('Refreshing reports', { period });
         try {
             await data.refresh(next.signal);
+            logger.info('Reports refreshed successfully', { period });
         } catch (error) {
-            if (!next.signal.aborted)
+            if (!next.signal.aborted) {
+                logger.error('Reports refresh failed', {
+                    period,
+                    error: error instanceof Error ? error.message : String(error),
+                });
                 showSnackbar('Reports refresh failed', error instanceof Error ? error.message : 'Try again.');
+            }
         } finally {
             if (controller.current === next) {
                 controller.current = undefined;

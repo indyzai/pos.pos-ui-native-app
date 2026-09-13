@@ -5,12 +5,15 @@ import {
     useRequiredLocalDatabase,
     type DatabaseState,
 } from '@indyzai/pos-database/react';
+import { createLogger } from '@indyzai/pos-core';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { createAdminLocalDatabase } from '@indyzai/pos-database/admin';
 import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '../storage/kvStore';
+
+const logger = createLogger('Database:admin');
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
     const { session, initializing: authInitializing } = useAuthSession();
@@ -47,25 +50,39 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
                 deviceId: registration.deviceId ?? registration.deviceIdentifier ?? 'development-device',
                 counterId: activeCounter?.counterId,
             };
+            logger.info('Initializing admin database', {
+                tenantId: scope.tenantId,
+                role: scope.role,
+                deviceId: scope.deviceId,
+            });
             const database = await createAdminLocalDatabase(scope);
             const owner = String(session.user.id);
             const previousOwner = await kvStore.get(appStorageKeys.admin.databaseOwner);
-            if (previousOwner && previousOwner !== owner) await database.clear();
+            if (previousOwner && previousOwner !== owner) {
+                logger.warn('Database owner changed, clearing local database', {
+                    previousOwner,
+                    currentOwner: owner,
+                });
+                await database.clear();
+            }
             await kvStore.set(appStorageKeys.admin.databaseOwner, owner);
             if (current !== generation.current) {
                 await database.close();
                 return;
             }
+            logger.info('Admin database ready', { tenantId: scope.tenantId, role: scope.role });
             setState((previous) => {
                 void previous.database?.close();
                 return { status: 'ready', error: '', database, scope };
             });
         } catch (reason) {
             if (current !== generation.current) return;
+            const errorMessage = reason instanceof Error ? reason.message : 'Local storage unavailable';
+            logger.error('Admin database initialization failed', { error: errorMessage });
             setState((previous) => ({
                 ...previous,
                 status: 'error',
-                error: reason instanceof Error ? reason.message : 'Local storage unavailable',
+                error: errorMessage,
             }));
         }
     }, [authInitializing, session]);

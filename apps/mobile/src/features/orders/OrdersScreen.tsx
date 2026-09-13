@@ -13,6 +13,9 @@ import { useOrders } from './useOrders';
 import type { SalesOrder } from './types';
 import { refundableQuantity } from './refundPolicy';
 import { canPerformManagerActions } from '../../config/appAccess';
+import { createLogger } from '@indyzai/pos-core';
+
+const logger = createLogger('Orders');
 
 export function OrdersScreen() {
   const { themeColors: c } = useAppTheme();
@@ -32,11 +35,17 @@ export function OrdersScreen() {
     const next = new AbortController();
     controller.current = next;
     setRefreshJob({ id: `orders-${Date.now()}`, text: 'Refreshing orders', cancel: () => next.abort() });
+    logger.info('Refreshing orders');
     try {
       await data.refresh(next.signal);
+      logger.info('Orders refreshed successfully');
     } catch (error) {
-      if (!next.signal.aborted)
+      if (!next.signal.aborted) {
+        logger.error('Orders refresh failed', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         showSnackbar('Orders refresh failed', error instanceof Error ? error.message : 'Try again.');
+      }
     } finally {
       if (controller.current === next) {
         controller.current = undefined;
@@ -211,16 +220,27 @@ export function OrdersScreen() {
           busy={data.refunding}
           onClose={() => setRefundOrder(undefined)}
           onConfirm={(selections, reason, method) => {
+            logger.info('Creating refund for order', {
+              billId: refundOrder?.billId,
+              reason,
+              method,
+              itemCount: selections.length,
+            });
             void data
               .createRefund({ order: refundOrder!, selections, reason, method })
               .then(() => {
+                logger.info('Refund saved successfully', { billId: refundOrder?.billId });
                 setRefundOrder(undefined);
                 setTab('refunds');
                 showSnackbar('Refund saved', 'The credit note is stored locally and will sync on refresh.');
               })
-              .catch((error) =>
-                showSnackbar('Could not save refund', error instanceof Error ? error.message : 'Try again.'),
-              );
+              .catch((error) => {
+                logger.error('Refund creation failed', {
+                  billId: refundOrder?.billId,
+                  error: error instanceof Error ? error.message : String(error),
+                });
+                showSnackbar('Could not save refund', error instanceof Error ? error.message : 'Try again.');
+              });
           }}
         />
       ) : null}

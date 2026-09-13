@@ -13,6 +13,9 @@ import type { LocalRecord, SyncStatus } from '@indyzai/pos-database';
 import { listSyncJobs, type SyncJob } from '../../sync/syncJobRepository';
 import { waybillRepository } from '../logistics/waybillRepository';
 import type { WaybillJob } from '../logistics/types';
+import { createLogger } from '@indyzai/pos-core';
+
+const logger = createLogger('Settings:data');
 
 type OutboxPayload = {
     offlineId?: string;
@@ -79,6 +82,7 @@ export function DataSettingsSection() {
 
     const refresh = async () => {
         setRefreshing(true);
+        logger.info('Refreshing synchronization status');
         try {
             await Promise.all([
                 outbox.reload(),
@@ -89,7 +93,10 @@ export function DataSettingsSection() {
             ]);
             setError('');
         } catch (reason) {
-            setError(reason instanceof Error ? reason.message : 'Unable to read local synchronization data.');
+            const errorMessage =
+                reason instanceof Error ? reason.message : 'Unable to read local synchronization data.';
+            logger.error('Failed to read synchronization data', { error: errorMessage });
+            setError(errorMessage);
         } finally {
             setRefreshing(false);
         }
@@ -111,8 +118,10 @@ export function DataSettingsSection() {
                     style: 'destructive',
                     onPress: () => {
                         setClearing(true);
+                        logger.warn('Clearing local admin database', { unsyncedRecords: unsynced });
                         void clearLocalUiData(local.database)
                             .then(() => {
+                                logger.info('Local admin database cleared successfully');
                                 setLegacyJobs([]);
                                 setWaybillJobs([]);
                                 queryClient.removeQueries();
@@ -121,12 +130,11 @@ export function DataSettingsSection() {
                                     'Local POS and synchronization data were removed.',
                                 );
                             })
-                            .catch((reason) =>
-                                showSnackbar(
-                                    'Could not clear database',
-                                    reason instanceof Error ? reason.message : 'Try again.',
-                                ),
-                            )
+                            .catch((reason) => {
+                                const errorMessage = reason instanceof Error ? reason.message : 'Try again.';
+                                logger.error('Failed to clear local admin database', { error: errorMessage });
+                                showSnackbar('Could not clear database', errorMessage);
+                            })
                             .finally(() => setClearing(false));
                     },
                 },

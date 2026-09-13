@@ -53,6 +53,9 @@ import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { canPerformManagerActions } from '../../../config/appAccess';
 import { formatCurrency } from '../../../shared/utils/currency';
 import type { BillingModeConfig } from '../domain/billingMode';
+import { createLogger } from '@indyzai/pos-core';
+
+const logger = createLogger('Billing:ui');
 
 type CartPage = 'cart' | 'customer' | 'held-orders' | 'petty-cash' | 'scrap' | 'checkout';
 const useNativeAnimationDriver = Platform.OS !== 'web';
@@ -343,6 +346,7 @@ export function BaseBillingLayout({
 
   const holdCurrentOrder = async () => {
     if (!cart.items.length) return;
+    logger.info('Holding current order', { itemCount: cart.items.length, customerId: customer?.id });
     try {
       await heldOrders.hold(cart.items, cart.orderDiscount, customer, getOrderContext(), scrapExchange);
       cart.clearCart();
@@ -351,6 +355,7 @@ export function BaseBillingLayout({
       onOrderCleared?.();
       if (!isWide) closeCart();
     } catch (error) {
+      logger.error('Could not hold order', { error: error instanceof Error ? error.message : String(error) });
       showSnackbar('Could not hold order', error instanceof Error ? error.message : 'Try again.');
     }
   };
@@ -367,6 +372,11 @@ export function BaseBillingLayout({
       rounding: cart.rounding,
     };
     const orderContext = getOrderContext();
+    logger.info('Initiating checkout', {
+      itemCount: items.length,
+      total: totals.total,
+      paymentMethod: checkoutPayment.method,
+    });
     try {
       if (!billing.data) throw new Error('Load billing before checkout.');
       const sale = await billingApi.checkout(
@@ -378,6 +388,10 @@ export function BaseBillingLayout({
         customer,
         orderContext,
       );
+      logger.info('Checkout completed successfully', {
+        receiptNumber: sale.receiptNumber,
+        saleId: sale.id,
+      });
       cart.clearCart();
       setCustomer(undefined);
       setScrapExchange(undefined);
@@ -407,6 +421,7 @@ export function BaseBillingLayout({
       }
       await billing.reload();
     } catch (e) {
+      logger.error('Checkout failed', { error: e instanceof Error ? e.message : String(e) });
       showSnackbar('Sale not saved', e instanceof Error ? e.message : 'Please try again.');
     } finally {
       setSubmitting(false);
@@ -424,10 +439,16 @@ export function BaseBillingLayout({
         item.id.toLowerCase() === value.toLowerCase(),
     );
     if (product) {
+      logger.info('Barcode scanned and product matched', {
+        barcode: value,
+        productId: product.id,
+        productName: product.name,
+      });
       const added = handleProductSelect(product);
       if (added) showSnackbar('Added to cart', product.name);
       return;
     }
+    logger.warn('Barcode scanned without product match', { barcode: value });
     setSearch(value);
     showSnackbar('Code scanned', `No product matched “${value}”. Showing it in search.`);
   };
@@ -457,12 +478,14 @@ export function BaseBillingLayout({
       return;
     }
     setRecordingPettyCash(true);
+    logger.info('Recording petty cash', { type: input.type, amount: input.amount });
     try {
       await counterSessionApi.recordPettyCash(session.token, String(session.tenant.id), {
         ...input,
         counterSessionId: counter.id,
         branchId: counter.branchId,
       });
+      logger.info('Petty cash recorded successfully');
       closeCartPage(() => setPettyCashOpen(false));
       await auth.refreshSession();
       showSnackbar(
@@ -470,6 +493,9 @@ export function BaseBillingLayout({
         `${input.type === 'EXPENSE' ? 'Expense' : 'Income'} of ${formatCurrency(input.amount, currencyCode)} recorded.`,
       );
     } catch (error) {
+      logger.error('Recording petty cash failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       showSnackbar('Could not record cash entry', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setRecordingPettyCash(false);

@@ -13,10 +13,13 @@ import { Calculator, ChevronDown, ChevronUp, Play, X } from 'lucide-react-native
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
+import { createLogger } from '@indyzai/pos-core';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';
 import type { CurrencyDenomination, DenominationCounts } from '../types';
+
+const logger = createLogger('CounterSession');
 
 type Props = {
     visible: boolean;
@@ -111,12 +114,22 @@ export function OpenCounterSessionDialog(props: Props) {
             return;
         }
         setOpening(true);
+        logger.info('Opening counter session', {
+            counterId: props.counterId,
+            counterName: props.counterName,
+            openingBalance: balance,
+        });
         try {
             await counterSessionApi.open(props.token, props.tenantId, props.counterId, balance);
             await saveDenominationCounts(props.tenantId, props.counterId, props.currencyCode, counts);
+            logger.info('Counter session opened successfully', { counterId: props.counterId });
             props.onClose();
             await props.onOpened();
         } catch (error) {
+            logger.error('Failed to open counter session', {
+                counterId: props.counterId,
+                error: error instanceof Error ? error.message : String(error),
+            });
             showSnackbar('Could not open counter', error instanceof Error ? error.message : 'Try again.');
         } finally {
             setOpening(false);

@@ -13,11 +13,14 @@ import { Banknote, Calculator, ChevronDown, ChevronUp, LockKeyhole, X } from 'lu
 import { AppPressable } from '../../../shared/components/ui/AppPressable';
 import { AppKeyboardSafeView } from '../../../shared/components/ui/AppKeyboardSafeView';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
+import { createLogger } from '@indyzai/pos-core';
 import { useAppTheme } from '../../../shared/providers/ThemeProvider';
 import type { CounterSession } from '../../sales/salesOutbox';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';
 import type { CurrencyDenomination, DenominationCounts } from '../types';
+
+const logger = createLogger('CounterSession');
 
 type Props = {
     visible: boolean;
@@ -128,6 +131,13 @@ export function CounterSessionSummaryDialog(props: Props) {
             return;
         }
         setClosing(true);
+        logger.info('Closing counter session', {
+            sessionId: props.session.id,
+            counterId: props.session.counterId,
+            closingCash: amount,
+            expectedCash,
+            difference: amount - expectedCash,
+        });
         try {
             await saveDenominationCounts(
                 props.tenantId,
@@ -143,9 +153,14 @@ export function CounterSessionSummaryDialog(props: Props) {
                 amount,
                 remarks.trim(),
             );
+            logger.info('Counter session closed successfully', { sessionId: props.session.id });
             props.onClose();
             await props.onClosed();
         } catch (error) {
+            logger.error('Failed to close counter session', {
+                sessionId: props.session.id,
+                error: error instanceof Error ? error.message : String(error),
+            });
             showSnackbar('Could not close counter', error instanceof Error ? error.message : 'Try again.');
         } finally {
             setClosing(false);

@@ -16,15 +16,15 @@ export default function LoginRoute() {
   const { authenticated, initializing, refreshSession } = useAuthSession();
   const [authenticatedRoute, setAuthenticatedRoute] = useState<'/billing' | '/device-setup'>('/billing');
   const finishLogin = async () => {
-    if (__DEV__) logger.info('Finishing login in main window');
+    logger.info('Finishing login in main window');
     const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
     setAuthenticatedRoute(needsDeviceSetup ? '/device-setup' : '/billing');
     await refreshSession();
     const hasToken = Boolean(await authApi.getAccessToken());
-    if (__DEV__) logger.info('Main-window session refresh completed', { hasToken, needsDeviceSetup });
+    logger.info('Main-window session refresh completed', { hasToken, needsDeviceSetup });
     if (!hasToken) throw new Error('The authentication session was not available in the main window.');
     if (Platform.OS === 'web') {
-      if (__DEV__) logger.info('Reloading authenticated billing route');
+      logger.info('Reloading authenticated billing route');
       window.location.replace('/billing');
       return;
     }
@@ -45,7 +45,7 @@ export default function LoginRoute() {
         onSignUp={() => router.push('/signup')}
         onSocialLogin={async (provider) => {
           const completed = await authApi.authorize(provider);
-          if (__DEV__) logger.info('Social authorization returned to login', { completed });
+          logger.info('Social authorization returned to login', { completed });
           if (completed) {
             await finishLogin();
           }

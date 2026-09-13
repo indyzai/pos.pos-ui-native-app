@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { createLogger } from '@indyzai/pos-core';
 import { authApi } from '../../auth/authApi';
 import { useAuthSession } from '../../auth/AuthSessionContext';
 
 WebBrowser.maybeCompleteAuthSession();
+
+const logger = createLogger('Auth:admin-app');
 
 export default function AuthCallbackRoute() {
     const params = useLocalSearchParams<{
@@ -22,12 +25,11 @@ export default function AuthCallbackRoute() {
         if (handled.current) return;
         const code = first(params.code);
         const state = first(params.state);
-        if (__DEV__)
-            console.info('[Auth:admin-app] Callback route loaded', {
-                hasCode: Boolean(code),
-                hasState: Boolean(state),
-                platform: Platform.OS,
-            });
+        logger.info('Callback route loaded', {
+            hasCode: Boolean(code),
+            hasState: Boolean(state),
+            platform: Platform.OS,
+        });
         if (!code) {
             if (params.error) setError(String(params.error));
             return;
@@ -38,16 +40,15 @@ export default function AuthCallbackRoute() {
                 await authApi.completeAuthorizationCode(code, state);
                 const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
                 await refreshSession();
-                if (__DEV__)
-                    console.info('[Auth:admin-app] Session refreshed after callback', { needsDeviceSetup });
+                logger.info('Session refreshed after callback', { needsDeviceSetup });
                 if (Platform.OS === 'web') {
-                    if (__DEV__) console.info('[Auth:admin-app] Closing authentication popup');
+                    logger.info('Closing authentication popup');
                     window.close();
                     return;
                 }
                 router.replace(needsDeviceSetup ? '/device-setup' : '/billing');
             } catch (reason) {
-                if (__DEV__) console.error('[Auth:admin-app] Callback failed', reason);
+                logger.error('Callback failed', reason);
                 setError(reason instanceof Error ? reason.message : 'Sign-in could not be completed.');
             }
         })();

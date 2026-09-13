@@ -8,6 +8,9 @@ import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { useState } from 'react';
+import { createLogger } from '@indyzai/pos-core';
+
+const logger = createLogger('Admin:billing');
 
 const posWebUrl =
     process.env.EXPO_PUBLIC_POS_APP_URL ??
@@ -17,6 +20,7 @@ const posWebUrl =
 const posAppUrl = 'indyzai-pos://billing';
 
 async function openPosBilling(tenantId: string): Promise<void> {
+    logger.info('Opening POS billing app handoff', { tenantId });
     const handoff = await authApi.createAppHandoff(tenantId);
     const destination = new URL(
         Platform.OS === 'web' ? '/auth/handoff' : 'indyzai-pos://auth/handoff',
@@ -49,7 +53,9 @@ export default function BillingRoute() {
         try {
             await openPosBilling(String(session.tenant.id));
         } catch (reason) {
-            setError(reason instanceof Error ? reason.message : 'Could not open the POS app.');
+            const errorMessage = reason instanceof Error ? reason.message : 'Could not open the POS app.';
+            logger.error('Failed to open POS billing', { error: errorMessage });
+            setError(errorMessage);
             setSwitching(false);
         }
     };

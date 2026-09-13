@@ -4,9 +4,12 @@ import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '../shared/components/ui/AppPressable';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
+import { createLogger } from '@indyzai/pos-core';
 import { useAppTheme } from '../shared/providers/ThemeProvider';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
+
+const logger = createLogger('Auth:device-setup');
 
 export default function DeviceSetup() {
     const router = useRouter();
@@ -18,15 +21,16 @@ export default function DeviceSetup() {
     const submit = async () => {
         if (pin !== confirm) return showSnackbar('Device PIN', 'PIN entries do not match.');
         setBusy(true);
+        logger.info('Registering device PIN');
         try {
             await authApi.registerDevice(pin);
             await refreshSession();
+            logger.info('Device successfully registered');
             router.replace('/billing');
         } catch (error) {
-            showSnackbar(
-                'Device access',
-                error instanceof Error ? error.message : 'Unable to register this device.',
-            );
+            const errorMessage = error instanceof Error ? error.message : 'Unable to register this device.';
+            logger.error('Device registration failed', { error: errorMessage });
+            showSnackbar('Device access', errorMessage);
         } finally {
             setBusy(false);
         }

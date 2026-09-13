@@ -32,6 +32,9 @@ import { useAppHeader } from '../../shared/providers/AppHeaderProvider';
 import { useBottomNavigation } from '../../shared/providers/BottomNavigationProvider';
 import { AddInventoryItemModal } from './components/AddInventoryItemModal';
 import { useBottomNavigationClearance } from '../../shared/hooks/useBottomNavigationClearance';
+import { createLogger } from '@indyzai/pos-core';
+
+const logger = createLogger('Inventory');
 
 export function InventoryScreen() {
     const { themeColors: c } = useAppTheme();
@@ -102,10 +105,15 @@ export function InventoryScreen() {
             text: 'Refreshing inventory',
             cancel: () => controller.abort(),
         });
+        logger.info('Refreshing inventory');
         try {
             await data.refresh(controller.signal);
+            logger.info('Inventory refreshed successfully');
         } catch (error) {
             if (!controller.signal.aborted) {
+                logger.error('Inventory refresh failed', {
+                    error: error instanceof Error ? error.message : String(error),
+                });
                 showSnackbar(
                     'Inventory refresh failed',
                     error instanceof Error ? error.message : 'Try again.',
@@ -228,11 +236,25 @@ export function InventoryScreen() {
                 busy={data.reconciling}
                 onClose={() => setSelected(null)}
                 onSave={async (input) => {
+                    logger.info('Reconciling stock for product', {
+                        productId: selected?.id,
+                        productName: selected?.name,
+                        countedQuantity: input.countedQuantity,
+                        remarks: input.remarks,
+                    });
                     try {
                         const job = await data.reconcile(input);
+                        logger.info('Stock reconciled successfully', {
+                            jobId: job.id,
+                            productId: selected?.id,
+                        });
                         setSelected(null);
                         showSnackbar('Stock reconciled', `Queue ${shortId(job.id)} completed.`);
                     } catch (error) {
+                        logger.error('Stock reconciliation failed', {
+                            productId: selected?.id,
+                            error: error instanceof Error ? error.message : String(error),
+                        });
                         showSnackbar(
                             'Reconciliation failed',
                             error instanceof Error ? error.message : 'Try again.',
@@ -245,14 +267,25 @@ export function InventoryScreen() {
                 busy={data.creating}
                 onClose={() => setAddOpen(false)}
                 onSave={async (input) => {
+                    logger.info('Adding inventory item', {
+                        name: input.name,
+                        category: input.category,
+                        price: input.price,
+                        stock: input.stock,
+                    });
                     try {
                         const job = await data.create(input);
+                        logger.info('Inventory item added successfully', { jobId: job.id, name: input.name });
                         setAddOpen(false);
                         showSnackbar(
                             'Item added',
                             `${input.name} was added. Queue ${shortId(job.id)} completed.`,
                         );
                     } catch (error) {
+                        logger.error('Failed to add inventory item', {
+                            name: input.name,
+                            error: error instanceof Error ? error.message : String(error),
+                        });
                         showSnackbar(
                             'Could not add item',
                             error instanceof Error ? error.message : 'Try again.',

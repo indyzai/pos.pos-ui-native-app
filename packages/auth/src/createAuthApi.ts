@@ -49,7 +49,7 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
     let authorizationCompletion: Promise<void> | undefined;
 
     const debugAuth = (message: string, details?: Record<string, unknown>) => {
-        if (typeof __DEV__ !== "undefined" && __DEV__) logger.info(message, details);
+        logger.info(message, details);
     };
 
     function publishWebAuthorization(result: { type: "success" | "error"; message?: string }) {
