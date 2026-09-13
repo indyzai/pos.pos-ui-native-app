@@ -9,9 +9,11 @@
     ".": "./src/index.ts",
     "./pressable": "./src/AppPressable.tsx",
     "./currency": "./src/currency.ts",
-    "./snackbar": "./src/Snackbar.tsx"
+    "./snackbar": "./src/Snackbar.tsx",
+    "./device-logs": "./src/DeviceLogViewer.tsx"
   },
   "dependencies": {
+    "@indyzai/pos-core": "workspace:*",
     "lucide-react-native": "^1.41.0"
   },
   "peerDependencies": {

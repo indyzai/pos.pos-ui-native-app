@@ -166,7 +166,7 @@ CREATE TABLE `app_settings` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -182,7 +182,7 @@ CREATE TABLE `brands` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -199,7 +199,7 @@ CREATE TABLE `cart_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -214,7 +214,7 @@ CREATE TABLE `carts` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -230,7 +230,7 @@ CREATE TABLE `cash_drawers` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -246,7 +246,7 @@ CREATE TABLE `cash_transactions` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -262,7 +262,7 @@ CREATE TABLE `categories` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -278,7 +278,7 @@ CREATE TABLE `counters` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -294,7 +294,7 @@ CREATE TABLE `currency_denominations` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -311,7 +311,7 @@ CREATE TABLE `customer_addresses` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -326,7 +326,7 @@ CREATE TABLE `customer_credit_summaries` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -342,7 +342,7 @@ CREATE TABLE `customer_loyalty_summaries` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -358,7 +358,7 @@ CREATE TABLE `devices` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -374,7 +374,7 @@ CREATE TABLE `expense_categories` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -390,7 +390,7 @@ CREATE TABLE `expenses` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -406,7 +406,7 @@ CREATE TABLE `feature_flags` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -423,7 +423,7 @@ CREATE TABLE `goods_receipt_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -438,7 +438,7 @@ CREATE TABLE `goods_receipts` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -455,7 +455,7 @@ CREATE TABLE `held_order_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -470,7 +470,7 @@ CREATE TABLE `modifier_groups` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -486,7 +486,7 @@ CREATE TABLE `organizations` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -502,7 +502,7 @@ CREATE TABLE `payments` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -518,7 +518,7 @@ CREATE TABLE `prescription_contexts` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -534,7 +534,7 @@ CREATE TABLE `price_lists` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -550,7 +550,7 @@ CREATE TABLE `print_templates` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -567,7 +567,7 @@ CREATE TABLE `product_barcodes` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -583,7 +583,7 @@ CREATE TABLE `product_modifiers` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -599,7 +599,7 @@ CREATE TABLE `product_prices` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -615,7 +615,7 @@ CREATE TABLE `product_uoms` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -631,7 +631,7 @@ CREATE TABLE `purchase_order_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -646,7 +646,7 @@ CREATE TABLE `purchase_orders` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -663,7 +663,7 @@ CREATE TABLE `refund_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -678,7 +678,7 @@ CREATE TABLE `role_permissions` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -695,7 +695,7 @@ CREATE TABLE `sale_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -716,7 +716,7 @@ CREATE TABLE `serialized_item_assignments` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -732,7 +732,7 @@ CREATE TABLE `shifts` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -748,7 +748,7 @@ CREATE TABLE `stock_balances` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -765,7 +765,7 @@ CREATE TABLE `stock_count_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -780,7 +780,7 @@ CREATE TABLE `stock_counts` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -796,7 +796,7 @@ CREATE TABLE `stock_locations` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -812,7 +812,7 @@ CREATE TABLE `stock_movements` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -828,7 +828,7 @@ CREATE TABLE `stores` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -844,7 +844,7 @@ CREATE TABLE `suppliers` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -860,7 +860,7 @@ CREATE TABLE `sync_conflicts` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -884,7 +884,7 @@ CREATE TABLE `sync_errors` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -933,7 +933,7 @@ CREATE TABLE `tombstones` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -950,7 +950,7 @@ CREATE TABLE `transfer_lines` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -965,7 +965,7 @@ CREATE TABLE `transfers` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );
@@ -981,7 +981,7 @@ CREATE TABLE `users` (
 	`remote_id` text,
 	`payload` text DEFAULT '{}' NOT NULL,
 	`server_version` integer DEFAULT 0 NOT NULL,
-	`sync_status` text DEFAULT 'SYNCED' NOT NULL,
+	`sync_status` text DEFAULT 'API' NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer
 );

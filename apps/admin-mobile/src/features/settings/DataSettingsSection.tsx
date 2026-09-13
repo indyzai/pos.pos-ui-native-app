@@ -51,6 +51,7 @@ export function DataSettingsSection() {
 
     const counts = useMemo(() => {
         const result: Record<SyncStatus, number> = {
+            API: 0,
             PENDING: 0,
             RUNNING: 0,
             FAILED: 0,

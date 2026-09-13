@@ -19,6 +19,7 @@ function keysFor(application: PosApplication) {
             oauthVerifier: `${namespace.secure}.oauth-verifier`,
         },
         apiEnvironment: `${namespace.local}.api-environment.v1`,
+        databaseOwner: `${namespace.local}.database-owner.v1`,
         billing: (userId: string, tenantId: string) =>
             `${namespace.local}.billing.v1:${userId}:${tenantId}`,
         orders: (userId: string, tenantId: string) =>

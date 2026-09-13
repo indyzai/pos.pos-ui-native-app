@@ -1,4 +1,5 @@
 export { AppPressable } from "./AppPressable";
+export { DeviceLogViewer } from "./DeviceLogViewer";
 export { formatCurrency } from "./currency";
 export {
     SnackbarProvider,

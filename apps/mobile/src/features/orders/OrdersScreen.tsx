@@ -12,10 +12,12 @@ import { RefundDialog } from './components/RefundDialog';
 import { useOrders } from './useOrders';
 import type { SalesOrder } from './types';
 import { refundableQuantity } from './refundPolicy';
+import { canPerformManagerActions } from '../../config/appAccess';
 
 export function OrdersScreen() {
   const { themeColors: c } = useAppTheme();
   const auth = useAuthSession();
+  const managerAccess = canPerformManagerActions(auth.session?.tenant.role, auth.session?.user.role);
   const data = useOrders();
   const bottomClearance = useBottomNavigationClearance();
   const { setFeatureRefresh, setRefreshJob } = useAppHeader();
@@ -108,11 +110,13 @@ export function OrdersScreen() {
             active={tab === 'orders'}
             onPress={() => setTab('orders')}
           />
-          <Tab
-            label={`Refunds (${data.refunds.length})`}
-            active={tab === 'refunds'}
-            onPress={() => setTab('refunds')}
-          />
+          {managerAccess ? (
+            <Tab
+              label={`Refunds (${data.refunds.length})`}
+              active={tab === 'refunds'}
+              onPress={() => setTab('refunds')}
+            />
+          ) : null}
         </View>
         {tab === 'orders'
           ? orders.map((order) => (
@@ -139,7 +143,7 @@ export function OrdersScreen() {
                 </Text>
                 <View style={s.cardBottom}>
                   <Status value={order.status} />
-                  <AppPressable
+                  {managerAccess ? <AppPressable
                     disabled={
                       !order.items.some((item) => refundableQuantity(order, item.productId, data.refunds) > 0)
                     }
@@ -154,7 +158,7 @@ export function OrdersScreen() {
                   >
                     <RotateCcw size={14} color={c.error} />
                     <Text style={[s.refundText, { color: c.error }]}>Refund</Text>
-                  </AppPressable>
+                  </AppPressable> : null}
                 </View>
               </View>
             ))
@@ -195,7 +199,7 @@ export function OrdersScreen() {
           </View>
         )}
       </ScrollView>
-      <RefundDialog
+      {managerAccess ? <RefundDialog
         order={refundOrder}
         refunds={data.refunds}
         currencyCode={currencyCode}
@@ -213,7 +217,7 @@ export function OrdersScreen() {
               showSnackbar('Could not save refund', error instanceof Error ? error.message : 'Try again.'),
             );
         }}
-      />
+      /> : null}
     </View>
   );
 }

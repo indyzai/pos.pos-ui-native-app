@@ -83,4 +83,27 @@ describe('IndexedDB local database adapter', () => {
     expect(await database.collection('customers').list()).toHaveLength(1);
     await database.close();
   });
+
+  test('atomically replaces bootstrap data with API records and records collection load time', async () => {
+    const { IndexedDbLocalDatabase } = await import('@indyzai/pos-database/indexeddb');
+    const { applyBootstrapCollections } = await import('@indyzai/pos-database');
+    const database = new IndexedDbLocalDatabase(scope);
+    await database.initialize();
+    const loadedAt = '2026-09-13T10:30:00.000Z';
+    await applyBootstrapCollections(database, {
+      products: [{ id: 1, name: 'Old' }],
+    }, loadedAt);
+    await applyBootstrapCollections(database, {
+      products: [{ id: 2, name: 'Current' }],
+    }, loadedAt);
+    const products = await database.collection('products').list();
+    expect(products).toHaveLength(1);
+    expect(products[0]).toMatchObject({ remoteId: '2', syncStatus: 'API' });
+    const states = await database.collection('sync_state').list();
+    expect(states[0].payload).toEqual({
+      collection: 'products',
+      lastSyncedAt: Date.parse(loadedAt),
+    });
+    await database.close();
+  });
 });

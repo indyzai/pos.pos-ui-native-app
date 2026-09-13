@@ -17,7 +17,7 @@ export {
     usePendingSync,
 } from "./hooks";
 export { useLocalDatabase, useRequiredLocalDatabase } from "./react";
-export { payloadsFromRecords, replaceLocalPayloads } from "./projections";
+export { applyBootstrapCollections, localRecordsFromPayloads, payloadsFromRecords, replaceLocalPayloads } from "./projections";
 export {
     collectionNames,
     createScopeKey,

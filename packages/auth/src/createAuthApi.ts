@@ -13,6 +13,7 @@ import type {
     RegistrationPayload,
 } from "./types";
 import { appStorageKeys, type PosApplication } from "./storageKeys";
+import { createLogger } from "@indyzai/pos-core";
 export type {
     AuthTenant,
     AuthUser,
@@ -30,6 +31,9 @@ export type AuthApiConfiguration = {
 
 export function createAuthApi(configuration: AuthApiConfiguration) {
     const authAppId = configuration.appId;
+    const webAuthChannel = `indyzai-auth:${authAppId}`;
+    const webAuthEventKey = `${webAuthChannel}:event`;
+    const logger = createLogger(`Auth:${authAppId}`);
     const {
         accessToken: accessTokenKey,
         refreshToken: refreshTokenKey,
@@ -43,6 +47,62 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
     const sessionFallback = new Map<string, string>();
     let sessionUserPromise: Promise<AuthUser | null> | undefined;
     let authorizationCompletion: Promise<void> | undefined;
+
+    const debugAuth = (message: string, details?: Record<string, unknown>) => {
+        if (typeof __DEV__ !== "undefined" && __DEV__) logger.info(message, details);
+    };
+
+    function publishWebAuthorization(result: { type: "success" | "error"; message?: string }) {
+        if (Platform.OS !== "web") return;
+        debugAuth("Publishing web authorization result", { type: result.type });
+        const payload = JSON.stringify({ ...result, at: Date.now() });
+        try {
+            const channel = new BroadcastChannel(webAuthChannel);
+            channel.postMessage(result);
+            channel.close();
+        } catch {}
+        try {
+            window.localStorage.setItem(webAuthEventKey, payload);
+            window.localStorage.removeItem(webAuthEventKey);
+        } catch {}
+    }
+
+    function openWebAuthorization(url: string, popup: Window): Promise<boolean> {
+        debugAuth("Waiting for popup authorization result");
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            let channel: BroadcastChannel | undefined;
+            const finish = (result: { type?: string; message?: string }) => {
+                if (settled) return;
+                settled = true;
+                debugAuth("Popup authorization finished", { type: result.type });
+                clearTimeout(timeout);
+                channel?.close();
+                window.removeEventListener("storage", onStorage);
+                if (result.type === "success") resolve(true);
+                else reject(new Error(result.message || "Sign-in could not be completed."));
+            };
+            const onStorage = (event: StorageEvent) => {
+                if (event.key !== webAuthEventKey || !event.newValue) return;
+                debugAuth("Received popup result through storage event");
+                try { finish(JSON.parse(event.newValue)); } catch {}
+            };
+            try {
+                channel = new BroadcastChannel(webAuthChannel);
+                channel.onmessage = (event) => {
+                    debugAuth("Received popup result through BroadcastChannel");
+                    finish(event.data || {});
+                };
+            } catch {}
+            window.addEventListener("storage", onStorage);
+            const timeout = setTimeout(
+                () => finish({ type: "error", message: "Sign-in timed out. Please try again." }),
+                5 * 60 * 1000,
+            );
+            popup.location.assign(url);
+            debugAuth("Authentication URL opened in popup");
+        });
+    }
 
     type Tokens = {
         accessToken?: string;
@@ -273,6 +333,10 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
         code: string,
         returnedState?: string,
     ): Promise<void> {
+        debugAuth("Completing authorization callback", {
+            hasCode: Boolean(code),
+            hasReturnedState: Boolean(returnedState),
+        });
         if (authorizationCompletion) return authorizationCompletion;
         authorizationCompletion = (async () => {
             const [expectedState, codeVerifier] = await Promise.all([
@@ -294,6 +358,14 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
         })();
         try {
             await authorizationCompletion;
+            debugAuth("Authorization code exchanged and session saved");
+            publishWebAuthorization({ type: "success" });
+        } catch (error) {
+            publishWebAuthorization({
+                type: "error",
+                message: error instanceof Error ? error.message : "Sign-in could not be completed.",
+            });
+            throw error;
         } finally {
             await Promise.all([
                 deleteSessionValue(oauthStateKey),
@@ -519,6 +591,13 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
             return saveSession(result);
         },
         async authorize(provider: "google" | "microsoft") {
+            debugAuth("Starting social authorization", { provider, platform: Platform.OS });
+            const popup = Platform.OS === "web"
+                ? window.open("about:blank", `${authAppId}-authentication`, "popup=yes,width=500,height=650")
+                : null;
+            if (Platform.OS === "web" && !popup)
+                throw new Error("The sign-in popup was blocked. Allow popups and try again.");
+            if (popup) debugAuth("Authentication popup created", { provider });
             const { authApiUrl: runtimeAuthApiUrl } =
                 await configuration.getRuntimeApiUrls();
             const redirectUri = AuthSession.makeRedirectUri(
@@ -566,10 +645,8 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
                 setSessionValue(oauthVerifierKey, request.codeVerifier),
             ]);
             if (Platform.OS === "web") {
-                window.location.assign(
-                    await request.makeAuthUrlAsync(discovery),
-                );
-                return false;
+                debugAuth("Launching prepared authorization request", { provider });
+                return openWebAuthorization(await request.makeAuthUrlAsync(discovery), popup!);
             }
             const result = await request.promptAsync(discovery);
             if (result.type === "cancel" || result.type === "dismiss") {

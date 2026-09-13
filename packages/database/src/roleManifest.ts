@@ -70,6 +70,7 @@ const management: CollectionName[] = [
     "expense_categories",
     "expenses",
     "waybill_jobs",
+    "scrap_purchase_jobs",
 ];
 
 const administration: CollectionName[] = [
@@ -78,7 +79,6 @@ const administration: CollectionName[] = [
     "purchase_order_lines",
     "goods_receipts",
     "goods_receipt_lines",
-    "scrap_purchase_jobs",
 ];
 
 const roleCollections: Record<PosRole, readonly CollectionName[]> = {

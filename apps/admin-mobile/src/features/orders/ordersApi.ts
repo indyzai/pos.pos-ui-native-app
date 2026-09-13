@@ -8,7 +8,7 @@ import type { RefundRecord, SalesOrder } from './types';
 import { buildPendingRefund, type RefundSelection } from './refundPolicy';
 
 const queue = new SerialQueue();
-const ordersQuery = `query MobileOrders($skip: Int!, $take: Int!) { bills(skip: $skip, take: $take) { id billId offlineId subtotal taxAmount discountAmount totalAmount status type saleDate customerName paymentMethod items { productId name quantity unitPrice discountAmount taxAmount lineTotal } } }`;
+const ordersQuery = `query MobileOrders($skip: Int!, $take: Int!) { bills(skip: $skip, take: $take) { id billId offlineId subtotal taxAmount discountAmount totalAmount status type saleDate customerName paymentMethod paymentType { id name code icon } items { productId name quantity unitPrice discountAmount taxAmount lineTotal } } }`;
 const refundsQuery = `query MobileRefunds { saleRefunds { id offlineId creditNoteNumber originalInvoiceNumber originalSaleId items subtotal tax total reason refundMethod status createdAt } }`;
 const refundMutation = `mutation MobileCreateRefund($input: CreateRefundInput!) { createSaleRefund(input: $input) { id offlineId creditNoteNumber originalInvoiceNumber originalSaleId items subtotal tax total reason refundMethod status createdAt } }`;
 

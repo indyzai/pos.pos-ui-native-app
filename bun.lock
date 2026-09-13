@@ -15,6 +15,7 @@
       "dependencies": {
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-backend": "workspace:*",
+        "@indyzai/pos-core": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-ui": "workspace:*",
         "@tanstack/react-query": "^5.102.8",
@@ -60,6 +61,7 @@
       "dependencies": {
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-backend": "workspace:*",
+        "@indyzai/pos-core": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-ui": "workspace:*",
         "@tanstack/react-query": "^5.102.8",
@@ -104,6 +106,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@indyzai/pos-backend": "workspace:*",
+        "@indyzai/pos-core": "workspace:*",
         "@indyzai/pos-ui": "workspace:*",
         "expo-application": "~57.0.2",
         "expo-auth-session": "~57.0.11",
@@ -121,6 +124,10 @@
     },
     "packages/backend": {
       "name": "@indyzai/pos-backend",
+      "version": "1.0.0",
+    },
+    "packages/core": {
+      "name": "@indyzai/pos-core",
       "version": "1.0.0",
     },
     "packages/database": {
@@ -143,6 +150,7 @@
       "name": "@indyzai/pos-ui",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/pos-core": "workspace:*",
         "lucide-react-native": "^1.41.0",
       },
       "peerDependencies": {
@@ -429,6 +437,8 @@
     "@indyzai/pos-auth": ["@indyzai/pos-auth@workspace:packages/auth"],
 
     "@indyzai/pos-backend": ["@indyzai/pos-backend@workspace:packages/backend"],
+
+    "@indyzai/pos-core": ["@indyzai/pos-core@workspace:packages/core"],
 
     "@indyzai/pos-database": ["@indyzai/pos-database@workspace:packages/database"],
 

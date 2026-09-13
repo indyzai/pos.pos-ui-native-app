@@ -1,9 +1,8 @@
-import { requestPos } from '../../core/api/posApi';
+import { requestPos, requestPosBootstrap, requestPosHasUpdates } from '../../core/api/posApi';
 import { SerialQueue } from '../../sync/serialQueue';
 import { readBillingSnapshot, writeBillingSnapshot } from './data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { loadOrganizationDetails } from '../organization/organizationApi';
 import { fetchCatalog } from '../products/catalogApi';
 import {
   createPendingSale,
@@ -30,6 +29,7 @@ import type { ProductBatch } from './types/billing';
 import { scrapPurchaseRepository } from '../scrap/scrapPurchaseRepository';
 import { scrapPurchaseJob, syncScrapPurchaseJobs } from '../scrap/scrapSync';
 import { canManageScrap } from '../scrap/permissions';
+import { applyBootstrapCollections, replaceLocalPayloads, type LocalDatabase } from '@indyzai/pos-database';
 
 type Context = { key: string; tenant: string; token: string };
 export type BillingCache = {
@@ -76,6 +76,18 @@ const fallbackPaymentMethods: BillingPaymentMethod[] = [
   },
 ];
 const syncQueue = new SerialQueue();
+const billingBootstrapCollections = ['products', 'customers', 'serviceUsers', 'paymentMethods', 'taxRates', 'counterSessions'];
+async function updatedBootstrapCollections(c: Context, database: LocalDatabase, signal?: AbortSignal) {
+  const states = await database.collection('sync_state').list({ includeDeleted: true });
+  const loaded = states
+    .map((state) => Number((state.payload as { lastSyncedAt?: number }).lastSyncedAt))
+    .filter(Number.isFinite);
+  const result = await requestPosHasUpdates<{ updates: Record<string, boolean> }>(c.token, c.tenant, {
+    since: loaded.length ? new Date(Math.max(...loaded)).toISOString() : undefined,
+    route: '/', collections: billingBootstrapCollections, signal,
+  });
+  return billingBootstrapCollections.filter((collection) => result.updates[collection]);
+}
 async function context(): Promise<Context> {
   const session = getActiveAuthSession();
   if (!session) throw new Error('Your workspace is still initializing. Please try again.');
@@ -115,22 +127,6 @@ async function request<T>(
   return requestPos<T>(c.token, c.tenant, query, variables, signal);
 }
 
-const PARTY_PAGE_SIZE = 200;
-
-async function fetchAllParties(c: Context, query: string, signal?: AbortSignal) {
-  const parties: Array<Record<string, unknown>> = [];
-  while (true) {
-    const page = await request<{ parties: Array<Record<string, unknown>> }>(
-      c,
-      query,
-      { skip: parties.length, take: PARTY_PAGE_SIZE },
-      signal,
-    );
-    parties.push(...page.parties);
-    if (page.parties.length < PARTY_PAGE_SIZE) return parties;
-  }
-}
-
 export const billingApi = {
   load: () =>
     syncQueue.run(async () => {
@@ -141,38 +137,44 @@ export const billingApi = {
     const c = await context();
     return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
   },
-  refresh: (signal?: AbortSignal) =>
+  refresh: (signal?: AbortSignal, database?: LocalDatabase | null, forceBootstrap = false) =>
     syncQueue.run(async () => {
       const c = await context();
       const cache = await read(c);
-      const products = await fetchCatalog((query, variables) => request(c, query, variables, signal));
-      const [customerData, paymentData, serviceUserData, taxData] = await Promise.all([
-        fetchAllParties(
-          c,
-          `query BillingCustomers($skip: Int!, $take: Int!) { parties(type: CUSTOMER, skip: $skip, take: $take) { id name type phone contactNumber email addressLine gstin creditLimit balance } }`,
-          signal,
-        ),
-        request<{ paymentTypes: Array<Record<string, unknown>> }>(
-          c,
-          `query BillingPaymentTypes { paymentTypes { id name code icon isActive isQuickAccess isBankRelated bankAccountIds defaultBankAccountId bankAccounts { id accountName bankName upiId isDefault isActive } } }`,
-          {},
-          signal,
-        ),
-        fetchAllParties(
-          c,
-          `query BillingTechnicians($skip: Int!, $take: Int!) { parties(type: TECHNICIAN, skip: $skip, take: $take) { id name phone email details } }`,
-          signal,
-        ),
-        request<{ taxes: Array<Record<string, unknown>> }>(
-          c,
-          `query BillingTaxRates { taxes { id name percentage isActive } }`,
-          {},
-          signal,
-        ),
-      ]);
-      const organization = await loadOrganizationDetails(c.token, c.tenant, signal);
-      const customers: Customer[] = customerData
-        .filter((party) => party.type === 'CUSTOMER')
+      const collections = database && !forceBootstrap
+        ? await updatedBootstrapCollections(c, database, signal)
+        : billingBootstrapCollections;
+      if (!collections.length) return;
+      const bootstrap = await requestPosBootstrap<{
+        generatedAt: string;
+        collections: Record<string, any[]>;
+      }>(c.token, c.tenant, {
+        route: '/',
+        collections,
+        limit: 1000,
+        signal,
+      });
+      const rows = bootstrap.collections;
+      const products: Product[] = (rows.products || [])
+        .filter((product) => product.categoryType === 'INVENTORY')
+        .map((product) => ({
+          id: String(product.id),
+          name: String(product.name),
+          price: Number(product.price),
+          stock: Number(product.stock),
+          barcode: product.barcode || undefined,
+          sku: product.sku || undefined,
+          imageUrl: product.image || undefined,
+          category: product.category || 'Uncategorized',
+          categoryType: product.categoryType || undefined,
+          taxRate: Number(product.taxRate || 0),
+          emoji: '📦',
+          color: '#E7EDFF',
+          quick: product.details?.isQuickItem === true || product.details?.isFavorite === true,
+          details: product.details || undefined,
+        }));
+      const customers: Customer[] = (rows.customers || [])
+        .filter((party) => String(party.type).toLowerCase() === 'customer')
         .map((party) => ({
           id: String(party.id),
           name: String(party.name),
@@ -180,11 +182,11 @@ export const billingApi = {
           phone: String(party.phone || party.contactNumber || '') || undefined,
           email: String(party.email || '') || undefined,
           gstin: String(party.gstin || '') || undefined,
-          address: String(party.addressLine || '') || undefined,
+          address: String(party.address || '') || undefined,
           creditLimit: party.creditLimit == null ? undefined : Number(party.creditLimit),
           balance: party.balance == null ? undefined : Number(party.balance),
         }));
-      const paymentMethods = paymentData.paymentTypes
+      const paymentMethods = (rows.paymentMethods || [])
         .filter((item) => item.isActive !== false)
         .map((item) => ({
           id: String(item.id),
@@ -208,42 +210,54 @@ export const billingApi = {
               }))
             : [],
         }));
-      const serviceUsers: ServiceUser[] = serviceUserData.map((party) => {
-        const details = (party.details || {}) as Record<string, unknown>;
-        return {
-          id: String(party.id),
-          name: String(party.name),
-          phone: String(party.phone || '') || undefined,
-          email: String(party.email || '') || undefined,
-          specialization: String(details.specialization || '') || undefined,
-          isActive: details.isActive !== false,
-        };
-      });
-      const taxRates: BillingTaxRate[] = taxData.taxes
-        .filter((tax) => tax.isActive !== false && Number.isFinite(Number(tax.percentage)))
+      const serviceUsers: ServiceUser[] = (rows.serviceUsers || []).map((party) => ({
+        id: String(party.id),
+        name: String(party.name),
+        phone: party.phone || undefined,
+        email: party.email || undefined,
+        specialization: party.specialization || undefined,
+        isActive: party.isActive !== false,
+      }));
+      const taxRates: BillingTaxRate[] = (rows.taxRates || [])
+        .filter((tax) => tax.isActive !== false && Number.isFinite(Number(tax.rate)))
         .map((tax) => ({
           id: String(tax.id),
           name: String(tax.name),
-          percentage: Math.max(0, Number(tax.percentage)),
+          percentage: Math.max(0, Number(tax.rate)),
           isActive: true,
         }));
-      cache.products = products;
-      cache.customers = customers;
-      cache.paymentMethods = paymentMethods.length ? paymentMethods : fallbackPaymentMethods;
-      cache.serviceUsers = serviceUsers;
-      cache.productBatches = normalizeProductBatches(products);
-      cache.taxRates = taxRates;
-      cache.session = organization?.activeSession ?? null;
-      cache.updated = new Date().toISOString();
-      await Promise.all([
-        write(c, cache),
-        billingReferenceRepository.replaceCustomers(c.key, customers),
-        billingReferenceRepository.replacePaymentMethods(c.key, cache.paymentMethods),
-        billingReferenceRepository.replaceServiceUsers(c.key, serviceUsers),
-        productBatchRepository.replace(c.key, cache.productBatches),
-        billingReferenceRepository.replaceTaxRates(c.key, taxRates),
-      ]);
+      if ('products' in rows) {
+        cache.products = products;
+        cache.productBatches = normalizeProductBatches(products);
+      }
+      if ('customers' in rows) cache.customers = customers;
+      if ('paymentMethods' in rows) cache.paymentMethods = paymentMethods.length ? paymentMethods : fallbackPaymentMethods;
+      if ('serviceUsers' in rows) cache.serviceUsers = serviceUsers;
+      if ('taxRates' in rows) cache.taxRates = taxRates;
+      if ('counterSessions' in rows) cache.session = (rows.counterSessions?.[0] as CounterSession | undefined) ?? null;
+      cache.updated = bootstrap.generatedAt;
+      if (database) {
+        const projectedRows = { ...rows };
+        if ('products' in rows) projectedRows.products = products;
+        if ('customers' in rows) projectedRows.customers = customers;
+        if ('paymentMethods' in rows) projectedRows.paymentMethods = cache.paymentMethods;
+        if ('serviceUsers' in rows) projectedRows.serviceUsers = serviceUsers;
+        if ('taxRates' in rows) projectedRows.taxRates = taxRates;
+        await applyBootstrapCollections(database, projectedRows, bootstrap.generatedAt);
+        if ('products' in rows) await replaceLocalPayloads(database, 'product_batches', cache.productBatches);
+      }
+      const writes: Promise<unknown>[] = [write(c, cache)];
+      if ('customers' in rows) writes.push(billingReferenceRepository.replaceCustomers(c.key, cache.customers));
+      if ('paymentMethods' in rows) writes.push(billingReferenceRepository.replacePaymentMethods(c.key, cache.paymentMethods));
+      if ('serviceUsers' in rows) writes.push(billingReferenceRepository.replaceServiceUsers(c.key, cache.serviceUsers));
+      if ('products' in rows) writes.push(productBatchRepository.replace(c.key, cache.productBatches));
+      if ('taxRates' in rows) writes.push(billingReferenceRepository.replaceTaxRates(c.key, cache.taxRates));
+      await Promise.all(writes);
     }),
+  hasUpdates: async (database: LocalDatabase, signal?: AbortSignal) => {
+    const c = await context();
+    return (await updatedBootstrapCollections(c, database, signal)).length > 0;
+  },
   checkout: (
     key: string,
     items: CartItem[],

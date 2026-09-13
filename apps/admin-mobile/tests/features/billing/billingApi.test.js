@@ -184,86 +184,34 @@ test('storage failure and business switch reject checkout', async () => {
 });
 
 test('catalog refresh maps and persists products for offline billing', async () => {
-    globalThis.fetch = async (_url, options) => {
-        const query = JSON.parse(options.body).query;
-        if (query.includes('query Catalog')) {
-            return {
-                ok: true,
-                json: async () => ({
-                    data: {
-                        products: [
-                            {
-                                id: 42,
-                                name: 'Offline tea',
-                                skuCode: 'TEA-42',
-                                imageUrl: 'https://example.test/tea.png',
-                                details: { isQuickItem: true, serviceDurationMinutes: 45 },
-                                price: 20,
-                                quantity: 7,
-                                barcode: '8901000000042',
-                                category: { name: 'Beverages', type: 'INVENTORY' },
-                                tax: { percentage: 5 },
-                            },
-                        ],
+    globalThis.fetch = async () => ({
+        ok: true,
+        json: async () => ({
+            generatedAt: '2026-01-01T00:00:00.000Z',
+            collections: {
+                products: [
+                    {
+                        id: 42,
+                        name: 'Offline tea',
+                        sku: 'TEA-42',
+                        image: 'https://example.test/tea.png',
+                        details: { isQuickItem: true, serviceDurationMinutes: 45 },
+                        price: 20,
+                        stock: 7,
+                        barcode: '8901000000042',
+                        category: 'Beverages',
+                        categoryType: 'INVENTORY',
+                        taxRate: 5,
                     },
-                }),
-            };
-        }
-        if (query.includes('BillingCustomers')) {
-            return {
-                ok: true,
-                json: async () => ({
-                    data: {
-                        parties: [
-                            { id: 7, name: 'Customer A', type: 'CUSTOMER' },
-                            { id: 9, name: 'Supplier A', type: 'SUPPLIER' },
-                        ],
-                    },
-                }),
-            };
-        }
-        if (query.includes('BillingPaymentTypes')) {
-            return { ok: true, json: async () => ({ data: { paymentTypes: [] } }) };
-        }
-        if (query.includes('BillingTechnicians')) {
-            return {
-                ok: true,
-                json: async () => ({
-                    data: {
-                        parties: [
-                            {
-                                id: 8,
-                                name: 'Technician A',
-                                phone: '123',
-                                details: { specialization: 'Repair' },
-                            },
-                        ],
-                    },
-                }),
-            };
-        }
-        if (query.includes('BillingTaxRates')) {
-            return {
-                ok: true,
-                json: async () => ({
-                    data: { taxes: [{ id: 5, name: 'GST 5%', percentage: 5, isActive: true }] },
-                }),
-            };
-        }
-        return {
-            ok: true,
-            json: async () => ({
-                data: {
-                    organization: {
-                        id: '1',
-                        name: 'Test business',
-                        config: {},
-                        activeSession: { id: '2', counterId: '3', status: 'OPEN' },
-                    },
-                },
-            }),
-        };
-    };
+                ],
+                customers: [{ id: 7, name: 'Customer A', type: 'customer' }],
+                serviceUsers: [{ id: 8, name: 'Technician A', phone: '123', specialization: 'Repair' }],
+                paymentMethods: [],
+                taxRates: [{ id: 5, name: 'GST 5%', rate: 5, isActive: true }],
+                counterSessions: [],
+            },
+        }),
+    });
     await billingApi.refresh();
     const { cache } = await billingApi.load();
     expect(cache.products).toEqual([

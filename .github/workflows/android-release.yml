@@ -134,16 +134,18 @@ jobs:
             if [[ -n "$LATEST_TAG" ]]; then
               BASE_POS="${LATEST_TAG#v}"
             else
-              BASE_POS="$(jq -r '.expo.version' apps/mobile/app.json | sed 's/-alpha\..*//; s/-alpha$//')"
+              BASE_POS="$(jq -r '.expo.version' apps/mobile/app.json)"
             fi
+            BASE_POS="$(echo "$BASE_POS" | sed 's/-alpha\..*//; s/-alpha$//')"
             BASE_ADMIN="$(jq -r '.expo.version' apps/admin-mobile/app.json | sed 's/-alpha\..*//; s/-alpha$//')"
             ALPHA_ID="${GITHUB_SHA:0:8}"
+            BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
 
-            POS_VERSION="${BASE_POS}-alpha.${ALPHA_ID}"
-            ADMIN_VERSION="${BASE_ADMIN}-alpha.${ALPHA_ID}"
+            POS_VERSION="${BASE_POS}-alpha.${BUILD_NUMBER}.${ALPHA_ID}"
+            ADMIN_VERSION="${BASE_ADMIN}-alpha.${BUILD_NUMBER}.${ALPHA_ID}"
             TAG="v${POS_VERSION}"
             PRERELEASE=true
-            RELEASE_NAME="IndyzAI POS Alpha ${POS_VERSION}"
+            RELEASE_NAME="IndyzAI POS Alpha ${POS_VERSION} (Build ${BUILD_NUMBER})"
           fi
 
           {
@@ -157,6 +159,7 @@ jobs:
           echo "POS version   : $POS_VERSION"
           echo "Admin version : $ADMIN_VERSION"
           echo "Release tag   : $TAG"
+          echo "Release name  : $RELEASE_NAME"
           echo "Prerelease    : $PRERELEASE"
 
   android-pos:

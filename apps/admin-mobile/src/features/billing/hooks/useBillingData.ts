@@ -1,12 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { billingApi, type BillingCache } from '../billingApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
 import {
     payloadsFromRecords,
-    replaceLocalPayloads,
     useLocalCollection,
     useLocalCustomers,
     useLocalProducts,
@@ -26,7 +25,6 @@ export function useBillingData() {
     const running = useRef(false);
     const auth = useAuthSession();
     const local = useLocalDatabase();
-    const [projectionError, setProjectionError] = useState('');
     const ready = !auth.initializing && !!auth.session && local.status === 'ready';
     const userId = auth.session?.user.id;
     const tenantId = auth.session?.tenant.id;
@@ -46,31 +44,13 @@ export function useBillingData() {
     const localProductBatches = useLocalCollection<LocalRecord<ProductBatch>>('product_batches');
     const localTaxRates = useLocalCollection<LocalRecord<BillingTaxRate>>('tax_rates');
 
-    useEffect(() => {
-        if (!local.database || !query.data) return;
-        const { cache } = query.data;
-        void Promise.all([
-            replaceLocalPayloads(local.database, 'products', cache.products),
-            replaceLocalPayloads(local.database, 'customers', cache.customers),
-            replaceLocalPayloads(local.database, 'payment_methods', cache.paymentMethods),
-            replaceLocalPayloads(local.database, 'service_users', cache.serviceUsers),
-            replaceLocalPayloads(local.database, 'product_batches', cache.productBatches),
-            replaceLocalPayloads(local.database, 'tax_rates', cache.taxRates),
-        ]).then(
-            () => setProjectionError(''),
-            (reason) =>
-                setProjectionError(
-                    reason instanceof Error ? reason.message : 'Unable to update the local POS database.',
-                ),
-        );
-    }, [local.database, query.data]);
     const syncMutation = useMutation({
         networkMode: 'always',
         retry: false,
         mutationFn: async (signal?: AbortSignal) => {
             await billingApi.sync(signal);
             await printingApi.syncPending();
-            await billingApi.refresh(signal);
+            await billingApi.refresh(signal, local.database);
         },
         onSettled: async () => {
             await queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
@@ -94,13 +74,38 @@ export function useBillingData() {
             running.current = false;
         }
     };
+    const refreshRef = useRef(refresh);
+    refreshRef.current = refresh;
+    const settings = auth.session?.organization?.settings;
+    const autoRefreshEnabled = settings?.autoRefresh === true || settings?.autoRefreshEnabled === true;
+    const autoRefreshSeconds = Math.max(15, Number(settings?.autoRefreshIntervalSeconds ?? 60));
+    useEffect(() => {
+        if (!autoRefreshEnabled || !ready || !local.database) return;
+        const timer = setInterval(() => {
+            if (running.current || !local.database) return;
+            void refreshRef.current().catch(() => undefined);
+        }, autoRefreshSeconds * 1000);
+        return () => clearInterval(timer);
+    }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready]);
     const initialRefreshKey = useRef<string | undefined>(undefined);
     useEffect(() => {
         const key = query.data?.key;
-        if (!ready || !key || initialRefreshKey.current === key) return;
+        if (!ready || !key || !local.database || initialRefreshKey.current === key) return;
         initialRefreshKey.current = key;
-        void refresh();
-    }, [query.data?.key, ready]);
+        void local.database.collection('sync_state').list({ includeDeleted: true }).then((states) => {
+            const loaded = new Set(states.map((state) =>
+                String((state.payload as { collection?: string }).collection ?? state.remoteId),
+            ));
+            const hasBootstrap = ['products', 'customers', 'payment_methods', 'service_users', 'tax_rates', 'shifts']
+                .every((collection) => loaded.has(collection));
+            if (!hasBootstrap) {
+                running.current = true;
+                return billingApi.refresh(undefined, local.database, true).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['billing-cache'] }),
+                ).finally(() => { running.current = false; });
+            }
+        }).catch(() => undefined);
+    }, [local.database, query.data?.key, queryClient, ready]);
     const error = syncMutation.error ?? query.error;
     const data = useMemo(() => {
         if (!ready || !query.data) return undefined;
@@ -128,7 +133,7 @@ export function useBillingData() {
     ]);
     return {
         data,
-        error: local.error || auth.error || projectionError || (error instanceof Error ? error.message : ''),
+        error: local.error || auth.error || (error instanceof Error ? error.message : ''),
         busy: query.isFetching || syncMutation.isPending,
         refresh,
         reload,

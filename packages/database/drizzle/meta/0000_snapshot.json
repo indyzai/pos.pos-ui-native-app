@@ -981,7 +981,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1080,7 +1080,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1186,7 +1186,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1280,7 +1280,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1379,7 +1379,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1478,7 +1478,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1577,7 +1577,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1676,7 +1676,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1775,7 +1775,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1881,7 +1881,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1975,7 +1975,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2074,7 +2074,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2173,7 +2173,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2272,7 +2272,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2371,7 +2371,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2470,7 +2470,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2576,7 +2576,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2670,7 +2670,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2776,7 +2776,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2870,7 +2870,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2969,7 +2969,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3068,7 +3068,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3167,7 +3167,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3266,7 +3266,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3365,7 +3365,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3471,7 +3471,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3572,7 +3572,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3673,7 +3673,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3774,7 +3774,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3875,7 +3875,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -3969,7 +3969,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4075,7 +4075,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4169,7 +4169,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4275,7 +4275,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4400,7 +4400,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4499,7 +4499,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4598,7 +4598,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4704,7 +4704,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4798,7 +4798,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4897,7 +4897,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -4996,7 +4996,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5095,7 +5095,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5194,7 +5194,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5293,7 +5293,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5436,7 +5436,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5740,7 +5740,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5846,7 +5846,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -5940,7 +5940,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -6039,7 +6039,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'SYNCED'"
+          "default": "'API'"
         },
         "updated_at": {
           "name": "updated_at",

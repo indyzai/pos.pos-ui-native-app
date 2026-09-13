@@ -31,7 +31,7 @@ export function buildReportMetrics(
         daily.set(key, { date: key, revenue: 0, orders: 0 });
     }
     for (const order of sales) {
-        const payment = order.paymentMethod?.trim() || 'Other';
+        const payment = order.paymentType?.name?.trim() || order.paymentMethod?.trim() || 'Other';
         paymentTotals.set(payment, (paymentTotals.get(payment) ?? 0) + Number(order.totalAmount || 0));
         const day = daily.get(new Date(order.saleDate).toISOString().slice(0, 10));
         if (day) {

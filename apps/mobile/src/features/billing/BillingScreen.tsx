@@ -58,6 +58,7 @@ import { ScrapExchangeDialog } from './components/ScrapExchangeDialog';
 import type { ScrapExchange } from './types/billing';
 import { canManageScrap } from '../scrap/permissions';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
+import { canPerformManagerActions } from '../../config/appAccess';
 
 type CartPage = 'cart' | 'customer' | 'held-orders' | 'petty-cash' | 'scrap' | 'checkout';
 const useNativeAnimationDriver = Platform.OS !== 'web';
@@ -113,6 +114,7 @@ export function BillingScreen() {
   const { setCenterItem } = useBottomNavigation();
   const { requestCounterDialog, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const auth = useAuthSession();
+  const managerAccess = canPerformManagerActions(auth.session?.tenant.role, auth.session?.user.role);
   const policy = useMemo(
     () => billingPolicy(auth.session?.organization?.settings),
     [auth.session?.organization?.settings],
@@ -614,7 +616,7 @@ export function BillingScreen() {
               setScannerOpen(true);
             }}
             scanEnabled={isEnabled('enableBarcodeScanning') && mode.scanByDefault}
-            onAddProduct={isEnabled('inventory') ? openQuickAdd : undefined}
+            onAddProduct={isEnabled('inventory') && managerAccess ? openQuickAdd : undefined}
             statsVisible={statsVisible}
             onToggleStats={
               isEnabled('advancedReporting') ? () => setStatsVisible((value) => !value) : undefined

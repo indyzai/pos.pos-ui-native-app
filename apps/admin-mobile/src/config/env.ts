@@ -1,6 +1,7 @@
 export const development = typeof __DEV__ !== 'undefined' && __DEV__;
 export const productionApiUrls = {
     pos: 'https://api.indyzai.com/pos/api/graphql',
+    posBase: 'https://api.indyzai.com/pos/api',
     auth: 'https://api.indyzai.com/auth/api/v1',
 } as const;
 
@@ -69,8 +70,19 @@ export function resolvePosApiUrl(expoGoLinkingUri?: string): string {
     });
 }
 
+export function resolvePosBaseUrl(expoGoLinkingUri?: string): string {
+    return resolveApiUrl({
+        envUrl: process.env.EXPO_PUBLIC_POS_BASE_URL,
+        prodUrl: productionApiUrls.posBase,
+        devPort: 3501,
+        devPath: '/api',
+        expoGoLinkingUri,
+    });
+}
+
 export const env = {
     posApiUrl: resolvePosApiUrl(),
+    posBaseUrl: resolvePosBaseUrl(),
     authApiUrl: resolveAuthApiUrl(),
     authAppId: process.env.EXPO_PUBLIC_AUTH_APP_ID,
 } as const;

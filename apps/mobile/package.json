@@ -6,6 +6,7 @@
     "@indyzai/pos-auth": "workspace:*",
     "@indyzai/pos-backend": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
+    "@indyzai/pos-core": "workspace:*",
     "@indyzai/pos-ui": "workspace:*",
     "@tanstack/react-query": "^5.102.8",
     "dexie": "^4.4.6",

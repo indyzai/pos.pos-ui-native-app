@@ -16,6 +16,7 @@ import { authApi, type DeviceRegistrationDetails } from '../../auth/authApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { development, env } from '../../config/env';
 import { getRuntimeApiUrls, setApiEnvironment, type ApiEnvironment } from '../../config/runtimeEnvironment';
+import { DeviceLogViewer } from '@indyzai/pos-ui/device-logs';
 
 export function DeviceSettingsSection({
     registerSave,
@@ -31,15 +32,15 @@ export function DeviceSettingsSection({
     const [pinOpen, setPinOpen] = useState(false);
     const [authorizingPin, setAuthorizingPin] = useState(false);
     const [apiEnvironment, setApiEnvironmentState] = useState<ApiEnvironment>('local');
-    const [apiUrls, setApiUrls] = useState({ posApiUrl: env.posApiUrl, authApiUrl: env.authApiUrl });
+    const [apiUrls, setApiUrls] = useState({ posApiUrl: env.posApiUrl, posBaseUrl: env.posBaseUrl, authApiUrl: env.authApiUrl });
     const [switchingEnvironment, setSwitchingEnvironment] = useState(false);
 
     useEffect(() => {
         void authApi.getDeviceRegistrationDetails().then(setDetails);
         if (development) {
-            void getRuntimeApiUrls().then(({ environment, posApiUrl, authApiUrl }) => {
+            void getRuntimeApiUrls().then(({ environment, posApiUrl, posBaseUrl, authApiUrl }) => {
                 setApiEnvironmentState(environment);
-                setApiUrls({ posApiUrl, authApiUrl });
+                setApiUrls({ posApiUrl, posBaseUrl, authApiUrl });
             });
         }
     }, []);
@@ -49,9 +50,9 @@ export function DeviceSettingsSection({
         setSwitchingEnvironment(true);
         try {
             await setApiEnvironment(environment);
-            const { posApiUrl, authApiUrl } = await getRuntimeApiUrls();
+            const { posApiUrl, posBaseUrl, authApiUrl } = await getRuntimeApiUrls();
             setApiEnvironmentState(environment);
-            setApiUrls({ posApiUrl, authApiUrl });
+            setApiUrls({ posApiUrl, posBaseUrl, authApiUrl });
         } catch (error) {
             showSnackbar(
                 'Could not change API environment',
@@ -237,8 +238,12 @@ export function DeviceSettingsSection({
                     </View>
                 )}
                 <Detail label="POS API URL" value={apiUrls.posApiUrl} selectable />
+                <Detail label="POS base URL" value={apiUrls.posBaseUrl} selectable />
                 <Detail label="Authentication URL" value={apiUrls.authApiUrl} selectable last />
             </View>
+
+            <SectionTitle icon={Cpu} title="Device logs" />
+            <DeviceLogViewer colors={c} onMessage={showSnackbar} />
         </View>
     );
 }

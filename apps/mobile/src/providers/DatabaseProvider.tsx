@@ -9,6 +9,8 @@ import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
 import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
+import { kvStore } from '../storage/kvStore';
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
   const { session, initializing: authInitializing } = useAuthSession();
@@ -41,6 +43,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         counterId: activeCounter?.counterId,
       };
       const database = await createStoreLocalDatabase(scope);
+      const owner = String(session.user.id);
+      const previousOwner = await kvStore.get(appStorageKeys.pos.databaseOwner);
+      if (previousOwner && previousOwner !== owner) await database.clear();
+      await kvStore.set(appStorageKeys.pos.databaseOwner, owner);
       if (current !== generation.current) {
         await database.close();
         return;

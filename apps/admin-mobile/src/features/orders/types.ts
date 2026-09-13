@@ -21,6 +21,7 @@ export type SalesOrder = {
     saleDate: string;
     customerName?: string;
     paymentMethod?: string;
+    paymentType?: { id: string; name: string; code: string; icon?: string };
     items: SalesOrderItem[];
 };
 

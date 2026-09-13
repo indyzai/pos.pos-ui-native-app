@@ -10,6 +10,9 @@ import {
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import type { AuthTenant, AuthUser } from "./types";
 import type { createAuthApi } from "./createAuthApi";
+import { createLogger } from "@indyzai/pos-core";
+
+const sessionLogger = createLogger("Auth:session");
 
 type AuthApi = ReturnType<typeof createAuthApi>;
 export type AuthOrganizationDetails = {
@@ -140,6 +143,17 @@ export function AuthSessionProvider({
             // Storage supplies only the preferred ID, never a second user snapshot.
             const tenant = await authApi.getSelectedTenant(profile);
             if (current !== generation.current) return;
+            if (typeof __DEV__ !== "undefined" && __DEV__)
+                sessionLogger.info("Resolved authenticated identity", {
+                    hasProfile: Boolean(profile),
+                    hasToken: Boolean(token),
+                    hasTenant: Boolean(tenant),
+                    tenantRole: tenant?.role,
+                    accountRole: profile?.role,
+                    hasAppAccess: tenant
+                        ? canAccessApp(tenant.role, profile?.role)
+                        : false,
+                });
             if (tenant && !canAccessApp(tenant.role, profile?.role)) {
                 setUser(null);
                 setAuthenticated(false);

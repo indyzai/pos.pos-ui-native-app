@@ -22,7 +22,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       setUnauthorizedHandler,
       loadOrganizationDetails,
       canAccessApp,
-      accessDeniedMessage: 'This app is available only to cashier and manager accounts.',
+      accessDeniedMessage: 'Your account does not have access to this business.',
       loaderColors: {
         background: themeColors.background,
         primary: themeColors.primary,

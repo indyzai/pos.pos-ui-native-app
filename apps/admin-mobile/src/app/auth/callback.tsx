@@ -19,9 +19,10 @@ export default function AuthCallbackRoute() {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (Platform.OS === 'web' || handled.current) return;
+        if (handled.current) return;
         const code = first(params.code);
         const state = first(params.state);
+        if (__DEV__) console.info('[Auth:admin-app] Callback route loaded', { hasCode: Boolean(code), hasState: Boolean(state), platform: Platform.OS });
         if (!code) {
             if (params.error) setError(String(params.error));
             return;
@@ -30,10 +31,17 @@ export default function AuthCallbackRoute() {
         void (async () => {
             try {
                 await authApi.completeAuthorizationCode(code, state);
-                const needsDeviceSetup = !(await authApi.hasRegisteredDevice());
+                const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
                 await refreshSession();
+                if (__DEV__) console.info('[Auth:admin-app] Session refreshed after callback', { needsDeviceSetup });
+                if (Platform.OS === 'web') {
+                    if (__DEV__) console.info('[Auth:admin-app] Closing authentication popup');
+                    window.close();
+                    return;
+                }
                 router.replace(needsDeviceSetup ? '/device-setup' : '/billing');
             } catch (reason) {
+                if (__DEV__) console.error('[Auth:admin-app] Callback failed', reason);
                 setError(reason instanceof Error ? reason.message : 'Sign-in could not be completed.');
             }
         })();
@@ -42,8 +50,10 @@ export default function AuthCallbackRoute() {
     return (
         <View style={styles.screen}>
             {!error && <ActivityIndicator color="#4F46E5" />}
-            <Text style={[styles.message, error && styles.error]}>{error || 'Completing sign-in…'}</Text>
-            {error && <Text style={styles.help}>Return to sign in and try again.</Text>}
+            <Text style={[styles.message, Boolean(error) && styles.error]}>
+                {error || 'Completing sign-in…'}
+            </Text>
+            {error ? <Text style={styles.help}>Return to sign in and try again.</Text> : null}
         </View>
     );
 }
