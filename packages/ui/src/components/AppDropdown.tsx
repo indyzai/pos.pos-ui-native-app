@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Check, ChevronDown } from 'lucide-react-native';
 import { Menu } from 'react-native-paper';
 import { AppPressable } from '../AppPressable';
@@ -52,6 +52,7 @@ export function AppDropdown<T extends DropdownValue>({
       onPress={() => setOpen((current) => !current)}
       style={[
         s.control,
+        Platform.OS === 'web' && open && s.openControl,
         { backgroundColor: c.background, borderColor: open ? c.primary : c.outline },
         unavailable && s.disabled,
       ]}
@@ -82,10 +83,17 @@ export function AppDropdown<T extends DropdownValue>({
   );
 
   return (
-    <View style={s.field}>
+    <View style={[s.field, Platform.OS === 'web' && open && s.openField]}>
       {label ? <Text style={[s.label, { color: c.textSecondary }]}>{label}</Text> : null}
       {Platform.OS === 'web' ? (
         <View style={s.webAnchor}>
+          {open ? (
+            <Pressable
+              accessibilityLabel="Close dropdown"
+              onPress={() => setOpen(false)}
+              style={s.webDismissLayer}
+            />
+          ) : null}
           {anchor}
           {open ? (
             <View
@@ -141,7 +149,8 @@ function DropdownMenuOption({
 }
 
 const s = StyleSheet.create({
-  field: { marginBottom: 13 },
+  field: { position: 'relative', zIndex: 1, marginBottom: 13 },
+  openField: { zIndex: 1000 },
   label: { fontSize: 11, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase' },
   control: {
     height: 46,
@@ -152,6 +161,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  openControl: { position: 'relative', zIndex: 1002 },
   value: { flex: 1, minWidth: 0, fontSize: 13, fontWeight: '600' },
   menu: {
     minWidth: 220,
@@ -161,13 +171,21 @@ const s = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 5,
   },
-  webAnchor: { position: 'relative', zIndex: 20 },
+  webAnchor: { position: 'relative' },
+  webDismissLayer: {
+    position: 'absolute',
+    top: -10000,
+    right: -10000,
+    bottom: -10000,
+    left: -10000,
+    zIndex: 1000,
+  },
   webMenu: {
     position: 'absolute',
     top: 50,
     left: 0,
     right: 0,
-    zIndex: 21,
+    zIndex: 1003,
     boxShadow: '0px 8px 24px rgba(8, 12, 22, 0.2)',
   },
   option: {

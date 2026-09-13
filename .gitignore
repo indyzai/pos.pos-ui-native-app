@@ -121,3 +121,4 @@ docs/superpowers/
 
 # CMake build caches from native module builds; Metro's watcher crashes on their transient dirs
 apps/mobile/modules/*/android/.cxx/
+.pnpm-store

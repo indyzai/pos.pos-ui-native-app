@@ -18,6 +18,11 @@ export {
     type AppHeaderStorageState,
     type SharedAppHeaderProps,
 } from "./layout/AppHeader";
+export {
+    BusinessContextDialog,
+    type BusinessContextOption,
+    type BranchContextOption,
+} from "./layout/BusinessContextDialog";
 export { ModulePlaceholder, ModuleContent } from "./layout/ModulePlaceholder";
 export {
     BottomNavigationProvider,

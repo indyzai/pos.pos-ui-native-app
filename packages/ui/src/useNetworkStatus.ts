@@ -102,7 +102,10 @@ export function useNetworkStatus(
         });
         const handleOnline = () => void checkHealth();
         const handleOffline = () => publish(false);
-        if (typeof window !== "undefined") {
+        if (
+            typeof window !== "undefined" &&
+            typeof window.addEventListener === "function"
+        ) {
             window.addEventListener("online", handleOnline);
             window.addEventListener("offline", handleOffline);
         }
@@ -125,7 +128,10 @@ export function useNetworkStatus(
             clearInterval(interval);
             unsubscribe?.();
             appState.remove();
-            if (typeof window !== "undefined") {
+            if (
+                typeof window !== "undefined" &&
+                typeof window.removeEventListener === "function"
+            ) {
                 window.removeEventListener("online", handleOnline);
                 window.removeEventListener("offline", handleOffline);
             }
