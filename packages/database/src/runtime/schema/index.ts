@@ -1,11 +1,6 @@
 export { products } from "./products";
 export { sales } from "./sales";
 export { billingMetadata } from "./settings";
-export {
-    syncJobs,
-    type SyncJobOperation,
-    type SyncJobStatus,
-} from "./syncJobs";
 export { heldOrders } from "./heldOrders";
 export { customers } from "./customers";
 export { paymentMethods } from "./paymentMethods";

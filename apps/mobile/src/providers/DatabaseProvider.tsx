@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 import {
   LocalDatabaseProvider,
   useLocalDatabase,
@@ -12,13 +13,20 @@ import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
 import {
   normalizePosRole,
   setActiveDatabase,
+  useOfflineQueueCount,
   type DatabaseScope,
   type LocalDatabase,
 } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-core/storage';
 import { queryClient } from '@indyzai/pos-core/query';
+import { useNetworkStatus } from '@indyzai/pos-ui';
 import { billingApi } from '../features/billing/billingApi';
+import {
+  startBillingOutboxWorker,
+  stopBillingOutboxWorker,
+  wakeBillingOutboxWorker,
+} from '../features/billing/billingOutboxWorker';
 
 const logger = createLogger('Database:store');
 
@@ -113,6 +121,35 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   }, [initialize]);
 
   const value = useMemo<DatabaseState>(() => ({ ...state, retry: initialize }), [initialize, state]);
-  return <LocalDatabaseProvider value={value}>{children}</LocalDatabaseProvider>;
+  return (
+    <LocalDatabaseProvider value={value}>
+      {state.database && state.status === 'ready' && session ? (
+        <BillingOutboxProcessor database={state.database} />
+      ) : null}
+      {children}
+    </LocalDatabaseProvider>
+  );
+}
+
+function BillingOutboxProcessor({ database }: { database: LocalDatabase }) {
+  const pendingSyncCount = useOfflineQueueCount();
+  const isOnline = useNetworkStatus(authApi, { pendingSyncCount });
+
+  useEffect(() => {
+    startBillingOutboxWorker(
+      database,
+      () => billingApi.sync(),
+      async () => isOnline,
+    );
+    const appState = AppState.addEventListener('change', (status) => {
+      if (status === 'active' && isOnline) wakeBillingOutboxWorker();
+    });
+    return () => {
+      appState.remove();
+      stopBillingOutboxWorker(database);
+    };
+  }, [database, isOnline]);
+
+  return null;
 }
 export { useLocalDatabase, useRequiredLocalDatabase };

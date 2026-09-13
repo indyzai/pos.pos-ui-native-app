@@ -4,7 +4,7 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
 import { createReconciliationVariables } from './reconciliation';
 import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
-import { createSyncJob, listSyncJobs, updateSyncJob, type SyncJob } from '@indyzai/pos-database/sync-jobs';
+import { createOutboxJob, listOutboxJobs, updateOutboxJob, type OutboxJob } from '@indyzai/pos-database/outbox-jobs';
 
 const reconciliationMutation = `
   mutation RecordInventoryReconciliation($input: InventoryReconciliationInput!) {
@@ -45,24 +45,24 @@ const scope = () => {
 };
 
 async function runTracked(
-    operation: SyncJob['operation'],
+    operation: OutboxJob['operation'],
     request: () => Promise<string | undefined>,
-): Promise<SyncJob> {
-    let job = await createSyncJob(scope(), operation);
-    job = await updateSyncJob(job, 'RUNNING');
+): Promise<OutboxJob> {
+    let job = await createOutboxJob(scope(), operation);
+    job = await updateOutboxJob(job, 'RUNNING');
     try {
         const entityId = await request();
-        return await updateSyncJob(job, 'COMPLETED', { entityId });
+        return await updateOutboxJob(job, 'COMPLETED', { entityId });
     } catch (reason) {
         const errorMessage = reason instanceof Error ? reason.message : 'The operation failed.';
-        await updateSyncJob(job, 'FAILED', { errorMessage });
+        await updateOutboxJob(job, 'FAILED', { errorMessage });
         throw reason;
     }
 }
 
 export const inventoryApi = {
     load: billingApi.load,
-    listJobs: () => listSyncJobs(scope()),
+    listJobs: () => listOutboxJobs(scope()),
     refresh: (signal?: AbortSignal) => billingApi.refresh(signal),
     async loadProductReferences(): Promise<ProductReferenceData> {
         const session = context();
@@ -90,7 +90,7 @@ export const inventoryApi = {
         referenceCache.set(tenantId, references);
         return references;
     },
-    async create(input: CreateInventoryItemInput): Promise<SyncJob> {
+    async create(input: CreateInventoryItemInput): Promise<OutboxJob> {
         const session = context();
         const job = await runTracked('CREATE_PRODUCT', async () => {
             const data = await requestPos<{ newProduct: { product?: { id: string }; message?: string } }>(
@@ -123,7 +123,7 @@ export const inventoryApi = {
         await billingApi.refresh();
         return job;
     },
-    async reconcile(input: StockReconciliationInput): Promise<SyncJob> {
+    async reconcile(input: StockReconciliationInput): Promise<OutboxJob> {
         const session = context();
         const job = await runTracked('UPDATE_STOCK', async () => {
             const data = await requestPos<{ recordInventoryReconciliation?: { id: string } }>(

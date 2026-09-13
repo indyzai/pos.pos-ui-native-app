@@ -3,13 +3,12 @@ import { createScopeKey, type CollectionName, type LocalDatabase, type LocalReco
 
 type BillingSnapshot = { products: { id: string; [key: string]: any }[]; session: any; queue: { id: string; [key: string]: any }[]; updated?: string };
 export const webStores = {
-    products: "products", sales: "sales", metadata: "app_settings", syncJobs: "sync_errors",
+    products: "products", sales: "sales", metadata: "app_settings",
     heldOrders: "held_orders", customers: "customers", paymentMethods: "payment_methods",
     printJobs: "print_jobs", printers: "printers", restaurantTables: "restaurant_tables",
     serviceUsers: "service_users", waybillJobs: "waybill_jobs", orders: "orders", refunds: "refunds",
     productBatches: "product_batches", scrapPurchaseJobs: "scrap_purchase_jobs", taxRates: "tax_rates",
 } as const satisfies Record<string, CollectionName>;
-export type WebSyncJob = { storageId: string; id: string; scope: string; operation: "CREATE_PRODUCT" | "UPDATE_STOCK"; entityId?: string; status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED"; errorMessage?: string; createdAt: string; updatedAt: string };
 
 const db = async (): Promise<LocalDatabase | null> => {
     const active = getActiveWebDatabaseSafe();
@@ -48,16 +47,6 @@ export async function writeWebBillingSnapshot(_scope: string, snapshot: BillingS
     const serverSales = existing.filter((item) => item.syncStatus === "API" || item.syncStatus === "SYNCED");
     await database.collection("sales").replace([...serverSales, ...snapshot.queue.map((item) => record(database, "sales", item))]);
     await database.collection("app_settings").put(record(database, "app_settings", { id: "billing-metadata", session: snapshot.session, updated: snapshot.updated }));
-}
-export async function readWebSyncJobs(_scope: string): Promise<WebSyncJob[]> {
-    const database = await db();
-    if (!database) return [];
-    return (await database.collection("sync_errors").list({ includeDeleted: true })).map((item) => item.payload as WebSyncJob);
-}
-export async function writeWebSyncJob(job: WebSyncJob): Promise<void> {
-    const database = await db();
-    if (!database) return;
-    await database.collection("sync_errors").put(record(database, "sync_errors", job));
 }
 export async function readWebHeldOrders<T>(_scope: string): Promise<T[]> {
     const database = await db();

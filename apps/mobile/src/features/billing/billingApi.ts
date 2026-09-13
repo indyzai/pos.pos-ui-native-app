@@ -34,6 +34,8 @@ import {
   bootstrapCollectionMap,
   getActiveDatabase,
   normalizeBootstrapCollections,
+  createScopeKey,
+  type LocalRecord,
   type LocalDatabase,
 } from '@indyzai/pos-database';
 import { getBillingBootstrapCollections, resolveBillingMode } from './domain/billingMode';
@@ -84,6 +86,42 @@ const fallbackPaymentMethods: BillingPaymentMethod[] = [
   },
 ];
 const syncQueue = new SerialQueue();
+type SaleOutboxPayload = {
+  offlineId: string;
+  idempotencyKey: string;
+  entityType: 'SALE';
+  operation: 'CREATE';
+  input: Record<string, unknown>;
+};
+const saleOutboxId = (database: LocalDatabase, offlineId: string) =>
+  `${createScopeKey(database.scope)}:outbox:sale:${offlineId}`;
+async function setSaleOutboxStatus(
+  database: LocalDatabase,
+  sale: PendingSale,
+  syncStatus: 'PENDING' | 'RUNNING',
+  errorMessage?: string,
+) {
+  const now = Date.now();
+  const payload: SaleOutboxPayload = {
+    offlineId: sale.id,
+    idempotencyKey: `sale:${sale.id}`,
+    entityType: 'SALE',
+    operation: 'CREATE',
+    input: sale.input,
+    ...(errorMessage ? { errorMessage } : {}),
+  };
+  await database.collection<LocalRecord<SaleOutboxPayload>>('sync_outbox').put({
+    id: saleOutboxId(database, sale.id),
+    scope: createScopeKey(database.scope),
+    tenantId: database.scope.tenantId,
+    storeId: sale.input.branchId ? String(sale.input.branchId) : null,
+    remoteId: null,
+    payload,
+    serverVersion: 0,
+    syncStatus,
+    updatedAt: now,
+  });
+}
 function getTargetBootstrapCollections(): string[] {
   const session = getActiveAuthSession();
   const mode = resolveBillingMode(session?.organization?.settings?.businessType).mode;
@@ -260,6 +298,8 @@ export const billingApi = {
       cache.queue.push(sale);
       try {
         await write(c, cache); // Never clear the cart until this durable write succeeds.
+        const database = getActiveDatabase();
+        if (database) await setSaleOutboxStatus(database, sale, 'PENDING');
       } catch (error) {
         if (payment.scrap) {
           const jobs = await scrapPurchaseRepository.read(c.key);
@@ -285,6 +325,7 @@ export const billingApi = {
     syncQueue.run(async () => {
       const c = await context();
       const cache = await read(c);
+      const database = getActiveDatabase();
       const scrapJobs = await scrapPurchaseRepository.read(c.key);
       await syncScrapPurchaseJobs(
         scrapJobs,
@@ -292,17 +333,30 @@ export const billingApi = {
         () => scrapPurchaseRepository.replace(c.key, scrapJobs),
       );
       const waybillJobs = await waybillRepository.read(c.key);
-      await syncPendingSales(
-        cache.queue,
-        (query, variables) => request(c, query, variables, signal),
-        () => write(c, cache),
-        async (sale, bill) => {
-          const job = waybillJobFromSale(sale, bill);
-          if (!job || waybillJobs.some((item) => item.id === job.id)) return;
-          waybillJobs.push(job);
-          await waybillRepository.replace(c.key, waybillJobs);
-        },
-      );
+      if (database)
+        await Promise.all(cache.queue.map((sale) => setSaleOutboxStatus(database, sale, 'RUNNING')));
+      try {
+        await syncPendingSales(
+          cache.queue,
+          (query, variables) => request(c, query, variables, signal),
+          () => write(c, cache),
+          async (sale, bill) => {
+            if (database) await database.collection('sync_outbox').remove(saleOutboxId(database, sale.id));
+            const job = waybillJobFromSale(sale, bill);
+            if (!job || waybillJobs.some((item) => item.id === job.id)) return;
+            waybillJobs.push(job);
+            await waybillRepository.replace(c.key, waybillJobs);
+          },
+        );
+      } catch (error) {
+        if (database) {
+          const message = error instanceof Error ? error.message : 'Unable to sync bill.';
+          await Promise.all(
+            cache.queue.map((sale) => setSaleOutboxStatus(database, sale, 'PENDING', message)),
+          );
+        }
+        throw error;
+      }
       await syncWaybillJobs(
         waybillJobs,
         (query, variables) => request(c, query, variables, signal),

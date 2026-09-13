@@ -83,7 +83,9 @@ function SettingsContent() {
   const { themeColors: c } = useAppTheme();
   const bottomClearance = useBottomNavigationClearance();
   const { setCenterItem } = useBottomNavigation();
-  const initialSection = tabs.some((tab) => tab.id === params.section) ? (params.section as SectionId) : 'general';
+  const initialSection = tabs.some((tab) => tab.id === params.section)
+    ? (params.section as SectionId)
+    : 'general';
   const [section, setSection] = useState<SectionId>(initialSection);
   const [tabsOpen, setTabsOpen] = useState(false);
   const [tabsTop, setTabsTop] = useState(75);
@@ -135,7 +137,12 @@ function SettingsContent() {
             ) : null}
           </View>
         </ScrollView>
-        <SectionMenu value={section} groups={tabSections.map((group) => ({ label: group.label, items: group.tabs }))} onChange={setSection} accessibilityLabel="settings" />
+        <SectionMenu
+          value={section}
+          groups={tabSections.map((group) => ({ label: group.label, items: group.tabs }))}
+          onChange={setSection}
+          accessibilityLabel="settings"
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

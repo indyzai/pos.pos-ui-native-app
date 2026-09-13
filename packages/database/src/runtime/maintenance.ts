@@ -2,7 +2,7 @@ import type { LocalDatabase } from "../types";
 import { getSQLiteClient, hasNativeDatabase } from "./client";
 import { initializeDatabase } from "./migrations";
 
-const legacyTables = ["billing_metadata", "sync_jobs"] as const;
+const legacyTables = ["billing_metadata"] as const;
 
 /** Clears offline business data without removing authentication or device registration. */
 export async function clearLocalUiData(

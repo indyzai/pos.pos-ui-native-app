@@ -22,6 +22,7 @@ import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { CheckoutDialog } from './CheckoutDialog';
 import { ReceiptDialog, type ReceiptData } from './ReceiptDialog';
 import { billingApi } from '../billingApi';
+import { triggerBillingOutboxWorker } from '../billingOutboxWorker';
 import { useBillingData } from '../hooks/useBillingData';
 import { useBillingCart } from '../hooks/useBillingCart';
 import type {
@@ -405,6 +406,7 @@ export function BaseBillingLayout({
         receiptNumber: sale.receiptNumber,
         saleId: sale.id,
       });
+      void triggerBillingOutboxWorker().catch(() => undefined);
       cart.clearCart();
       setCustomer(undefined);
       setScrapExchange(undefined);

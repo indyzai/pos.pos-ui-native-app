@@ -36,7 +36,7 @@ export function useInventory() {
         );
     }, [local.database, query.data]);
     const jobs = useQuery({
-        queryKey: ['inventory-sync-jobs', auth.session?.user.id, auth.session?.tenant.id],
+        queryKey: ['inventory-outbox-jobs', auth.session?.user.id, auth.session?.tenant.id],
         queryFn: inventoryApi.listJobs,
         enabled: ready,
         networkMode: 'always',
@@ -50,7 +50,7 @@ export function useInventory() {
         retry: false,
         onSettled: () => {
             void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
-            void queryClient.invalidateQueries({ queryKey: ['inventory-sync-jobs'] });
+            void queryClient.invalidateQueries({ queryKey: ['inventory-outbox-jobs'] });
         },
     });
     const reconcile = useMutation({
@@ -58,7 +58,7 @@ export function useInventory() {
         retry: false,
         onSettled: () => {
             void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
-            void queryClient.invalidateQueries({ queryKey: ['inventory-sync-jobs'] });
+            void queryClient.invalidateQueries({ queryKey: ['inventory-outbox-jobs'] });
         },
     });
     const create = useMutation({
@@ -66,7 +66,7 @@ export function useInventory() {
         retry: false,
         onSettled: () => {
             void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
-            void queryClient.invalidateQueries({ queryKey: ['inventory-sync-jobs'] });
+            void queryClient.invalidateQueries({ queryKey: ['inventory-outbox-jobs'] });
         },
     });
     const error = refresh.error ?? reconcile.error ?? create.error ?? query.error;

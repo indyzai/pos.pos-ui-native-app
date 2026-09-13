@@ -5,7 +5,7 @@ import {
     type DatabaseAppProfile,
 } from "@indyzai/pos-database";
 
-export const localSchemaVersion = 1;
+export const localSchemaVersion = 2;
 let initialized = false;
 
 /** Creates the new-app schema once. Future schema changes must use forward-only migrations. */
@@ -26,6 +26,18 @@ export function initializeDatabase(
     if (version === 0) {
         sqlite.withTransactionSync(() => {
             sqlite.execSync(schemaSqlForProfile(initialSchemaSql, profile));
+            sqlite.execSync(`PRAGMA user_version = ${localSchemaVersion}`);
+            sqlite.runSync(
+                `INSERT OR REPLACE INTO schema_metadata (key, value, updated_at) VALUES (?, ?, ?)`,
+                "schemaVersion",
+                String(localSchemaVersion),
+                Date.now(),
+            );
+        });
+    }
+    if (version > 0 && version < 2) {
+        sqlite.withTransactionSync(() => {
+            sqlite.execSync("DROP TABLE IF EXISTS sync_jobs");
             sqlite.execSync(`PRAGMA user_version = ${localSchemaVersion}`);
             sqlite.runSync(
                 `INSERT OR REPLACE INTO schema_metadata (key, value, updated_at) VALUES (?, ?, ?)`,

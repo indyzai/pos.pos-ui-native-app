@@ -31,7 +31,7 @@
     "./schema": "./src/runtime/schema/index.ts",
     "./sqlite": "./src/adapters/sqlite.ts",
     "./web-client": "./src/runtime/webClient.ts",
-    "./sync-jobs": "./src/syncJobs.ts"
+    "./outbox-jobs": "./src/outboxJobs.ts"
   },
   "dependencies": {
     "dexie": "^4.4.6",

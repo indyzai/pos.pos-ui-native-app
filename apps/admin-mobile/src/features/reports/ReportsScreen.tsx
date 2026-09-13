@@ -97,10 +97,12 @@ export function ReportsScreen() {
         <View style={[s.screen, { backgroundColor: c.background }]}>
             <SectionMenu
                 value={String(period)}
-                groups={[{
-                    label: 'Report range',
-                    items: periods.map((value) => ({ id: String(value), label: `Last ${value} days` })),
-                }]}
+                groups={[
+                    {
+                        label: 'Report range',
+                        items: periods.map((value) => ({ id: String(value), label: `Last ${value} days` })),
+                    },
+                ]}
                 onChange={(value) => setPeriod(Number(value) as ReportPeriod)}
                 accessibilityLabel="reports"
             />

@@ -64,8 +64,13 @@ class SqliteCollection<
             where.push("store_id = ?");
             args.push(query.storeId);
         }
-        if (query.syncStatus && columns.has("sync_status")) {
-            where.push("sync_status = ?");
+        const syncStatusColumn = columns.has("sync_status")
+            ? "sync_status"
+            : columns.has("status")
+              ? "status"
+              : undefined;
+        if (query.syncStatus && syncStatusColumn) {
+            where.push(`${syncStatusColumn} = ?`);
             args.push(query.syncStatus);
         }
         if (!query.includeDeleted && columns.has("deleted_at"))

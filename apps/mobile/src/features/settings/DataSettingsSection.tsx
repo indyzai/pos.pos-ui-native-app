@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Trash2 } from 'lucide-react-native';
+import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Send, Trash2 } from 'lucide-react-native';
 import { AppPressable } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui';
@@ -10,10 +10,10 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { clearLocalUiData } from '@indyzai/pos-database/maintenance';
 import { useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
 import type { LocalRecord, SyncStatus } from '@indyzai/pos-database';
-import { listSyncJobs, type SyncJob } from '@indyzai/pos-database/sync-jobs';
 import { waybillRepository } from '../logistics/waybillRepository';
 import type { WaybillJob } from '../logistics/types';
 import { createLogger } from '@indyzai/pos-core';
+import { triggerBillingOutboxWorker } from '../billing/billingOutboxWorker';
 
 const logger = createLogger('Settings:data');
 
@@ -46,9 +46,9 @@ export function DataSettingsSection() {
     limit: 20,
   });
   const conflicts = useLocalCollection('sync_conflicts', { includeDeleted: true, limit: 20 });
-  const [legacyJobs, setLegacyJobs] = useState<SyncJob[]>([]);
   const [waybillJobs, setWaybillJobs] = useState<WaybillJob[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,21 +62,16 @@ export function DataSettingsSection() {
       SYNCED: 0,
     };
     for (const record of outbox.records) result[record.syncStatus]++;
-    for (const job of legacyJobs) {
-      const status = normalizeStatus(job.status);
-      result[status]++;
-    }
     for (const job of waybillJobs) {
       result[normalizeStatus(job.status)]++;
     }
     return result;
-  }, [legacyJobs, outbox.records, waybillJobs]);
+  }, [outbox.records, waybillJobs]);
 
-  const loadCompatibilityJobs = async () => {
+  const loadWaybillJobs = async () => {
     if (!session || local.status !== 'ready') return;
     const scope = appStorageKeys.pos.billing(session.user.id, session.tenant.id);
-    const [jobs, logistics] = await Promise.all([listSyncJobs(scope), waybillRepository.read(scope)]);
-    setLegacyJobs(jobs);
+    const logistics = await waybillRepository.read(scope);
     setWaybillJobs(logistics);
   };
 
@@ -89,7 +84,7 @@ export function DataSettingsSection() {
         states.reload(),
         errors.reload(),
         conflicts.reload(),
-        loadCompatibilityJobs(),
+        loadWaybillJobs(),
       ]);
       setError('');
     } catch (reason) {
@@ -99,6 +94,30 @@ export function DataSettingsSection() {
       setError(errorMessage);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const syncNow = async () => {
+    if (syncing || local.status !== 'ready') return;
+    setSyncing(true);
+    try {
+      if (!local.database) throw new Error('Local database is not ready.');
+      {
+        const result = await triggerBillingOutboxWorker();
+        if (result === 'offline') throw new Error('You are offline. The outbox remains queued.');
+        if (result === 'empty') {
+          await refresh();
+          showSnackbar('Sync', 'There are no pending bills to send.');
+          return;
+        }
+      }
+      await refresh();
+      showSnackbar('Sync complete', 'Pending outbox activity was processed.');
+    } catch (reason) {
+      showSnackbar('Sync deferred', reason instanceof Error ? reason.message : 'Unable to reach the server.');
+      await refresh();
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -122,7 +141,6 @@ export function DataSettingsSection() {
             void clearLocalUiData(local.database)
               .then(() => {
                 logger.info('Local POS database cleared successfully');
-                setLegacyJobs([]);
                 setWaybillJobs([]);
                 queryClient.removeQueries();
                 showSnackbar('Database cleared', 'Local POS and synchronization data were removed.');
@@ -140,22 +158,13 @@ export function DataSettingsSection() {
   };
 
   const recent = [...outbox.records].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 20);
-  const compatibility = [
-    ...legacyJobs.map((job) => ({
-      id: job.id,
-      label: job.operation === 'CREATE_PRODUCT' ? 'Add item' : 'Update stock',
-      status: job.status,
-      timestamp: job.updatedAt,
-      error: job.errorMessage,
-    })),
-    ...waybillJobs.map((job) => ({
+  const waybillActivity = waybillJobs.map((job) => ({
       id: job.id,
       label: 'Create waybill',
       status: job.status,
       timestamp: job.createdAt,
       error: job.error,
-    })),
-  ].slice(0, 20);
+    })).slice(0, 20);
   const problems = [
     ...errors.records.map((record) => ({
       id: record.id,
@@ -199,6 +208,16 @@ export function DataSettingsSection() {
 
       <View style={s.titleRow}>
         <SectionHeader icon={<RefreshCw size={18} color={c.primary} />} title="Synchronization" compact />
+        <View style={s.syncActions}>
+        <AppPressable
+          accessibilityLabel="Manually synchronize pending outbox activity"
+          disabled={syncing || local.status !== 'ready'}
+          onPress={() => void syncNow()}
+          style={[s.refreshButton, { backgroundColor: c.primary, opacity: syncing ? 0.55 : 1 }]}
+        >
+          <Send size={14} color="#fff" />
+          <Text style={[s.refreshText, { color: '#fff' }]}>{syncing ? 'Syncing…' : 'Sync now'}</Text>
+        </AppPressable>
         <AppPressable
           accessibilityLabel="Refresh local synchronization status"
           disabled={refreshing || local.status !== 'ready'}
@@ -208,6 +227,7 @@ export function DataSettingsSection() {
           <RefreshCw size={14} color={c.primary} />
           <Text style={[s.refreshText, { color: c.primary }]}>{refreshing ? 'Reading…' : 'Refresh'}</Text>
         </AppPressable>
+        </View>
       </View>
       <View style={s.summaryGrid}>
         <Summary label="Pending" value={counts.PENDING} color={c.primary} />
@@ -235,6 +255,7 @@ export function DataSettingsSection() {
               status={record.syncStatus}
               timestamp={record.updatedAt}
               error={record.payload.errorMessage}
+              json={{ id: record.id, syncStatus: record.syncStatus, updatedAt: record.updatedAt, payload: record.payload }}
               last={index === recent.length - 1}
             />
           ))
@@ -268,15 +289,12 @@ export function DataSettingsSection() {
         </>
       )}
 
-      {!!compatibility.length && (
+      {!!waybillActivity.length && (
         <>
-          <SectionHeader icon={<Clock3 size={18} color={c.primary} />} title="Compatibility queue" />
-          <Text style={[s.hint, { color: c.textSecondary }]}>
-            {'Jobs created by features not yet moved to sync_outbox.'}
-          </Text>
+          <SectionHeader icon={<Clock3 size={18} color={c.primary} />} title="Waybill activity" />
           <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
-            {compatibility.map((job, index) => (
-              <SyncRow key={job.id} {...job} last={index === compatibility.length - 1} />
+            {waybillActivity.map((job, index) => (
+              <SyncRow key={job.id} {...job} last={index === waybillActivity.length - 1} />
             ))}
           </View>
         </>
@@ -310,9 +328,11 @@ function SyncRow(props: {
   status: string;
   timestamp: number | string;
   error?: string;
+  json?: unknown;
   last: boolean;
 }) {
   const { themeColors: c } = useAppTheme();
+  const [jsonOpen, setJsonOpen] = useState(false);
   const color =
     props.status === 'FAILED' || props.status === 'CONFLICT'
       ? c.error
@@ -330,6 +350,14 @@ function SyncRow(props: {
       </Text>
       <Text style={[s.syncTime, { color: c.textSecondary }]}>{formatTime(props.timestamp)}</Text>
       {props.error ? <Text style={[s.error, { color: c.error }]}>{props.error}</Text> : null}
+      {props.json ? (
+        <>
+          <AppPressable onPress={() => setJsonOpen((open) => !open)} style={s.jsonButton}>
+            <Text style={[s.jsonButtonText, { color: c.primary }]}>{jsonOpen ? 'Hide JSON' : 'View JSON'}</Text>
+          </AppPressable>
+          {jsonOpen ? <Text selectable style={[s.json, { color: c.text, backgroundColor: c.surfaceMuted }]}>{JSON.stringify(props.json, null, 2)}</Text> : null}
+        </>
+      ) : null}
     </View>
   );
 }
@@ -447,12 +475,16 @@ const s = StyleSheet.create({
     gap: 6,
   },
   refreshText: { fontSize: 11, fontWeight: '900' },
+  syncActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   syncRow: { paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
   syncTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   syncLabel: { flex: 1, fontSize: 12, fontWeight: '900' },
   syncStatus: { fontSize: 10, fontWeight: '900' },
   syncId: { marginTop: 3, fontSize: 10 },
   syncTime: { marginTop: 2, fontSize: 10 },
+  jsonButton: { alignSelf: 'flex-start', marginTop: 8, paddingVertical: 3 },
+  jsonButtonText: { fontSize: 11, fontWeight: '900' },
+  json: { marginTop: 6, borderRadius: 10, padding: 10, fontSize: 10, lineHeight: 15 },
   empty: { paddingVertical: 22, textAlign: 'center', fontSize: 12 },
   error: { marginTop: 10, fontSize: 11, lineHeight: 16 },
   hint: { marginBottom: 10, fontSize: 11, lineHeight: 16 },

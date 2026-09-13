@@ -4,7 +4,6 @@ import type { CollectionName, DatabaseAppProfile } from "./types";
 const systemTables = new Set([
     "schema_metadata",
     "billing_metadata",
-    "sync_jobs",
 ]);
 
 /** Selects CREATE TABLE/INDEX statements belonging to one application profile. */
