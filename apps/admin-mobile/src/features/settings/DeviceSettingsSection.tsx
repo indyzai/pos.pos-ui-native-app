@@ -32,7 +32,11 @@ export function DeviceSettingsSection({
     const [pinOpen, setPinOpen] = useState(false);
     const [authorizingPin, setAuthorizingPin] = useState(false);
     const [apiEnvironment, setApiEnvironmentState] = useState<ApiEnvironment>('local');
-    const [apiUrls, setApiUrls] = useState({ posApiUrl: env.posApiUrl, posBaseUrl: env.posBaseUrl, authApiUrl: env.authApiUrl });
+    const [apiUrls, setApiUrls] = useState({
+        posApiUrl: env.posApiUrl,
+        posBaseUrl: env.posBaseUrl,
+        authApiUrl: env.authApiUrl,
+    });
     const [switchingEnvironment, setSwitchingEnvironment] = useState(false);
 
     useEffect(() => {

@@ -143,22 +143,26 @@ export function OrdersScreen() {
                 </Text>
                 <View style={s.cardBottom}>
                   <Status value={order.status} />
-                  {managerAccess ? <AppPressable
-                    disabled={
-                      !order.items.some((item) => refundableQuantity(order, item.productId, data.refunds) > 0)
-                    }
-                    onPress={() => setRefundOrder(order)}
-                    style={[
-                      s.refund,
-                      { backgroundColor: c.errorSoft },
-                      !order.items.some(
-                        (item) => refundableQuantity(order, item.productId, data.refunds) > 0,
-                      ) && s.disabled,
-                    ]}
-                  >
-                    <RotateCcw size={14} color={c.error} />
-                    <Text style={[s.refundText, { color: c.error }]}>Refund</Text>
-                  </AppPressable> : null}
+                  {managerAccess ? (
+                    <AppPressable
+                      disabled={
+                        !order.items.some(
+                          (item) => refundableQuantity(order, item.productId, data.refunds) > 0,
+                        )
+                      }
+                      onPress={() => setRefundOrder(order)}
+                      style={[
+                        s.refund,
+                        { backgroundColor: c.errorSoft },
+                        !order.items.some(
+                          (item) => refundableQuantity(order, item.productId, data.refunds) > 0,
+                        ) && s.disabled,
+                      ]}
+                    >
+                      <RotateCcw size={14} color={c.error} />
+                      <Text style={[s.refundText, { color: c.error }]}>Refund</Text>
+                    </AppPressable>
+                  ) : null}
                 </View>
               </View>
             ))
@@ -199,25 +203,27 @@ export function OrdersScreen() {
           </View>
         )}
       </ScrollView>
-      {managerAccess ? <RefundDialog
-        order={refundOrder}
-        refunds={data.refunds}
-        currencyCode={currencyCode}
-        busy={data.refunding}
-        onClose={() => setRefundOrder(undefined)}
-        onConfirm={(selections, reason, method) => {
-          void data
-            .createRefund({ order: refundOrder!, selections, reason, method })
-            .then(() => {
-              setRefundOrder(undefined);
-              setTab('refunds');
-              showSnackbar('Refund saved', 'The credit note is stored locally and will sync on refresh.');
-            })
-            .catch((error) =>
-              showSnackbar('Could not save refund', error instanceof Error ? error.message : 'Try again.'),
-            );
-        }}
-      /> : null}
+      {managerAccess ? (
+        <RefundDialog
+          order={refundOrder}
+          refunds={data.refunds}
+          currencyCode={currencyCode}
+          busy={data.refunding}
+          onClose={() => setRefundOrder(undefined)}
+          onConfirm={(selections, reason, method) => {
+            void data
+              .createRefund({ order: refundOrder!, selections, reason, method })
+              .then(() => {
+                setRefundOrder(undefined);
+                setTab('refunds');
+                showSnackbar('Refund saved', 'The credit note is stored locally and will sync on refresh.');
+              })
+              .catch((error) =>
+                showSnackbar('Could not save refund', error instanceof Error ? error.message : 'Try again.'),
+              );
+          }}
+        />
+      ) : null}
     </View>
   );
 }

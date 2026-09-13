@@ -84,7 +84,7 @@ class SqliteCollection<
             .map((row) => this.fromRow(row));
     }
 
-    async put(record: T) {
+    private putSync(record: T) {
         this.assertScope(record);
         const values = this.toRow(record);
         const names = Object.keys(values);
@@ -97,9 +97,13 @@ class SqliteCollection<
         );
     }
 
+    async put(record: T) {
+        this.putSync(record);
+    }
+
     async putMany(records: readonly T[]) {
         this.sqlite.withTransactionSync(() =>
-            records.forEach((record) => void this.put(record)),
+            records.forEach((record) => this.putSync(record)),
         );
     }
 
@@ -118,7 +122,7 @@ class SqliteCollection<
                 `DELETE FROM ${quote(this.name)} WHERE scope = ?`,
                 this.scopeKey,
             );
-            records.forEach((record) => void this.put(record));
+            records.forEach((record) => this.putSync(record));
         });
     }
 
@@ -263,9 +267,12 @@ export class SqliteLocalDatabase implements LocalDatabase {
     }
 
     async transaction<T>(
-        _collections: readonly CollectionName[],
+        collections: readonly CollectionName[],
         work: () => Promise<T> | T,
     ) {
+        collections.forEach((name) =>
+            assertCollectionAllowed(this.scope, name),
+        );
         // Expo's exclusive async transaction keeps all awaited repository calls on this connection.
         let result!: T;
         await this.sqlite.withExclusiveTransactionAsync(async () => {

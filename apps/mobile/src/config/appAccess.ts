@@ -4,7 +4,8 @@ export const allowedAppRoles: readonly PosRole[] = ['cashier', 'manager', 'admin
 const tenantUserRoles = new Set(['cashier', 'manager', 'admin', 'owner', 'superadmin', 'member', 'guest']);
 const accountUserRoles = new Set(['cashier', 'manager', 'admin', 'owner', 'superadmin', 'user', 'member']);
 
-const normalizeRole = (role: unknown) => String(role ?? '')
+const normalizeRole = (role: unknown) =>
+  String(role ?? '')
     .trim()
     .toLowerCase()
     .replace(/^role[_:-]?/, '') as PosRole;

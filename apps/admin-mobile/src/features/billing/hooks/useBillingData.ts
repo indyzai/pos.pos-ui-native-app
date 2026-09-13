@@ -92,19 +92,34 @@ export function useBillingData() {
         const key = query.data?.key;
         if (!ready || !key || !local.database || initialRefreshKey.current === key) return;
         initialRefreshKey.current = key;
-        void local.database.collection('sync_state').list({ includeDeleted: true }).then((states) => {
-            const loaded = new Set(states.map((state) =>
-                String((state.payload as { collection?: string }).collection ?? state.remoteId),
-            ));
-            const hasBootstrap = ['products', 'customers', 'payment_methods', 'service_users', 'tax_rates', 'shifts']
-                .every((collection) => loaded.has(collection));
-            if (!hasBootstrap) {
-                running.current = true;
-                return billingApi.refresh(undefined, local.database, true).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['billing-cache'] }),
-                ).finally(() => { running.current = false; });
-            }
-        }).catch(() => undefined);
+        void local.database
+            .collection('sync_state')
+            .list({ includeDeleted: true })
+            .then((states) => {
+                const loaded = new Set(
+                    states.map((state) =>
+                        String((state.payload as { collection?: string }).collection ?? state.remoteId),
+                    ),
+                );
+                const hasBootstrap = [
+                    'products',
+                    'customers',
+                    'payment_methods',
+                    'service_users',
+                    'tax_rates',
+                    'shifts',
+                ].every((collection) => loaded.has(collection));
+                if (!hasBootstrap) {
+                    running.current = true;
+                    return billingApi
+                        .refresh(undefined, local.database, true)
+                        .then(() => queryClient.invalidateQueries({ queryKey: ['billing-cache'] }))
+                        .finally(() => {
+                            running.current = false;
+                        });
+                }
+            })
+            .catch(() => undefined);
     }, [local.database, query.data?.key, queryClient, ready]);
     const error = syncMutation.error ?? query.error;
     const data = useMemo(() => {

@@ -34,13 +34,24 @@ export async function requestPosBootstrap<T>(
         ...(options.role ? { role: options.role } : {}),
         ...(options.collections?.length ? { collections: options.collections.join(',') } : {}),
     }).toString();
-    logger.info('Loading bootstrap data', { route: options.route ?? '/', collections: options.collections, url: url.origin + url.pathname });
+    logger.info('Loading bootstrap data', {
+        route: options.route ?? '/',
+        collections: options.collections,
+        url: url.origin + url.pathname,
+    });
     try {
-        const result = await requestJson<T>(url.toString(), { token, tenantId, signal: options.signal, timeoutMs: 30_000 });
+        const result = await requestJson<T>(url.toString(), {
+            token,
+            tenantId,
+            signal: options.signal,
+            timeoutMs: 30_000,
+        });
         logger.info('Bootstrap data loaded', { route: options.route ?? '/' });
         return result;
     } catch (error) {
-        logger.error('Bootstrap request failed', { message: error instanceof Error ? error.message : String(error) });
+        logger.error('Bootstrap request failed', {
+            message: error instanceof Error ? error.message : String(error),
+        });
         throw error;
     }
 }

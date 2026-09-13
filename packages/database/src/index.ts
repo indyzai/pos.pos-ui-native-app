@@ -17,7 +17,41 @@ export {
     usePendingSync,
 } from "./hooks";
 export { useLocalDatabase, useRequiredLocalDatabase } from "./react";
-export { applyBootstrapCollections, localRecordsFromPayloads, payloadsFromRecords, replaceLocalPayloads } from "./projections";
+export {
+    applyBootstrapCollections,
+    bootstrapCollectionMap,
+    localRecordsFromPayloads,
+    payloadsFromRecords,
+    replaceLocalPayloads,
+} from "./projections";
+export {
+    applyPosBootstrap,
+    mapBootstrapCustomer,
+    mapBootstrapPaymentMethod,
+    mapBootstrapProduct,
+    mapBootstrapServiceUser,
+    mapBootstrapTaxRate,
+    normalizeBootstrapCollections,
+    normalizeProductBatches,
+} from "./bootstrap";
+export type {
+    BootstrapBankAccount,
+    BootstrapCustomer,
+    BootstrapPaymentMethod,
+    BootstrapProduct,
+    BootstrapProductBatch,
+    BootstrapServiceUser,
+    BootstrapTaxRate,
+    NormalizedBootstrapResult,
+} from "./bootstrap";
+export {
+    getActiveDatabase,
+    getActiveDatabaseSafe,
+    getActiveWebDatabase,
+    getActiveWebDatabaseSafe,
+    setActiveDatabase,
+    setActiveWebDatabase,
+} from "./runtime/activeDatabase";
 export {
     collectionNames,
     createScopeKey,

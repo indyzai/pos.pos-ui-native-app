@@ -19,17 +19,20 @@ import type {
   ProductBatch,
   ServiceUser,
 } from '../types/billing';
+import { resolveBillingMode, type BillingMode } from '../domain/billingMode';
 
-export function useBillingData() {
+export function useBillingData(businessTypeOverride?: BillingMode) {
   const queryClient = useQueryClient();
   const running = useRef(false);
   const auth = useAuthSession();
+  const currentMode =
+    businessTypeOverride ?? resolveBillingMode(auth.session?.organization?.settings.businessType).mode;
   const local = useLocalDatabase();
   const ready = !auth.initializing && !!auth.session && local.status === 'ready';
   const userId = auth.session?.user.id;
   const tenantId = auth.session?.tenant.id;
   const query = useQuery<{ key: string; cache: BillingCache }>({
-    queryKey: ['billing-cache', userId, tenantId],
+    queryKey: ['billing-cache', userId, tenantId, currentMode],
     enabled: ready,
     networkMode: 'always',
     queryFn: billingApi.load,
@@ -92,20 +95,31 @@ export function useBillingData() {
     const key = query.data?.key;
     if (!ready || !key || !local.database || initialRefreshKey.current === key) return;
     initialRefreshKey.current = key;
-    void local.database.collection('sync_state').list({ includeDeleted: true }).then((states) => {
-      const loaded = new Set(states.map((state) =>
-        String((state.payload as { collection?: string }).collection ?? state.remoteId),
-      ));
-      const hasBootstrap = ['products', 'customers', 'payment_methods', 'service_users', 'tax_rates', 'shifts']
-        .every((collection) => loaded.has(collection));
-      if (!hasBootstrap) {
-        running.current = true;
-        return billingApi.refresh(undefined, local.database, true).then(() =>
-          queryClient.invalidateQueries({ queryKey: ['billing-cache'] }),
-        ).finally(() => { running.current = false; });
-      }
-    }).catch(() => undefined);
-  }, [local.database, query.data?.key, queryClient, ready]);
+    void local.database
+      .collection('sync_state')
+      .list({ includeDeleted: true })
+      .then((states) => {
+        const loaded = new Set(
+          states.map((state) =>
+            String((state.payload as { collection?: string }).collection ?? state.remoteId),
+          ),
+        );
+        const required = ['products', 'customers', 'payment_methods', 'tax_rates'];
+        if (currentMode === 'pharmacy') required.push('product_batches');
+        if (currentMode === 'service') required.push('service_users');
+        const hasBootstrap = required.every((collection) => loaded.has(collection));
+        if (!hasBootstrap) {
+          running.current = true;
+          return billingApi
+            .refresh(undefined, local.database, true)
+            .then(() => queryClient.invalidateQueries({ queryKey: ['billing-cache'] }))
+            .finally(() => {
+              running.current = false;
+            });
+        }
+      })
+      .catch(() => undefined);
+  }, [currentMode, local.database, query.data?.key, queryClient, ready]);
   const error = syncMutation.error ?? query.error;
   const data = useMemo(() => {
     if (!ready || !query.data) return undefined;
@@ -116,12 +130,13 @@ export function useBillingData() {
         products: payloadsFromRecords(localProducts.records),
         customers: payloadsFromRecords(localCustomers.records),
         paymentMethods: payloadsFromRecords(localPaymentMethods.records),
-        serviceUsers: payloadsFromRecords(localServiceUsers.records),
-        productBatches: payloadsFromRecords(localProductBatches.records),
+        serviceUsers: currentMode === 'service' ? payloadsFromRecords(localServiceUsers.records) : [],
+        productBatches: currentMode === 'pharmacy' ? payloadsFromRecords(localProductBatches.records) : [],
         taxRates: payloadsFromRecords(localTaxRates.records),
       },
     };
   }, [
+    currentMode,
     localCustomers.records,
     localPaymentMethods.records,
     localProductBatches.records,

@@ -9,8 +9,16 @@
     ".": "./src/index.ts",
     "./role-manifest": "./src/roleManifest.ts",
     "./indexeddb": "./src/adapters/indexeddb/index.ts",
-    "./admin": "./src/admin.ts",
-    "./store": "./src/store.ts",
+    "./admin": {
+      "browser": "./src/admin.web.ts",
+      "react-native": "./src/admin.ts",
+      "default": "./src/admin.ts"
+    },
+    "./store": {
+      "browser": "./src/store.web.ts",
+      "react-native": "./src/store.ts",
+      "default": "./src/store.ts"
+    },
     "./client": {
       "browser": "./src/runtime/client.web.ts",
       "react-native": "./src/runtime/client.ts",

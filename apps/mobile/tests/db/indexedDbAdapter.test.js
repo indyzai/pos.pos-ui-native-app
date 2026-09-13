@@ -90,12 +90,20 @@ describe('IndexedDB local database adapter', () => {
     const database = new IndexedDbLocalDatabase(scope);
     await database.initialize();
     const loadedAt = '2026-09-13T10:30:00.000Z';
-    await applyBootstrapCollections(database, {
-      products: [{ id: 1, name: 'Old' }],
-    }, loadedAt);
-    await applyBootstrapCollections(database, {
-      products: [{ id: 2, name: 'Current' }],
-    }, loadedAt);
+    await applyBootstrapCollections(
+      database,
+      {
+        products: [{ id: 1, name: 'Old' }],
+      },
+      loadedAt,
+    );
+    await applyBootstrapCollections(
+      database,
+      {
+        products: [{ id: 2, name: 'Current' }],
+      },
+      loadedAt,
+    );
     const products = await database.collection('products').list();
     expect(products).toHaveLength(1);
     expect(products[0]).toMatchObject({ remoteId: '2', syncStatus: 'API' });
@@ -104,6 +112,90 @@ describe('IndexedDB local database adapter', () => {
       collection: 'products',
       lastSyncedAt: Date.parse(loadedAt),
     });
+    await database.close();
+  });
+
+  test('applyPosBootstrap normalizes raw collections, writes to local DB, and tracks product_batches sync_state', async () => {
+    const { IndexedDbLocalDatabase } = await import('@indyzai/pos-database/indexeddb');
+    const { applyPosBootstrap } = await import('@indyzai/pos-database');
+    const database = new IndexedDbLocalDatabase(scope);
+    await database.initialize();
+    const loadedAt = '2026-09-13T12:00:00.000Z';
+    const rawCollections = {
+      products: [
+        {
+          id: 'prod-1',
+          name: 'Paracetamol 500mg',
+          price: 25,
+          stock: 100,
+          category: 'Pharmacy',
+          categoryType: 'INVENTORY',
+          details: {
+            batchNumber: 'BATCH-2026A',
+            expiryDate: '2027-01-01',
+          },
+        },
+      ],
+      customers: [
+        {
+          id: 'cust-1',
+          name: 'Alice',
+          type: 'CUSTOMER',
+          phone: '9876543210',
+        },
+      ],
+      paymentMethods: [
+        {
+          id: 'pm-1',
+          name: 'UPI',
+          code: 'UPI',
+          isActive: true,
+          isQuickAccess: true,
+        },
+      ],
+      taxRates: [
+        {
+          id: 'tax-1',
+          name: 'GST 5%',
+          rate: 5,
+          isActive: true,
+        },
+      ],
+      serviceUsers: [
+        {
+          id: 'tech-1',
+          name: 'Bob',
+          phone: '1234567890',
+        },
+      ],
+    };
+
+    const normalized = await applyPosBootstrap(database, rawCollections, loadedAt);
+    expect(normalized.products).toHaveLength(1);
+    expect(normalized.customers).toHaveLength(1);
+    expect(normalized.paymentMethods).toHaveLength(1);
+    expect(normalized.taxRates).toHaveLength(1);
+    expect(normalized.serviceUsers).toHaveLength(1);
+    expect(normalized.productBatches).toHaveLength(1);
+
+    const localProducts = await database.collection('products').list();
+    expect(localProducts).toHaveLength(1);
+    expect(localProducts[0].payload.name).toBe('Paracetamol 500mg');
+
+    const localBatches = await database.collection('product_batches').list();
+    expect(localBatches).toHaveLength(1);
+    expect(localBatches[0].payload.batchNumber).toBe('BATCH-2026A');
+
+    const localCustomers = await database.collection('customers').list();
+    expect(localCustomers).toHaveLength(1);
+    expect(localCustomers[0].payload.name).toBe('Alice');
+
+    const states = await database.collection('sync_state').list();
+    const syncedCollections = states.map((s) => s.payload.collection);
+    expect(syncedCollections).toContain('products');
+    expect(syncedCollections).toContain('customers');
+    expect(syncedCollections).toContain('product_batches');
+
     await database.close();
   });
 });

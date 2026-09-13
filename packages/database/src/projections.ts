@@ -1,4 +1,5 @@
 import {
+    collectionNames,
     createScopeKey,
     type CollectionName,
     type LocalDatabase,
@@ -46,13 +47,27 @@ export function localRecordsFromPayloads<T extends { id: string }>(
     });
 }
 
-const bootstrapCollectionMap: Record<string, CollectionName> = {
-    products: "products", categories: "categories", units: "product_uoms",
-    taxRates: "tax_rates", customers: "customers", serviceUsers: "service_users",
-    branches: "stores", counters: "counters", counterSessions: "shifts",
-    paymentMethods: "payment_methods", sales: "sales", refunds: "refunds",
-    purchases: "purchase_orders", waybills: "waybill_jobs", transfers: "transfers",
-    stockTransfers: "transfers", tables: "restaurant_tables", printers: "printers",
+export const bootstrapCollectionMap: Record<string, CollectionName> = {
+    products: "products",
+    categories: "categories",
+    units: "product_uoms",
+    taxRates: "tax_rates",
+    customers: "customers",
+    serviceUsers: "service_users",
+    branches: "stores",
+    counters: "counters",
+    counterSessions: "shifts",
+    paymentMethods: "payment_methods",
+    sales: "sales",
+    refunds: "refunds",
+    purchases: "purchase_orders",
+    waybills: "waybill_jobs",
+    transfers: "transfers",
+    stockTransfers: "transfers",
+    tables: "restaurant_tables",
+    printers: "printers",
+    product_batches: "product_batches",
+    productBatches: "product_batches",
 };
 
 /** Applies a server bootstrap snapshot without discarding unsynced local work. */
@@ -61,17 +76,25 @@ export async function applyBootstrapCollections(
     collections: Record<string, readonly Record<string, unknown>[]>,
     loadedAt: number | string = Date.now(),
 ): Promise<void> {
-    const timestamp = typeof loadedAt === "string"
-        ? Date.parse(loadedAt) || Date.now()
-        : loadedAt;
+    const timestamp =
+        typeof loadedAt === "string"
+            ? Date.parse(loadedAt) || Date.now()
+            : loadedAt;
     const applied = new Set<CollectionName>();
     for (const [serverName, payloads] of Object.entries(collections)) {
-        const collection = bootstrapCollectionMap[serverName];
+        const collection =
+            bootstrapCollectionMap[serverName] ??
+            (collectionNames.includes(serverName as CollectionName)
+                ? (serverName as CollectionName)
+                : undefined);
         if (!collection || applied.has(collection)) continue;
         applied.add(collection);
         let repository;
-        try { repository = database.collection<LocalRecord>(collection); }
-        catch { continue; }
+        try {
+            repository = database.collection<LocalRecord>(collection);
+        } catch {
+            continue;
+        }
         const serverRecords = localRecordsFromPayloads(
             database,
             collection,

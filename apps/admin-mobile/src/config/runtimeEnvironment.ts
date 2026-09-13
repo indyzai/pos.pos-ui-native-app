@@ -30,6 +30,11 @@ export async function setApiEnvironment(value: ApiEnvironment): Promise<void> {
 export async function getRuntimeApiUrls() {
     const environment = await getApiEnvironment();
     return environment === 'production'
-        ? { environment, posApiUrl: productionApiUrls.pos, posBaseUrl: productionApiUrls.posBase, authApiUrl: productionApiUrls.auth }
+        ? {
+              environment,
+              posApiUrl: productionApiUrls.pos,
+              posBaseUrl: productionApiUrls.posBase,
+              authApiUrl: productionApiUrls.auth,
+          }
         : { environment, posApiUrl: env.posApiUrl, posBaseUrl: env.posBaseUrl, authApiUrl: env.authApiUrl };
 }

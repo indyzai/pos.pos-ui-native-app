@@ -57,7 +57,26 @@ const modes: Record<BillingMode, Omit<BillingModeConfig, 'mode'>> = {
 export function resolveBillingMode(value: unknown): BillingModeConfig {
   const normalized = String(value || 'retail')
     .trim()
-    .toLowerCase() as BillingMode;
-  const mode = modes[normalized] ? normalized : 'retail';
-  return { mode, ...modes[mode] };
+    .toLowerCase();
+  const resolvedMode: BillingMode =
+    normalized === 'supermarket'
+      ? 'retail'
+      : modes[normalized as BillingMode]
+        ? (normalized as BillingMode)
+        : 'retail';
+  return { mode: resolvedMode, ...modes[resolvedMode] };
+}
+
+export function getBillingBootstrapCollections(mode: BillingMode): string[] {
+  const core = ['products', 'customers', 'paymentMethods', 'taxRates', 'counterSessions'];
+  switch (mode) {
+    case 'pharmacy':
+      return [...core, 'productBatches'];
+    case 'service':
+      return [...core, 'serviceUsers'];
+    case 'restaurant':
+      return [...core, 'tables'];
+    default:
+      return core;
+  }
 }

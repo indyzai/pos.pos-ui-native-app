@@ -22,7 +22,12 @@ export default function AuthCallbackRoute() {
         if (handled.current) return;
         const code = first(params.code);
         const state = first(params.state);
-        if (__DEV__) console.info('[Auth:admin-app] Callback route loaded', { hasCode: Boolean(code), hasState: Boolean(state), platform: Platform.OS });
+        if (__DEV__)
+            console.info('[Auth:admin-app] Callback route loaded', {
+                hasCode: Boolean(code),
+                hasState: Boolean(state),
+                platform: Platform.OS,
+            });
         if (!code) {
             if (params.error) setError(String(params.error));
             return;
@@ -33,7 +38,8 @@ export default function AuthCallbackRoute() {
                 await authApi.completeAuthorizationCode(code, state);
                 const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
                 await refreshSession();
-                if (__DEV__) console.info('[Auth:admin-app] Session refreshed after callback', { needsDeviceSetup });
+                if (__DEV__)
+                    console.info('[Auth:admin-app] Session refreshed after callback', { needsDeviceSetup });
                 if (Platform.OS === 'web') {
                     if (__DEV__) console.info('[Auth:admin-app] Closing authentication popup');
                     window.close();
