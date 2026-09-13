@@ -82,7 +82,14 @@ function RootNavigator() {
       if (!allowed) router.replace('/billing');
     }
   }, [authenticated, initializing, pathname, router, session]);
-  const headerHidden = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff'].includes(pathname);
+  const headerHidden = [
+    '/',
+    '/login',
+    '/signup',
+    '/auth/callback',
+    '/auth/handoff',
+    '/device-setup',
+  ].includes(pathname);
   const showLeftNavigation = !headerHidden && width >= 700 && width > height;
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>

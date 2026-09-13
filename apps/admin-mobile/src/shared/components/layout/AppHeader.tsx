@@ -298,7 +298,7 @@ export function AppHeader({
                             ? `Cancel ${refreshJob.text}, job ${refreshJob.id}`
                             : local.status === 'error'
                               ? local.error || 'Retry local storage'
-                              : `${isOnline ? 'Online' : 'Offline'}; ${pendingQueueCount} changes queued; local storage ${local.status}`
+                              : `${isOnline ? 'Online' : 'Offline'}; local storage ${local.status}; ${pendingQueueCount} mutations pending`
                     }
                     disabled={!refreshJob && local.status !== 'error'}
                     onPress={() => void (refreshJob ? refreshJob.cancel() : local.retry())}
@@ -352,9 +352,7 @@ export function AppHeader({
                             {refreshJob
                                 ? `${refreshJob.text} · ${refreshJob.id.slice(-6).toUpperCase()}`
                                 : local.status === 'ready'
-                                  ? pendingQueueCount > 0
-                                      ? `${isOnline ? 'Online' : 'Offline'} · ${pendingQueueCount} queued`
-                                      : `${isOnline ? 'Online' : 'Offline'} · Storage ready`
+                                  ? `${isOnline ? 'Online' : 'Offline'} · Storage ready`
                                   : local.status === 'error'
                                     ? '↻ Storage'
                                     : '◌ Preparing'}
@@ -604,6 +602,9 @@ const s = StyleSheet.create({
     phoneControl: { width: 32, height: 32, borderRadius: 16 },
     toggleText: { fontSize: 11, fontWeight: '900' },
     queueBadge: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
         minWidth: 18,
         height: 18,
         borderRadius: 9,

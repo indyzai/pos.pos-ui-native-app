@@ -117,14 +117,10 @@ export function useOfflineQueueCount(): number {
     });
     const sales = useLocalCollection("sales", { syncStatus: "PENDING" });
     const refunds = useLocalCollection("refunds", { syncStatus: "PENDING" });
-    const printJobs = useLocalCollection("print_jobs", {
-        syncStatus: "PENDING",
-    });
     return (
         outbox.records.length +
         customers.records.length +
         sales.records.length +
-        refunds.records.length +
-        printJobs.records.length
+        refunds.records.length
     );
 }
