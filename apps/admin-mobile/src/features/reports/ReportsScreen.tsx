@@ -8,7 +8,7 @@ import {
     ShoppingBag,
 } from 'lucide-react-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { AppPressable } from '@indyzai/pos-ui';
+import { AppPressable, SectionMenu } from '@indyzai/pos-ui';
 import { useBottomNavigationClearance } from '@indyzai/pos-ui';
 import { useBottomNavigation } from '@indyzai/pos-ui';
 import { useAppHeader } from '@indyzai/pos-ui';
@@ -95,6 +95,15 @@ export function ReportsScreen() {
 
     return (
         <View style={[s.screen, { backgroundColor: c.background }]}>
+            <SectionMenu
+                value={String(period)}
+                groups={[{
+                    label: 'Report range',
+                    items: periods.map((value) => ({ id: String(value), label: `Last ${value} days` })),
+                }]}
+                onChange={(value) => setPeriod(Number(value) as ReportPeriod)}
+                accessibilityLabel="reports"
+            />
             <ScrollView
                 refreshControl={
                     <RefreshControl refreshing={data.refreshing} onRefresh={() => void refresh()} />

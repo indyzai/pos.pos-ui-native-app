@@ -58,6 +58,7 @@ export type SharedAppHeaderProps = {
   storage: AppHeaderStorageState;
   refreshJob?: AppHeaderRefreshJob | null;
   onCounterPress: () => void;
+  onPendingSyncPress?: () => void;
   onProfile: () => void;
   onDebugUser: () => void;
   onSwitchBusiness: () => void;
@@ -84,6 +85,7 @@ export function AppHeader({
   storage,
   refreshJob,
   onCounterPress,
+  onPendingSyncPress,
   onProfile,
   onDebugUser,
   onSwitchBusiness,
@@ -128,35 +130,32 @@ export function AppHeader({
         )}
         <View style={[s.logoFrame, isPhone && s.phoneLogoFrame]}><Logo size={isPhone ? 28 : 34} /></View>
         <View style={[s.brandCopy, isPhone ? s.phoneBrandCopy : s.desktopBrandCopy]}>
-          {isPhone ? (
+          {isPhone ? <>
             <Text numberOfLines={1} style={[s.title, s.phoneTitle, { color: themeColors.text }]}>{businessName || title}</Text>
-          ) : (
-            <View style={s.titleRow}>
-              <Text numberOfLines={1} style={[s.title, { color: themeColors.text }]}>{title}</Text>
-              {Boolean(businessName) && (
-                <View style={[s.businessTag, { backgroundColor: themeColors.primarySoft, borderColor: `${themeColors.primary}28` }]}>
-                  <Building2 size={10} color={themeColors.primary} strokeWidth={2.4} />
-                  <Text numberOfLines={1} style={[s.businessTagText, { color: themeColors.primary }]}>{businessName}</Text>
-                </View>
-              )}
+            <View style={s.branchRow}>
+              <Store size={11} color={themeColors.textSecondary} strokeWidth={2.2} />
+              <Text numberOfLines={1} style={[s.branchText, s.phoneBranchText, { color: themeColors.textSecondary }]}>{branchName}</Text>
+              <CounterStatus compact />
+            </View>
+          </> : (
+            <View style={s.desktopIdentity}>
+              <View style={s.identityColumn}>
+                <Text numberOfLines={1} style={[s.title, { color: themeColors.text }]}>{title}</Text>
+                <View style={s.branchCell}><Store size={12} color={themeColors.textSecondary} strokeWidth={2.2} /><Text numberOfLines={1} style={[s.branchText, { color: themeColors.textSecondary }]}>{branchName}</Text></View>
+              </View>
+              <View style={s.identityColumn}>
+                <View style={[s.businessTag, { backgroundColor: themeColors.primarySoft, borderColor: `${themeColors.primary}28` }]}><Building2 size={10} color={themeColors.primary} strokeWidth={2.4} /><Text numberOfLines={1} style={[s.businessTagText, { color: themeColors.primary }]}>{businessName || 'No business'}</Text></View>
+                <CounterStatus />
+              </View>
             </View>
           )}
-          <View style={s.branchRow}>
-            <Store size={isPhone ? 11 : 12} color={themeColors.textSecondary} strokeWidth={2.2} />
-            <Text numberOfLines={1} style={[s.branchText, isPhone && s.phoneBranchText, { color: themeColors.textSecondary }]}>{branchName}</Text>
-            {!isPhone && <Text style={[s.dotSeparator, { color: themeColors.outline }]}>·</Text>}
-            <AppPressable accessibilityLabel={isCounterOpen ? `View ${counterName} session` : `Open ${counterName} session`} onPress={onCounterPress} style={[s.counterStatus, isPhone && s.phoneCounterStatus, { backgroundColor: counterColors.bg, borderColor: counterColors.border }]}>
-              {isCounterOpen ? <UnlockKeyhole size={isPhone ? 10 : 12} color={counterColors.text} strokeWidth={2.5} /> : <LockKeyhole size={isPhone ? 10 : 12} color={counterColors.text} strokeWidth={2.5} />}
-              <Text numberOfLines={1} style={[s.counterStatusText, { color: counterColors.text }]}>{isPhone ? (isCounterOpen ? 'Open' : 'Closed') : `${counterName} · ${isCounterOpen ? 'Open' : 'Closed'}`}</Text>
-            </AppPressable>
-          </View>
         </View>
       </View>
       <View style={s.headerActions}>
         <AppPressable
           accessibilityLabel={refreshJob ? `Cancel ${refreshJob.text}, job ${refreshJob.id}` : storage.status === 'error' ? storage.error || 'Retry local storage' : `${isOnline ? 'Online' : 'Offline'}; local storage ${storage.status}; ${pendingQueueCount} mutations pending`}
-          disabled={!refreshJob && storage.status !== 'error'}
-          onPress={() => void (refreshJob ? refreshJob.cancel() : storage.retry())}
+          disabled={!refreshJob && storage.status !== 'error' && pendingQueueCount === 0}
+          onPress={() => void (refreshJob ? refreshJob.cancel() : storage.status === 'error' ? storage.retry() : onPendingSyncPress?.())}
           style={[s.themeToggle, !showActionLabels && s.iconAction, { backgroundColor: storageColors.bg, borderWidth: 1, borderColor: storageColors.border }]}
         >
           {refreshJob ? (isPhone ? <View style={s.cancelProgress}><ActivityIndicator size={28} color={themeColors.primary} /><X size={12} color={themeColors.primary} strokeWidth={3} style={s.cancelProgressIcon} /></View> : <ActivityIndicator size="small" color={themeColors.primary} />) : storage.status === 'error' ? <RefreshCw size={14} color={storageColors.text} /> : isOnline ? <Wifi size={14} color={storageColors.text} /> : <WifiOff size={14} color={storageColors.text} />}
@@ -191,6 +190,17 @@ export function AppHeader({
       {children}
     </View>
   );
+
+  function CounterStatus({ compact = false }: { compact?: boolean }) {
+    return <AppPressable
+      accessibilityLabel={isCounterOpen ? `View ${counterName} session` : `Open ${counterName} session`}
+      onPress={onCounterPress}
+      style={[s.counterStatus, compact && s.phoneCounterStatus, { backgroundColor: counterColors.bg, borderColor: counterColors.border }]}
+    >
+      {isCounterOpen ? <UnlockKeyhole size={compact ? 10 : 12} color={counterColors.text} strokeWidth={2.5} /> : <LockKeyhole size={compact ? 10 : 12} color={counterColors.text} strokeWidth={2.5} />}
+      <Text numberOfLines={1} style={[s.counterStatusText, { color: counterColors.text }]}>{compact ? (isCounterOpen ? 'Open' : 'Closed') : `${counterName} · ${isCounterOpen ? 'Open' : 'Closed'}`}</Text>
+    </AppPressable>;
+  }
 }
 
 function MenuOption({ icon, label, destructive, onPress }: { icon: ReactNode; label: string; destructive?: boolean; onPress: () => void }) {
@@ -203,13 +213,16 @@ const s = StyleSheet.create({
   phoneHeader: { height: 64, paddingHorizontal: 10 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, marginRight: 8 },
   logoFrame: { width: 36, height: 38, flexShrink: 0, alignItems: 'center', justifyContent: 'flex-start' },
-  phoneLogoFrame: { width: 30, height: 34 }, brandCopy: { minWidth: 0, flex: 1, justifyContent: 'center' }, phoneBrandCopy: { maxWidth: '100%' }, desktopBrandCopy: { maxWidth: 440 },
+  phoneLogoFrame: { width: 30, height: 34 }, brandCopy: { minWidth: 0, flex: 1, justifyContent: 'center' }, phoneBrandCopy: { maxWidth: '100%' }, desktopBrandCopy: { maxWidth: 620 },
+  desktopIdentity: { flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
+  identityColumn: { minWidth: 0, flexShrink: 1, gap: 3, alignItems: 'flex-start' },
+  branchCell: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
   burger: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   navigationState: { position: 'absolute', right: 1, bottom: 1, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 }, title: { fontSize: 15, lineHeight: 19, fontWeight: '800' }, phoneTitle: { fontSize: 14, lineHeight: 17, fontWeight: '800' },
-  businessTag: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, borderWidth: 1, flexShrink: 1, minWidth: 0 }, businessTagText: { fontSize: 11, fontWeight: '700', flexShrink: 1 },
-  branchRow: { minWidth: 0, minHeight: 20, marginTop: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }, branchText: { fontSize: 11, fontWeight: '500', flexShrink: 1, maxWidth: 160 }, phoneBranchText: { maxWidth: 100 }, dotSeparator: { fontSize: 10, marginHorizontal: 1 },
-  counterStatus: { height: 20, paddingHorizontal: 6, borderRadius: 10, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 3.5, flexShrink: 0 }, phoneCounterStatus: { paddingHorizontal: 5, gap: 3 }, counterStatusText: { fontSize: 10, fontWeight: '800' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0 }, title: { fontSize: 15, lineHeight: 19, fontWeight: '800', flexShrink: 1 }, phoneTitle: { fontSize: 14, lineHeight: 17, fontWeight: '800', maxWidth: '100%' },
+  businessTag: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1, flexShrink: 1, minWidth: 0, maxWidth: 180 }, businessTagText: { fontSize: 11, fontWeight: '700', flexShrink: 1 },
+  branchRow: { minWidth: 0, minHeight: 20, marginTop: 3, flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 1 }, branchText: { fontSize: 11, fontWeight: '500', flexShrink: 1, maxWidth: 180 }, phoneBranchText: { maxWidth: 100 }, dotSeparator: { fontSize: 10, marginHorizontal: 3 },
+  counterStatus: { height: 20, maxWidth: 170, paddingHorizontal: 6, borderRadius: 10, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 3.5, flexShrink: 1 }, phoneCounterStatus: { paddingHorizontal: 5, gap: 3, flexShrink: 0 }, counterStatusText: { fontSize: 10, fontWeight: '800', flexShrink: 1 },
   avatar: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, headerActions: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0 },
   themeToggle: { height: 34, paddingHorizontal: 10, borderRadius: 17, alignItems: 'center', flexDirection: 'row', gap: 5, justifyContent: 'center' }, iconAction: { width: 32, paddingHorizontal: 0 }, phoneControl: { width: 32, height: 32, borderRadius: 16 }, toggleText: { fontSize: 11, fontWeight: '900' },
   queueBadge: { position: 'absolute', top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' }, queueBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '900' }, cancelProgress: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }, cancelProgressIcon: { position: 'absolute' }, avatarText: { fontSize: 12, fontWeight: '800' },

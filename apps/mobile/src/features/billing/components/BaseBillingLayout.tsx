@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingCart } from 'lucide-react-native';
 import {
-  ActivityIndicator,
   Animated,
   PanResponder,
   Platform,
@@ -138,7 +137,7 @@ export function BaseBillingLayout({
   const cartContentAnimating = useRef(false);
   const scanHandled = useRef(false);
   const { setCenterItem } = useBottomNavigation();
-  const { requestCounterDialog, setFeatureRefresh, setRefreshJob } = useAppHeader();
+  const { requestCounterDialog, setFeatureLoading, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const auth = useAuthSession();
   const managerAccess = canPerformManagerActions(auth.session?.tenant.role, auth.session?.user.role);
   const policy = useMemo(
@@ -156,6 +155,19 @@ export function BaseBillingLayout({
   const paymentMethods = billing.data?.cache.paymentMethods || [];
   const taxRates = billing.data?.cache.taxRates || [];
   const currencyCode = String(auth.session?.organization?.settings.currency || 'INR');
+
+  useEffect(() => {
+    if (!billing.data || billing.busy) {
+      setFeatureLoading({
+        id: 'billing-data',
+        title: 'Loading billing data…',
+        message: 'Reading the local catalog and checking for updates',
+      });
+    } else {
+      setFeatureLoading(undefined);
+    }
+    return () => setFeatureLoading(undefined);
+  }, [billing.busy, billing.data, setFeatureLoading]);
 
   useEffect(() => {
     if (!paymentMethods.length || paymentMethods.some((method) => method.code === payment)) return;
@@ -699,24 +711,6 @@ export function BaseBillingLayout({
           </View>
         )}
       </View>
-      {(!billing.data || billing.busy) && (
-        <View
-          pointerEvents={billing.data ? 'none' : 'auto'}
-          style={[
-            s.billingLoader,
-            { backgroundColor: themeColors.background + (billing.data ? 'CC' : 'F5') },
-          ]}
-          accessibilityLiveRegion="polite"
-        >
-          <View style={[s.billingLoaderCard, { backgroundColor: themeColors.surface }]}>
-            <ActivityIndicator size="large" color={themeColors.primary} />
-            <Text style={[s.billingLoaderTitle, { color: themeColors.text }]}>Loading billing data…</Text>
-            <Text style={[s.billingLoaderText, { color: themeColors.textSecondary }]}>
-              Reading the local catalog and checking for updates
-            </Text>
-          </View>
-        </View>
-      )}
       {isWide && !cartOpen && (
         <AppPressable onPress={() => setCartOpen(true)} style={s.wideCart}>
           <Text style={s.wideCartIcon}>🛒</Text>
@@ -931,23 +925,6 @@ export function BaseBillingLayout({
 const s = StyleSheet.create({
   root: { flex: 1 },
   workspace: { flex: 1, flexDirection: 'row' },
-  billingLoader: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  billingLoaderCard: {
-    minWidth: 240,
-    maxWidth: 360,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    elevation: 8,
-  },
-  billingLoaderTitle: { marginTop: 14, fontSize: 16, fontWeight: '900' },
-  billingLoaderText: { marginTop: 6, fontSize: 12, textAlign: 'center' },
   rightCart: { width: 390, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: '#C3C6CF' },
   content: { flexGrow: 1 },
   wideCart: {

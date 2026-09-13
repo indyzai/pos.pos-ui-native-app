@@ -10,6 +10,7 @@ import {
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import {
   AppPressable,
+  SectionMenu,
   formatCurrency,
   useAppHeader,
   useAppTheme,
@@ -96,6 +97,12 @@ export function ReportsScreen() {
 
   return (
     <View style={[s.screen, { backgroundColor: c.background }]}>
+      <SectionMenu
+        value={String(period)}
+        groups={[{ label: 'Report range', items: periods.map((value) => ({ id: String(value), label: value === 1 ? 'Today' : `Last ${value} days` })) }]}
+        onChange={(value) => setPeriod(Number(value) as ReportPeriod)}
+        accessibilityLabel="reports"
+      />
       <ScrollView
         refreshControl={<RefreshControl refreshing={data.refreshing} onRefresh={() => void refresh()} />}
         contentContainerStyle={[s.content, { paddingBottom: bottomClearance }]}

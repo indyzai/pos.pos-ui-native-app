@@ -112,15 +112,6 @@ export const usePendingSync = <T extends LocalRecord = LocalRecord>() =>
 /** Pending durable writes shown globally in the application header. */
 export function useOfflineQueueCount(): number {
     const outbox = useLocalCollection("sync_outbox", { syncStatus: "PENDING" });
-    const customers = useLocalCollection("customers", {
-        syncStatus: "PENDING",
-    });
-    const sales = useLocalCollection("sales", { syncStatus: "PENDING" });
-    const refunds = useLocalCollection("refunds", { syncStatus: "PENDING" });
-    return (
-        outbox.records.length +
-        customers.records.length +
-        sales.records.length +
-        refunds.records.length
-    );
+    const running = useLocalCollection("sync_outbox", { syncStatus: "RUNNING" });
+    return outbox.records.length + running.records.length;
 }

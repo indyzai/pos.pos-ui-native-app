@@ -12,6 +12,7 @@ export { colors, darkColors, radii, type ThemeColors } from "./theme/tokens";
 export { ThemeProvider, useAppTheme, type ThemeMode, type ThemeContextValue } from "./theme/ThemeProvider";
 export { AppPaperProvider } from "./theme/AppPaperProvider";
 export { AppHeaderProvider, useAppHeader, type HeaderContextValue } from "./layout/AppHeaderProvider";
+export { GlobalDataLoaderView } from "./layout/GlobalDataLoaderView";
 export {
     AppHeader,
     type AppHeaderRefreshJob,
@@ -34,6 +35,7 @@ export {
     useBottomNavigationClearance,
     BOTTOM_NAVIGATION_HEIGHT,
 } from "./navigation/useBottomNavigationClearance";
+export { SectionMenu, type SectionMenuGroup, type SectionMenuItem } from "./navigation/SectionMenu";
 export { AppKeyboardSafeView } from "./components/AppKeyboardSafeView";
 export { AppBottomSheetShell } from "./components/AppBottomSheetShell";
 export {

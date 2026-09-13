@@ -109,6 +109,7 @@ export function AppHeader({
       storage={local}
       refreshJob={refreshJob}
       onCounterPress={() => (isCounterOpen ? setSummaryOpen(true) : setCounterOpen(true))}
+      onPendingSyncPress={() => router.push('/settings?section=data')}
       onProfile={() => router.push('/profile')}
       onDebugUser={() =>
         showSnackbar(

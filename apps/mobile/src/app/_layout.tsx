@@ -34,7 +34,6 @@ export default function RootLayout() {
                 <DatabaseProvider>
                   <AppHeaderProvider>
                     <RootNavigator />
-                    <GlobalDataLoader />
                   </AppHeaderProvider>
                 </DatabaseProvider>
               </AuthSessionProvider>
@@ -102,6 +101,7 @@ function RootNavigator() {
           />
         </SafeAreaView>
       )}
+      {!headerHidden && <GlobalDataLoader />}
       <View style={{ flex: 1, flexDirection: 'row' }}>
         {showLeftNavigation && <TabletNavigationPane collapsed={navigationCollapsed} />}
         <View style={{ flex: 1 }}>

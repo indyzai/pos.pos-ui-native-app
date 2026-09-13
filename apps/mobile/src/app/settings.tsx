@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Save, X } from 'lucide-react-native';
 import {
   KeyboardAvoidingView,
@@ -11,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '@indyzai/pos-ui';
+import { SectionMenu } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui';
 import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
@@ -78,10 +79,12 @@ export default function SettingsRoute() {
 }
 
 function SettingsContent() {
+  const params = useLocalSearchParams<{ section?: string }>();
   const { themeColors: c } = useAppTheme();
   const bottomClearance = useBottomNavigationClearance();
   const { setCenterItem } = useBottomNavigation();
-  const [section, setSection] = useState<SectionId>('general');
+  const initialSection = tabs.some((tab) => tab.id === params.section) ? (params.section as SectionId) : 'general';
+  const [section, setSection] = useState<SectionId>(initialSection);
   const [tabsOpen, setTabsOpen] = useState(false);
   const [tabsTop, setTabsTop] = useState(75);
   const tabsButtonRef = useRef<View>(null);
@@ -132,47 +135,7 @@ function SettingsContent() {
             ) : null}
           </View>
         </ScrollView>
-        <View ref={tabsButtonRef} collapsable={false} style={s.tabsButtonAnchor}>
-          <AppPressable
-            accessibilityLabel={tabsOpen ? 'Close settings navigation' : 'Open settings navigation'}
-            onPress={toggleTabs}
-            style={[s.tabsButton, { backgroundColor: c.primary }]}
-          >
-            {tabsOpen ? <X size={19} color="#fff" /> : <ChevronLeft size={20} color="#fff" />}
-          </AppPressable>
-        </View>
-        {tabsOpen ? (
-          <Modal transparent visible animationType="fade" onRequestClose={() => setTabsOpen(false)}>
-            <View style={s.tabsOverlay}>
-              <Pressable
-                accessibilityLabel="Close settings navigation"
-                style={StyleSheet.absoluteFill}
-                onPress={() => setTabsOpen(false)}
-              />
-              <View style={[s.tabs, { top: tabsTop, backgroundColor: c.surface, borderColor: c.outline }]}>
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.tabsContent}>
-                  {tabSections.map((group) => (
-                    <View key={group.label} style={s.tabSection}>
-                      <Text style={[s.tabSectionLabel, { color: c.textSecondary }]}>{group.label}</Text>
-                      {group.tabs.map((tab) => (
-                        <AppPressable
-                          key={tab.id}
-                          onPress={() => {
-                            setSection(tab.id);
-                            setTabsOpen(false);
-                          }}
-                          style={[s.tab, section === tab.id && { backgroundColor: c.primarySoft }]}
-                        >
-                          <Text style={[s.tabText, { color: c.text }]}>{tab.label}</Text>
-                        </AppPressable>
-                      ))}
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-          </Modal>
-        ) : null}
+        <SectionMenu value={section} groups={tabSections.map((group) => ({ label: group.label, items: group.tabs }))} onChange={setSection} accessibilityLabel="settings" />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
