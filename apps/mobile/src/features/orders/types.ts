@@ -19,6 +19,9 @@ export type SalesOrder = {
   status: string;
   type: string;
   saleDate: string;
+  counterId?: string;
+  counterSessionId?: string;
+  branchId?: string;
   customerName?: string;
   paymentMethod?: string;
   paymentType?: { id: string; name: string; code: string; icon?: string };

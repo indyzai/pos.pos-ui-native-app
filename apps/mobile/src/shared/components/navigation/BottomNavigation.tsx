@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, type LucideIcon } from 'lucide-react-native';
+import { CircleOff, Menu, X, type LucideIcon } from 'lucide-react-native';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import { Modal, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ export function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
+  const CenterIcon = centerItem?.icon ?? CircleOff;
   if (width >= 700 && width > height) return null;
   return (
     <View
@@ -60,29 +61,35 @@ export function BottomNavigation() {
           onPress={() => setMoreOpen(true)}
         />
       </View>
-      {centerItem && (
-        <AppPressable
-          accessibilityLabel={centerItem.label}
-          onPress={centerItem.onPress}
+      <AppPressable
+          accessibilityLabel={centerItem?.label ?? 'Center action unavailable'}
+          accessibilityState={{ disabled: !centerItem }}
+          disabled={!centerItem}
+          onPress={centerItem?.onPress}
           style={s.centerAction}
         >
           <View
             style={[
               s.centerCircle,
-              { backgroundColor: c.primarySoft, borderColor: c.background },
+              {
+                backgroundColor: centerItem ? c.primarySoft : c.outlineMuted,
+                borderColor: c.background,
+                opacity: centerItem ? 1 : 0.72,
+              },
               isDark && { boxShadow: '0px 5px 14px rgba(0, 0, 0, 0.38)' },
             ]}
           >
-            <centerItem.icon size={27} color={c.primary} strokeWidth={2} />
-            <Text style={[s.centerLabel, { color: c.primary }]}>{centerItem.label}</Text>
-            {(centerItem.badge ?? 0) > 0 && (
+            <CenterIcon size={27} color={centerItem ? c.primary : c.textSecondary} strokeWidth={2} />
+            <Text style={[s.centerLabel, { color: centerItem ? c.primary : c.textSecondary }]}>
+              {centerItem?.label ?? 'Disabled'}
+            </Text>
+            {(centerItem?.badge ?? 0) > 0 && (
               <View style={[s.badge, { backgroundColor: c.error, borderColor: c.surface }]}>
-                <Text style={s.badgeText}>{centerItem.badge}</Text>
+                <Text style={s.badgeText}>{centerItem?.badge}</Text>
               </View>
             )}
           </View>
         </AppPressable>
-      )}
       <MoreMenu
         visible={moreOpen}
         onClose={() => setMoreOpen(false)}

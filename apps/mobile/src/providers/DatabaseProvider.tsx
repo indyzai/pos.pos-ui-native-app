@@ -12,6 +12,8 @@ import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
 import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-core/storage';
+import { queryClient } from '@indyzai/pos-core/query';
+import { billingApi } from '../features/billing/billingApi';
 
 const logger = createLogger('Database:store');
 
@@ -51,7 +53,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         deviceId: scope.deviceId,
       });
       const database = await createStoreLocalDatabase(scope);
-      const owner = String(session.user.id);
+      // A tenant switch is the same isolation boundary as a user switch. Keeping
+      // only the user id here allowed one user's previous business data and
+      // React Query projections to remain visible after changing workspaces.
+      const owner = `${scope.tenantId}:${scope.userId}`;
       const previousOwner = await kvStore.get(appStorageKeys.pos.databaseOwner);
       if (previousOwner && previousOwner !== owner) {
         logger.warn('Database owner changed, clearing local database', {
@@ -59,6 +64,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           currentOwner: owner,
         });
         await database.clear();
+        queryClient.clear();
       }
       await kvStore.set(appStorageKeys.pos.databaseOwner, owner);
       if (current !== generation.current) {
@@ -69,6 +75,15 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       setState((previous) => {
         void previous.database?.close();
         return { status: 'ready', error: '', database, scope };
+      });
+      // Network is an optional synchronization source. The bootstrap writes to
+      // the local database; screens continue observing local collections only.
+      // Failure is intentionally non-fatal so a previously bootstrapped user can
+      // open the app without connectivity.
+      void billingApi.refresh(undefined, database, true).catch((reason) => {
+        logger.warn('Initial database pull deferred until connectivity returns', {
+          error: reason instanceof Error ? reason.message : String(reason),
+        });
       });
     } catch (reason) {
       if (current !== generation.current) return;

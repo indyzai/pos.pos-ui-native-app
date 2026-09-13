@@ -12,6 +12,8 @@ import { createAdminLocalDatabase } from '@indyzai/pos-database/admin';
 import { normalizePosRole, type DatabaseScope, type LocalDatabase } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-core/storage';
+import { queryClient } from '@indyzai/pos-core/query';
+import { billingApi } from '../features/billing/billingApi';
 
 const logger = createLogger('Database:admin');
 
@@ -56,7 +58,9 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
                 deviceId: scope.deviceId,
             });
             const database = await createAdminLocalDatabase(scope);
-            const owner = String(session.user.id);
+            // Tenant and user together own the local projection. This prevents
+            // query and database rows from leaking across workspace switches.
+            const owner = `${scope.tenantId}:${scope.userId}`;
             const previousOwner = await kvStore.get(appStorageKeys.admin.databaseOwner);
             if (previousOwner && previousOwner !== owner) {
                 logger.warn('Database owner changed, clearing local database', {
@@ -64,6 +68,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
                     currentOwner: owner,
                 });
                 await database.clear();
+                queryClient.clear();
             }
             await kvStore.set(appStorageKeys.admin.databaseOwner, owner);
             if (current !== generation.current) {
@@ -74,6 +79,14 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             setState((previous) => {
                 void previous.database?.close();
                 return { status: 'ready', error: '', database, scope };
+            });
+            // The API only refreshes the durable local projection. UI consumers
+            // remain bound to local collections, and an offline failure does not
+            // prevent the cached workspace from opening.
+            void billingApi.refresh(undefined, database, true).catch((reason) => {
+                logger.warn('Initial database pull deferred until connectivity returns', {
+                    error: reason instanceof Error ? reason.message : String(reason),
+                });
             });
         } catch (reason) {
             if (current !== generation.current) return;

@@ -390,6 +390,25 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
                 accessToken,
             );
         },
+        async getApplicationRedirectUrl(appName: string): Promise<string> {
+            const { authApiUrl: runtimeAuthApiUrl } = await configuration.getRuntimeApiUrls();
+            const applications = await requestJson<Record<string, {
+                redirectUrls?: Record<string, string | { url?: string }>;
+            }>>(`${runtimeAuthApiUrl}/auth/applications`);
+            const redirects = applications[appName]?.redirectUrls;
+            const environment = typeof __DEV__ !== "undefined" && __DEV__ ? "dev" : "prod";
+            const configured = redirects?.[environment] ?? redirects?.prod ?? redirects?.dev;
+            const url = typeof configured === "string" ? configured : configured?.url;
+            if (!url) throw new Error(`Redirect URL is not configured for ${appName}.`);
+            const destination = new URL(url);
+            const api = new URL(runtimeAuthApiUrl);
+            if (
+                environment === "dev" &&
+                ["localhost", "127.0.0.1"].includes(destination.hostname) &&
+                !["localhost", "127.0.0.1"].includes(api.hostname)
+            ) destination.hostname = api.hostname;
+            return destination.toString();
+        },
         async completeAppHandoff(
             code: string,
             tenantId: string,

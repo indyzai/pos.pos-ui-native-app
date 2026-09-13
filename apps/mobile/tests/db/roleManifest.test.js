@@ -65,6 +65,7 @@ describe('role-scoped local database manifest', () => {
     const first = createScopeKey(scope('cashier'));
     const reordered = createScopeKey({ ...scope('cashier'), storeIds: ['store-1', 'store-2'] });
     expect(first).toBe(reordered);
+    expect(createScopeKey({ ...scope('cashier'), storeIds: [], counterId: undefined })).toBe(first);
     expect(createScopeKey(scope('manager'))).not.toBe(first);
     expect(createScopeKey({ ...scope('cashier'), tenantId: 'tenant-2' })).not.toBe(first);
   });

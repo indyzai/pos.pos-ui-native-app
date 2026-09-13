@@ -17,28 +17,22 @@ const posWebUrl =
     (typeof __DEV__ !== 'undefined' && __DEV__
         ? 'http://localhost:3511/billing'
         : 'https://pos.indyzai.com/');
-const posAppUrl = 'indyzai-pos://billing';
-
 async function openPosBilling(tenantId: string): Promise<void> {
     logger.info('Opening POS billing app handoff', { tenantId });
-    const handoff = await authApi.createAppHandoff(tenantId);
-    const destination = new URL(
+    const [handoff, authUiUrl] = await Promise.all([
+        authApi.createAppHandoff(tenantId),
+        authApi.getApplicationRedirectUrl('auth'),
+    ]);
+    const posDestination = new URL(
         Platform.OS === 'web' ? '/auth/handoff' : 'indyzai-pos://auth/handoff',
         posWebUrl,
     );
-    destination.searchParams.set('code', handoff.code);
-    destination.searchParams.set('tenantId', handoff.tenantId);
-    if (Platform.OS === 'web') {
-        await Linking.openURL(destination.toString());
-        return;
-    }
-    if (await Linking.canOpenURL(posAppUrl)) {
-        await Linking.openURL(destination.toString());
-        return;
-    }
-    const webDestination = new URL('/auth/handoff', posWebUrl);
-    webDestination.search = destination.search;
-    await Linking.openURL(webDestination.toString());
+    posDestination.searchParams.set('tenantId', handoff.tenantId);
+    const authDestination = new URL('/tauri/callback', authUiUrl);
+    authDestination.searchParams.set('code', handoff.code);
+    authDestination.searchParams.set('callback', posDestination.toString());
+    logger.info('Opening auth handoff page', { authOrigin: authDestination.origin });
+    await Linking.openURL(authDestination.toString());
 }
 
 export default function BillingRoute() {

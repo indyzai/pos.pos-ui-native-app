@@ -146,6 +146,9 @@ export function normalizePosRole(value: unknown): PosRole {
 }
 
 export function createScopeKey(scope: DatabaseScope): string {
-    const stores = [...scope.storeIds].sort().join(",");
-    return `pos:v1:${scope.tenantId}:${scope.userId}:${scope.role}:${stores}:${scope.deviceId}:${scope.counterId ?? ""}`;
+    // Branch assignments and the active counter are mutable bootstrap data. They
+    // must not select a different projection when startup happens offline.
+    // Repositories still apply row-level store filters, while role reconciliation
+    // removes records that are no longer permitted.
+    return `pos:v2:${scope.tenantId}:${scope.userId}:${scope.role}:${scope.deviceId}`;
 }
