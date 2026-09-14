@@ -20,6 +20,7 @@ import type {
   ServiceUser,
 } from '../types/billing';
 import { resolveBillingMode, type BillingMode } from '../domain/billingMode';
+import { useBillingSales } from './useBillingSales';
 
 export function useBillingData(businessTypeOverride?: BillingMode) {
   const queryClient = useQueryClient();
@@ -46,6 +47,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
   const localServiceUsers = useLocalCollection<LocalRecord<ServiceUser>>('service_users');
   const localProductBatches = useLocalCollection<LocalRecord<ProductBatch>>('product_batches');
   const localTaxRates = useLocalCollection<LocalRecord<BillingTaxRate>>('tax_rates');
+  const sales = useBillingSales();
 
   const syncMutation = useMutation({
     networkMode: 'always',
@@ -152,7 +154,8 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
   return {
     data,
     error: local.error || auth.error || (error instanceof Error ? error.message : ''),
-    busy: query.isFetching || syncMutation.isPending,
+    busy: query.isFetching || syncMutation.isPending || sales.loading,
+    sales,
     refresh,
     reload,
   };

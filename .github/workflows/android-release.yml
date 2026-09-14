@@ -308,9 +308,6 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             TRACK="${{ inputs.play_track || 'internal' }}"
             PUBLISH="${{ inputs.publish_to_play != false }}"
-          elif [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            TRACK="production"
-            PUBLISH="true"
           else
             TRACK="internal"
             PUBLISH="true"
@@ -334,7 +331,7 @@ jobs:
           fi
           chmod 600 /tmp/google-play-service-account.json
 
-      - name: Publish AAB to Google Play Store
+      - name: Publish AAB to Google Play Store (Internal Testing)
         if: env.HAS_PLAY_STORE_KEY == 'true' && steps.play-target.outputs.publish == 'true'
         uses: r0adkll/upload-google-play@v1
         with:
@@ -343,6 +340,7 @@ jobs:
           releaseFiles: apps/mobile/release/indyz-pos-${{ needs.metadata.outputs.pos_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
+          changesNotSentForReview: true
           releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.pos_version }})
           whatsNewDirectory: distribution/whatsnew
 
@@ -497,9 +495,6 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             TRACK="${{ inputs.play_track || 'internal' }}"
             PUBLISH="${{ inputs.publish_to_play != false }}"
-          elif [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            TRACK="production"
-            PUBLISH="true"
           else
             TRACK="internal"
             PUBLISH="true"
@@ -523,7 +518,7 @@ jobs:
           fi
           chmod 600 /tmp/google-play-service-account.json
 
-      - name: Publish AAB to Google Play Store
+      - name: Publish AAB to Google Play Store (Internal Testing)
         if: env.HAS_PLAY_STORE_KEY == 'true' && steps.play-target.outputs.publish == 'true'
         uses: r0adkll/upload-google-play@v1
         with:
@@ -532,6 +527,7 @@ jobs:
           releaseFiles: apps/admin-mobile/release/indyz-pos-admin-${{ needs.metadata.outputs.admin_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
+          changesNotSentForReview: true
           releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.admin_version }})
           whatsNewDirectory: distribution/whatsnew
 

@@ -18,6 +18,14 @@ export {
     usePendingSync,
 } from "./hooks";
 export { useLocalDatabase, useRequiredLocalDatabase } from "./react";
+export { createLocalFirstTableHook } from "./tableSyncHook";
+export type {
+    CreateTableMutation,
+    LocalFirstTableHookConfig,
+    MutationDependency,
+    ResolveTableMutation,
+    TableOutboxPayload,
+} from "./tableSyncHook";
 export {
     applyBootstrapCollections,
     bootstrapCollectionMap,

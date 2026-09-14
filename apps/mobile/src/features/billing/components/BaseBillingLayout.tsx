@@ -401,6 +401,14 @@ export function BaseBillingLayout({
         cart.orderDiscount,
         customer,
         orderContext,
+        (pendingSale) =>
+          billing.sales.createMutation({
+            payload: pendingSale,
+            operation: 'CREATE',
+            localId: pendingSale.id,
+            idempotencyKey: `sale:${pendingSale.id}`,
+            storeId: pendingSale.input.branchId ? String(pendingSale.input.branchId) : null,
+          }),
       );
       logger.info('Checkout completed successfully', {
         receiptNumber: sale.receiptNumber,

@@ -40,6 +40,7 @@ import {
 } from '@indyzai/pos-database';
 import { getBillingBootstrapCollections, resolveBillingMode } from './domain/billingMode';
 import { customersApi } from '../customers/customersApi';
+import type { TableOutboxPayload } from '@indyzai/pos-database';
 
 type Context = { key: string; tenant: string; token: string };
 export type BillingCache = {
@@ -92,6 +93,10 @@ type SaleOutboxPayload = {
   entityType: 'SALE';
   operation: 'CREATE';
   input: Record<string, unknown>;
+  table?: 'sales';
+  localId?: string;
+  data?: PendingSale;
+  dependencyJobIds?: string[];
 };
 const saleOutboxId = (database: LocalDatabase, offlineId: string) =>
   `${createScopeKey(database.scope)}:outbox:sale:${offlineId}`;
@@ -102,12 +107,35 @@ async function setSaleOutboxStatus(
   errorMessage?: string,
 ) {
   const now = Date.now();
+  const existing = (
+    await database.collection<LocalRecord<SaleOutboxPayload>>('sync_outbox').list({ includeDeleted: true })
+  ).find(
+    (record) =>
+      (record.payload.table === 'sales' && record.payload.localId === sale.id) ||
+      record.payload.offlineId === sale.id,
+  );
+  if (existing) {
+    await database.collection<LocalRecord<SaleOutboxPayload>>('sync_outbox').put({
+      ...existing,
+      payload: {
+        ...existing.payload,
+        ...(errorMessage ? { errorMessage } : {}),
+      },
+      syncStatus,
+      updatedAt: now,
+    });
+    return;
+  }
   const payload: SaleOutboxPayload = {
     offlineId: sale.id,
     idempotencyKey: `sale:${sale.id}`,
     entityType: 'SALE',
     operation: 'CREATE',
     input: sale.input,
+    table: 'sales',
+    localId: sale.id,
+    data: sale,
+    dependencyJobIds: [],
     ...(errorMessage ? { errorMessage } : {}),
   };
   await database.collection<LocalRecord<SaleOutboxPayload>>('sync_outbox').put({
@@ -266,6 +294,7 @@ export const billingApi = {
     orderDiscount = 0,
     customer?: Customer,
     orderContext?: BillingOrderContext,
+    enqueueSale?: (sale: PendingSale) => Promise<unknown>,
   ) =>
     syncQueue.run(async () => {
       const c = await context();
@@ -295,11 +324,16 @@ export const billingApi = {
         jobs.push(scrapPurchaseJob(payment.scrap, currentSession, customer));
         await scrapPurchaseRepository.replace(c.key, jobs);
       }
-      cache.queue.push(sale);
       try {
-        await write(c, cache); // Never clear the cart until this durable write succeeds.
-        const database = getActiveDatabase();
-        if (database) await setSaleOutboxStatus(database, sale, 'PENDING');
+        if (enqueueSale) {
+          await write(c, cache);
+          await enqueueSale(sale);
+        } else {
+          cache.queue.push(sale);
+          await write(c, cache); // Never clear the cart until this durable write succeeds.
+          const database = getActiveDatabase();
+          if (database) await setSaleOutboxStatus(database, sale, 'PENDING');
+        }
       } catch (error) {
         if (payment.scrap) {
           const jobs = await scrapPurchaseRepository.read(c.key);
@@ -326,6 +360,24 @@ export const billingApi = {
       const c = await context();
       const cache = await read(c);
       const database = getActiveDatabase();
+      const saleJobs = database
+        ? (
+            await database
+              .collection<LocalRecord<SaleOutboxPayload>>('sync_outbox')
+              .list({ includeDeleted: true })
+          ).filter(
+            (record) =>
+              record.payload.entityType === 'SALE' &&
+              (record.syncStatus === 'PENDING' || record.syncStatus === 'RUNNING'),
+          )
+        : [];
+      const outboxSales = saleJobs.flatMap((record) => {
+        const sale = record.payload.data;
+        return sale?.id && sale.input ? [sale] : [];
+      });
+      // Existing installs may still have bills in the old sales queue. New UI
+      // checkout writes only through the generic table hook and sync_outbox.
+      const pendingSales = outboxSales.length ? outboxSales : cache.queue;
       const scrapJobs = await scrapPurchaseRepository.read(c.key);
       await syncScrapPurchaseJobs(
         scrapJobs,
@@ -334,14 +386,35 @@ export const billingApi = {
       );
       const waybillJobs = await waybillRepository.read(c.key);
       if (database)
-        await Promise.all(cache.queue.map((sale) => setSaleOutboxStatus(database, sale, 'RUNNING')));
+        await Promise.all(pendingSales.map((sale) => setSaleOutboxStatus(database, sale, 'RUNNING')));
       try {
         await syncPendingSales(
-          cache.queue,
+          pendingSales,
           (query, variables) => request(c, query, variables, signal),
-          () => write(c, cache),
+          () => (outboxSales.length ? Promise.resolve() : write(c, cache)),
           async (sale, bill) => {
-            if (database) await database.collection('sync_outbox').remove(saleOutboxId(database, sale.id));
+            if (database) {
+              const jobs = await database
+                .collection<LocalRecord<TableOutboxPayload>>('sync_outbox')
+                .list({ includeDeleted: true });
+              const job = jobs.find(
+                (candidate) => candidate.payload.table === 'sales' && candidate.payload.localId === sale.id,
+              );
+              const localSale = await database.collection<LocalRecord<PendingSale>>('sales').get(sale.id);
+              if (job && localSale) {
+                await database.collection<LocalRecord<PendingSale>>('sales').put({
+                  ...localSale,
+                  remoteId: String(bill.id),
+                  payload: { ...localSale.payload, id: String(bill.id) },
+                  serverVersion: localSale.serverVersion + 1,
+                  syncStatus: 'SYNCED',
+                  updatedAt: Date.now(),
+                });
+                await database.collection('sync_outbox').remove(job.id);
+              } else {
+                await database.collection('sync_outbox').remove(saleOutboxId(database, sale.id));
+              }
+            }
             const job = waybillJobFromSale(sale, bill);
             if (!job || waybillJobs.some((item) => item.id === job.id)) return;
             waybillJobs.push(job);
@@ -352,7 +425,7 @@ export const billingApi = {
         if (database) {
           const message = error instanceof Error ? error.message : 'Unable to sync bill.';
           await Promise.all(
-            cache.queue.map((sale) => setSaleOutboxStatus(database, sale, 'PENDING', message)),
+            pendingSales.map((sale) => setSaleOutboxStatus(database, sale, 'PENDING', message)),
           );
         }
         throw error;

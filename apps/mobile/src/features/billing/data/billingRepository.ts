@@ -45,17 +45,20 @@ const productFromRow = (product: typeof products.$inferSelect): Product => ({
 
 function pendingSaleFromRow(sale: typeof sales.$inferSelect): PendingSale | null {
   try {
-    const input = JSON.parse(sale.payload) as Record<string, unknown>;
+    const parsed = JSON.parse(sale.payload) as Record<string, unknown>;
+    const queued = parsed.input ? (parsed as PendingSale) : undefined;
+    const input = (queued?.input ?? parsed) as Record<string, unknown>;
     return {
-      id: sale.offlineId,
+      id: queued?.id ?? sale.offlineId,
       operation: 'CREATE',
       payload: input,
       input,
-      createdAt: sale.createdAt,
+      createdAt: queued?.createdAt ?? sale.createdAt,
       receiptNumber:
         String((input.details as Record<string, unknown> | undefined)?.provisionalReceiptNumber || '') ||
+        queued?.receiptNumber ||
         sale.offlineId,
-      error: sale.errorMessage ?? undefined,
+      error: sale.errorMessage ?? queued?.error ?? undefined,
     };
   } catch {
     return null;

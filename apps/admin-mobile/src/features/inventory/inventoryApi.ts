@@ -4,7 +4,12 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
 import { createReconciliationVariables } from './reconciliation';
 import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
-import { createOutboxJob, listOutboxJobs, updateOutboxJob, type OutboxJob } from '@indyzai/pos-database/outbox-jobs';
+import {
+    createOutboxJob,
+    listOutboxJobs,
+    updateOutboxJob,
+    type OutboxJob,
+} from '@indyzai/pos-database/outbox-jobs';
 
 const reconciliationMutation = `
   mutation RecordInventoryReconciliation($input: InventoryReconciliationInput!) {

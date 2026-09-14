@@ -9,7 +9,7 @@ import { useAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { clearLocalUiData } from '@indyzai/pos-database/maintenance';
 import { useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
-import type { LocalRecord, SyncStatus } from '@indyzai/pos-database';
+import type { CollectionName, LocalRecord, SyncStatus } from '@indyzai/pos-database';
 import { waybillRepository } from '../logistics/waybillRepository';
 import type { WaybillJob } from '../logistics/types';
 import { createLogger } from '@indyzai/pos-core';
@@ -25,6 +25,8 @@ type OutboxPayload = {
   attemptCount?: number;
   errorMessage?: string;
   createdAt?: number | string;
+  table?: CollectionName;
+  localId?: string;
 };
 type SyncStatePayload = { collection?: string; cursor?: string; lastSyncedAt?: number | string };
 type SyncErrorPayload = {
@@ -49,6 +51,7 @@ export function DataSettingsSection() {
   const [waybillJobs, setWaybillJobs] = useState<WaybillJob[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState('');
 
@@ -157,16 +160,80 @@ export function DataSettingsSection() {
     );
   };
 
-  const recent = [...outbox.records].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 20);
-  const waybillActivity = waybillJobs.map((job) => ({
+  const retryOutbox = async (record: LocalRecord<OutboxPayload>) => {
+    if (!local.database) return;
+    const { errorMessage: _error, ...payload } = record.payload;
+    await local.database.collection<LocalRecord<OutboxPayload>>('sync_outbox').put({
+      ...record,
+      payload,
+      syncStatus: 'PENDING',
+      updatedAt: Date.now(),
+    });
+    await refresh();
+    void triggerBillingOutboxWorker().catch(() => undefined);
+  };
+
+  const deleteOutbox = async (record: LocalRecord<OutboxPayload>) => {
+    if (!local.database) return;
+    const jobId = record.payload.offlineId || record.remoteId || record.id;
+    const dependencies = await local.database.collection('sync_dependencies').list({ includeDeleted: true });
+    if (record.payload.table && record.payload.localId) {
+      const repository = local.database.collection(record.payload.table);
+      const current = await repository.get(record.payload.localId);
+      if (current) {
+        if (!current.remoteId) await repository.remove(current.id);
+        else await repository.put({ ...current, syncStatus: 'SYNCED', updatedAt: Date.now() });
+      }
+    }
+    await Promise.all([
+      local.database.collection('sync_outbox').remove(record.id),
+      ...dependencies
+        .filter((dependency) => {
+          const payload = dependency.payload as { jobId?: string; dependsOnJobId?: string };
+          return payload.jobId === jobId || payload.dependsOnJobId === jobId;
+        })
+        .map((dependency) => local.database!.collection('sync_dependencies').remove(dependency.id)),
+    ]);
+    await refresh();
+  };
+
+  const resolveConflict = async (record: LocalRecord) => {
+    if (!local.database) return;
+    const payload = record.payload as { jobId?: string; outboxId?: string; offlineId?: string };
+    const targetId = payload.jobId || payload.outboxId || payload.offlineId;
+    if (targetId) {
+      const jobs = await local.database
+        .collection<LocalRecord<OutboxPayload>>('sync_outbox')
+        .list({ includeDeleted: true });
+      const job = jobs.find(
+        (candidate) =>
+          candidate.id === targetId ||
+          candidate.remoteId === targetId ||
+          candidate.payload.offlineId === targetId,
+      );
+      if (job) await retryOutbox(job);
+    }
+    await local.database.collection('sync_conflicts').remove(record.id);
+    await refresh();
+  };
+
+  const recent = [...outbox.records]
+    .filter((record) => showCompleted || (record.syncStatus !== 'SYNCED' && record.syncStatus !== 'API'))
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 20);
+  const waybillActivity = waybillJobs
+    .map((job) => ({
       id: job.id,
       label: 'Create waybill',
       status: job.status,
       timestamp: job.createdAt,
       error: job.error,
-    })).slice(0, 20);
+    }))
+    .slice(0, 20);
   const problems = [
     ...errors.records.map((record) => ({
+      source: 'error' as const,
+      record,
       id: record.id,
       label: record.payload.operation || record.payload.entityType || 'Sync error',
       status: 'FAILED',
@@ -176,6 +243,8 @@ export function DataSettingsSection() {
     ...conflicts.records.map((record) => {
       const payload = record.payload as Record<string, unknown>;
       return {
+        source: 'conflict' as const,
+        record,
         id: record.id,
         label: String(payload.entityType || payload.operation || 'Data conflict'),
         status: 'CONFLICT',
@@ -209,24 +278,24 @@ export function DataSettingsSection() {
       <View style={s.titleRow}>
         <SectionHeader icon={<RefreshCw size={18} color={c.primary} />} title="Synchronization" compact />
         <View style={s.syncActions}>
-        <AppPressable
-          accessibilityLabel="Manually synchronize pending outbox activity"
-          disabled={syncing || local.status !== 'ready'}
-          onPress={() => void syncNow()}
-          style={[s.refreshButton, { backgroundColor: c.primary, opacity: syncing ? 0.55 : 1 }]}
-        >
-          <Send size={14} color="#fff" />
-          <Text style={[s.refreshText, { color: '#fff' }]}>{syncing ? 'Syncing…' : 'Sync now'}</Text>
-        </AppPressable>
-        <AppPressable
-          accessibilityLabel="Refresh local synchronization status"
-          disabled={refreshing || local.status !== 'ready'}
-          onPress={() => void refresh()}
-          style={[s.refreshButton, { backgroundColor: c.primarySoft, opacity: refreshing ? 0.55 : 1 }]}
-        >
-          <RefreshCw size={14} color={c.primary} />
-          <Text style={[s.refreshText, { color: c.primary }]}>{refreshing ? 'Reading…' : 'Refresh'}</Text>
-        </AppPressable>
+          <AppPressable
+            accessibilityLabel="Manually synchronize pending outbox activity"
+            disabled={syncing || local.status !== 'ready'}
+            onPress={() => void syncNow()}
+            style={[s.refreshButton, { backgroundColor: c.primary, opacity: syncing ? 0.55 : 1 }]}
+          >
+            <Send size={14} color="#fff" />
+            <Text style={[s.refreshText, { color: '#fff' }]}>{syncing ? 'Syncing…' : 'Sync now'}</Text>
+          </AppPressable>
+          <AppPressable
+            accessibilityLabel="Refresh local synchronization status"
+            disabled={refreshing || local.status !== 'ready'}
+            onPress={() => void refresh()}
+            style={[s.refreshButton, { backgroundColor: c.primarySoft, opacity: refreshing ? 0.55 : 1 }]}
+          >
+            <RefreshCw size={14} color={c.primary} />
+            <Text style={[s.refreshText, { color: c.primary }]}>{refreshing ? 'Reading…' : 'Refresh'}</Text>
+          </AppPressable>
         </View>
       </View>
       <View style={s.summaryGrid}>
@@ -242,7 +311,31 @@ export function DataSettingsSection() {
         </Text>
       ) : null}
 
-      <SectionHeader icon={<Clock3 size={18} color={c.primary} />} title="Recent outbox activity" />
+      <View style={s.activityTitleRow}>
+        <SectionHeader icon={<Clock3 size={18} color={c.primary} />} title="Recent outbox activity" compact />
+        <AppPressable
+          accessibilityLabel={
+            showCompleted
+              ? 'Hide completed synchronization objects'
+              : 'Show completed synchronization objects'
+          }
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: showCompleted }}
+          onPress={() => setShowCompleted((value) => !value)}
+          style={[
+            s.completedToggle,
+            {
+              backgroundColor: showCompleted ? c.background : c.surfaceMuted,
+              borderColor: showCompleted ? c.success : c.outlineMuted,
+            },
+          ]}
+        >
+          <CheckCircle2 size={14} color={showCompleted ? c.success : c.textSecondary} />
+          <Text style={[s.completedToggleText, { color: showCompleted ? c.success : c.textSecondary }]}>
+            Show completed
+          </Text>
+        </AppPressable>
+      </View>
       <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
         {!recent.length ? (
           <Empty text="No records in the new sync outbox." />
@@ -255,7 +348,18 @@ export function DataSettingsSection() {
               status={record.syncStatus}
               timestamp={record.updatedAt}
               error={record.payload.errorMessage}
-              json={{ id: record.id, syncStatus: record.syncStatus, updatedAt: record.updatedAt, payload: record.payload }}
+              json={{
+                id: record.id,
+                syncStatus: record.syncStatus,
+                updatedAt: record.updatedAt,
+                payload: record.payload,
+              }}
+              onRetry={record.syncStatus === 'FAILED' ? () => retryOutbox(record) : undefined}
+              onDelete={
+                ['PENDING', 'RUNNING', 'FAILED', 'CONFLICT'].includes(record.syncStatus)
+                  ? () => deleteOutbox(record)
+                  : undefined
+              }
               last={index === recent.length - 1}
             />
           ))
@@ -283,7 +387,18 @@ export function DataSettingsSection() {
           <SectionHeader icon={<AlertCircle size={18} color={c.error} />} title="Sync problems" />
           <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
             {problems.map((problem, index) => (
-              <SyncRow key={problem.id} {...problem} last={index === problems.length - 1} />
+              <SyncRow
+                key={problem.id}
+                {...problem}
+                onResolve={problem.source === 'conflict' ? () => resolveConflict(problem.record) : undefined}
+                onDelete={() =>
+                  local.database
+                    ?.collection(problem.source === 'conflict' ? 'sync_conflicts' : 'sync_errors')
+                    .remove(problem.record.id)
+                    .then(refresh)
+                }
+                last={index === problems.length - 1}
+              />
             ))}
           </View>
         </>
@@ -329,6 +444,9 @@ function SyncRow(props: {
   timestamp: number | string;
   error?: string;
   json?: unknown;
+  onRetry?: () => void | Promise<void>;
+  onResolve?: () => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
   last: boolean;
 }) {
   const { themeColors: c } = useAppTheme();
@@ -350,15 +468,44 @@ function SyncRow(props: {
       </Text>
       <Text style={[s.syncTime, { color: c.textSecondary }]}>{formatTime(props.timestamp)}</Text>
       {props.error ? <Text style={[s.error, { color: c.error }]}>{props.error}</Text> : null}
+      {props.onRetry || props.onResolve || props.onDelete ? (
+        <View style={s.rowActions}>
+          {props.onRetry ? <RowAction label="Retry" color={c.primary} onPress={props.onRetry} /> : null}
+          {props.onResolve ? <RowAction label="Resolve" color={c.success} onPress={props.onResolve} /> : null}
+          {props.onDelete ? <RowAction label="Delete" color={c.error} onPress={props.onDelete} /> : null}
+        </View>
+      ) : null}
       {props.json ? (
         <>
           <AppPressable onPress={() => setJsonOpen((open) => !open)} style={s.jsonButton}>
-            <Text style={[s.jsonButtonText, { color: c.primary }]}>{jsonOpen ? 'Hide JSON' : 'View JSON'}</Text>
+            <Text style={[s.jsonButtonText, { color: c.primary }]}>
+              {jsonOpen ? 'Hide JSON' : 'View JSON'}
+            </Text>
           </AppPressable>
-          {jsonOpen ? <Text selectable style={[s.json, { color: c.text, backgroundColor: c.surfaceMuted }]}>{JSON.stringify(props.json, null, 2)}</Text> : null}
+          {jsonOpen ? (
+            <Text selectable style={[s.json, { color: c.text, backgroundColor: c.surfaceMuted }]}>
+              {JSON.stringify(props.json, null, 2)}
+            </Text>
+          ) : null}
         </>
       ) : null}
     </View>
+  );
+}
+
+function RowAction({
+  label,
+  color,
+  onPress,
+}: {
+  label: string;
+  color: string;
+  onPress: () => void | Promise<void>;
+}) {
+  return (
+    <AppPressable onPress={() => void onPress()} style={[s.rowAction, { borderColor: color }]}>
+      <Text style={[s.rowActionText, { color }]}>{label}</Text>
+    </AppPressable>
   );
 }
 
@@ -476,12 +623,38 @@ const s = StyleSheet.create({
   },
   refreshText: { fontSize: 11, fontWeight: '900' },
   syncActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  activityTitleRow: {
+    marginTop: 22,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  completedToggle: {
+    minHeight: 34,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  completedToggleText: { fontSize: 11, fontWeight: '800' },
   syncRow: { paddingVertical: 13, borderBottomWidth: StyleSheet.hairlineWidth },
   syncTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   syncLabel: { flex: 1, fontSize: 12, fontWeight: '900' },
   syncStatus: { fontSize: 10, fontWeight: '900' },
   syncId: { marginTop: 3, fontSize: 10 },
   syncTime: { marginTop: 2, fontSize: 10 },
+  rowActions: { marginTop: 9, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  rowAction: {
+    minHeight: 30,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+  },
+  rowActionText: { fontSize: 10, fontWeight: '900' },
   jsonButton: { alignSelf: 'flex-start', marginTop: 8, paddingVertical: 3 },
   jsonButtonText: { fontSize: 11, fontWeight: '900' },
   json: { marginTop: 6, borderRadius: 10, padding: 10, fontSize: 10, lineHeight: 15 },

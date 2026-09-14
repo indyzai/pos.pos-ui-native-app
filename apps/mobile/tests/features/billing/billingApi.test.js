@@ -81,6 +81,24 @@ test('concurrent sales are retained', async () => {
   expect(cache.queue[0].input.totalAmount).toBe(21);
   expect(cache.queue[0].id).not.toBe(cache.queue[1].id);
 });
+test('billing UI can persist checkout through the generic local-first mutation hook', async () => {
+  let queued;
+  const result = await billingApi.checkout(
+    key,
+    items,
+    'Cash',
+    undefined,
+    0,
+    undefined,
+    undefined,
+    async (sale) => {
+      queued = clone(sale);
+    },
+  );
+  expect(queued).toMatchObject({ id: result.id, operation: 'CREATE', receiptNumber: result.receiptNumber });
+  expect(queued.input).toMatchObject({ offlineId: result.id, totalAmount: 21 });
+  expect((await billingApi.load()).cache.queue).toEqual([]);
+});
 test('customized restaurant lines retain the original product and line metadata', async () => {
   await billingApi.checkout(
     key,
