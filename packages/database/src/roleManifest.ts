@@ -58,12 +58,12 @@ const base: CollectionName[] = [
     "sync_conflicts",
     "sync_errors",
     "tombstones",
+    "stock_counts",
+    "stock_count_lines",
 ];
 
 const management: CollectionName[] = [
     "stock_movements",
-    "stock_counts",
-    "stock_count_lines",
     "transfers",
     "transfer_lines",
     "customer_credit_summaries",

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Check, ClipboardList, Save, ScanLine, Search, X } from 'lucide-react-native';
@@ -39,6 +39,14 @@ export function StockReconciliationScreen() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [sharedWithCashiers, setSharedWithCashiers] = useState(false);
+  const refreshKey = useRef('');
+  const canManage = hasEntitlement(
+    'manager.actions',
+    auth.session?.tenant.role,
+    auth.session?.user.role,
+    'pos',
+  );
   const allowed = hasEntitlement(
     'inventory.reconcile',
     auth.session?.tenant.role,
@@ -69,6 +77,19 @@ export function StockReconciliationScreen() {
     [counts, products.data],
   );
   const hasInvalidCounts = selected.length !== addedProducts.length;
+  const visibleDrafts = useMemo(
+    () =>
+      reconciliations.data.filter(
+        ({ payload }) =>
+          payload.status === 'DRAFT' &&
+          (canManage || payload.ownedByCurrentUser === true || payload.sharedWithCashiers === true),
+      ),
+    [canManage, reconciliations.data],
+  );
+  const completedReports = useMemo(
+    () => reconciliations.data.filter(({ payload }) => payload.status === 'COMPLETED'),
+    [reconciliations.data],
+  );
   const suggestions = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return [];
@@ -93,6 +114,92 @@ export function StockReconciliationScreen() {
       delete next[productId];
       return next;
     });
+
+  const refreshDrafts = useCallback(async () => {
+    const db = local.database;
+    if (!db || !auth.session) return;
+    try {
+      const drafts = await inventoryApi.loadReconciliationDrafts();
+      const scope = createScopeKey(db.scope);
+      const existing = await db
+        .collection<LocalRecord<StockReconciliationReport>>('stock_counts')
+        .list({ includeDeleted: true });
+      const remoteIds = new Set(drafts.map((draft) => String(draft.id)));
+      await db.collection<LocalRecord<StockReconciliationReport>>('stock_counts').putMany(
+        drafts.map((draft) => {
+          const current = existing.find((record) => record.remoteId === String(draft.id));
+          const lines = draft.items.map((item) => {
+            const product = products.data.find(
+              (record) => String(record.payload.id) === String(item.productId),
+            )?.payload;
+            const previousQuantity = Number(product?.stock ?? item.countedQuantity);
+            const countedQuantity = Number(item.countedQuantity);
+            const lossQuantity = Math.max(0, previousQuantity - countedQuantity);
+            return {
+              productId: String(item.productId),
+              productName: product?.name ?? `Product ${item.productId}`,
+              previousQuantity,
+              countedQuantity,
+              variance: countedQuantity - previousQuantity,
+              lossQuantity,
+              lossValue: lossQuantity * Number(product?.price ?? 0),
+            };
+          });
+          const payload: StockReconciliationReport = {
+            id: current?.id ?? `stock-count-server-${draft.id}`,
+            lines,
+            reference: draft.reference,
+            remarks: draft.remarks,
+            status: 'DRAFT',
+            totalLossQuantity: lines.reduce((sum, line) => sum + line.lossQuantity, 0),
+            totalLossValue: lines.reduce((sum, line) => sum + line.lossValue, 0),
+            createdAt: draft.createdAt,
+            updatedAt: draft.updatedAt ?? draft.createdAt,
+            sharedWithCashiers: draft.sharedWithCashiers,
+            createdBy: String(draft.createdBy),
+            ownedByCurrentUser: draft.ownedByCurrentUser,
+          };
+          return {
+            ...current,
+            id: payload.id,
+            scope,
+            tenantId: db.scope.tenantId,
+            storeId: current?.storeId ?? db.scope.storeIds[0] ?? null,
+            remoteId: String(draft.id),
+            payload,
+            serverVersion: current?.serverVersion ?? 0,
+            syncStatus: 'API' as const,
+            updatedAt: Date.parse(payload.updatedAt) || Date.now(),
+            deletedAt: null,
+          };
+        }),
+      );
+      await Promise.all(
+        existing
+          .filter(
+            (record) =>
+              record.payload.status === 'DRAFT' &&
+              record.syncStatus === 'API' &&
+              record.remoteId &&
+              !remoteIds.has(record.remoteId),
+          )
+          .map((record) =>
+            db.collection<LocalRecord<StockReconciliationReport>>('stock_counts').remove(record.id),
+          ),
+      );
+      await reconciliations.reload();
+    } catch {
+      // Keep the last authorized local draft list available while offline.
+    }
+  }, [auth.session, local.database, products.data, reconciliations]);
+
+  useEffect(() => {
+    const key = `${auth.session?.tenant.id ?? ''}:${auth.session?.user.id ?? ''}:${local.status}:${products.data.length}`;
+    if (!auth.session || local.status !== 'ready' || !products.data.length || refreshKey.current === key)
+      return;
+    refreshKey.current = key;
+    void refreshDrafts();
+  }, [auth.session, local.status, products.data.length, refreshDrafts]);
 
   const buildReport = (status: StockReconciliationReport['status']): StockReconciliationReport => {
     const now = new Date().toISOString();
@@ -119,6 +226,9 @@ export function StockReconciliationScreen() {
       totalLossValue: lines.reduce((sum, line) => sum + line.lossValue, 0),
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
+      sharedWithCashiers: canManage ? sharedWithCashiers : (existing?.sharedWithCashiers ?? false),
+      createdBy: existing?.createdBy ?? String(auth.session?.user.id ?? ''),
+      ownedByCurrentUser: existing?.ownedByCurrentUser ?? true,
       ...(status === 'COMPLETED' ? { completedAt: now } : {}),
     };
   };
@@ -144,6 +254,7 @@ export function StockReconciliationScreen() {
         draftId: current?.remoteId ?? undefined,
         reference: report.reference,
         remarks: report.remarks,
+        sharedWithCashiers: report.sharedWithCashiers,
       });
       await db.collection<LocalRecord<StockReconciliationReport>>('stock_counts').put({
         ...current,
@@ -194,6 +305,7 @@ export function StockReconciliationScreen() {
         draftId: current?.remoteId ?? undefined,
         reference: report.reference,
         remarks: report.remarks,
+        sharedWithCashiers: report.sharedWithCashiers,
       });
       await reconciliations.resolveMutation({
         jobId: queued.job.payload.offlineId,
@@ -214,6 +326,7 @@ export function StockReconciliationScreen() {
       setEditingId(undefined);
       setReference('');
       setRemarks('');
+      setSharedWithCashiers(false);
       showSnackbar('Reconciliation submitted', `${report.lines.length} product stocks were updated.`);
     } catch (error) {
       showSnackbar('Submission failed', error instanceof Error ? error.message : 'Try again.');
@@ -228,6 +341,7 @@ export function StockReconciliationScreen() {
     setCounts(Object.fromEntries(report.lines.map((line) => [line.productId, String(line.countedQuantity)])));
     setReference(report.reference ?? '');
     setRemarks(report.remarks ?? '');
+    setSharedWithCashiers(report.sharedWithCashiers === true);
   };
 
   if (!allowed) return <Redirect href="/billing" />;
@@ -255,6 +369,19 @@ export function StockReconciliationScreen() {
           placeholderTextColor={c.textSecondary}
           style={[s.field, { color: c.text, borderColor: c.outline }]}
         />
+        {canManage ? (
+          <AppPressable
+            onPress={() => setSharedWithCashiers((value) => !value)}
+            style={[s.shareControl, { borderColor: c.outline }]}
+          >
+            <View
+              style={[s.shareIndicator, { backgroundColor: sharedWithCashiers ? c.primary : c.outlineMuted }]}
+            />
+            <Text style={{ color: c.text, fontWeight: '800' }}>
+              {sharedWithCashiers ? 'Shared with cashiers' : 'Only managers can see this draft'}
+            </Text>
+          </AppPressable>
+        ) : null}
         <TextInput
           value={remarks}
           onChangeText={setRemarks}
@@ -351,9 +478,12 @@ export function StockReconciliationScreen() {
       <View style={s.history}>
         <View style={s.historyHeading}>
           <ClipboardList size={17} color={c.primary} />
-          <Text style={[s.historyTitle, { color: c.text }]}>Reconciliation history</Text>
+          <Text style={[s.historyTitle, { color: c.text }]}>Saved drafts</Text>
         </View>
-        {reconciliations.data.map((record) => {
+        {!visibleDrafts.length ? (
+          <Text style={[s.emptySelection, { color: c.textSecondary }]}>No saved drafts available.</Text>
+        ) : null}
+        {visibleDrafts.map((record) => {
           const report = record.payload;
           if (!report.lines) return null;
           return (
@@ -369,12 +499,35 @@ export function StockReconciliationScreen() {
                 </Text>
               </View>
               <AppPressable onPress={() => edit(record)} style={[s.edit, { borderColor: c.primary }]}>
-                <Text style={[s.editText, { color: c.primary }]}>Edit</Text>
+                <Text style={[s.editText, { color: c.primary }]}>Open</Text>
               </AppPressable>
             </View>
           );
         })}
       </View>
+      {completedReports.length ? (
+        <View style={s.history}>
+          <View style={s.historyHeading}>
+            <ClipboardList size={17} color={c.primary} />
+            <Text style={[s.historyTitle, { color: c.text }]}>Completed history</Text>
+          </View>
+          {completedReports.map((record) => (
+            <View
+              key={record.id}
+              style={[s.historyRow, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}
+            >
+              <View style={s.productCopy}>
+                <Text style={[s.productName, { color: c.text }]}>
+                  {record.payload.reference || record.payload.id}
+                </Text>
+                <Text style={[s.productStock, { color: c.textSecondary }]}>
+                  {record.payload.lines.length} products · Loss ₹{record.payload.totalLossValue.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <BarcodeScannerModal
         visible={scannerOpen}
         onClose={() => setScannerOpen(false)}
@@ -405,6 +558,17 @@ const s = StyleSheet.create({
   subtitle: { marginTop: 3, fontSize: 12 },
   panel: { borderWidth: 1, borderRadius: 18, padding: 14 },
   field: { height: 44, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, marginBottom: 10 },
+  shareControl: {
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  shareIndicator: { width: 10, height: 10, borderRadius: 5 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   searchBox: {
     flex: 1,

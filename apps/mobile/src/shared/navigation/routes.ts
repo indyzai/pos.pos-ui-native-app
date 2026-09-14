@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   ChartPie,
   Clock,
+  ClipboardCheck,
   LayoutGrid,
   Package,
   ShoppingBag,
@@ -39,6 +40,12 @@ export const reportNavigationItem: AppNavigationItem = {
 };
 
 export const moreNavigationItems: AppNavigationItem[] = [
+  {
+    label: 'Stock count',
+    icon: ClipboardCheck,
+    href: '/inventory-reconciliation',
+    entitlement: 'inventory.reconcile',
+  },
   { label: 'Customers', icon: Users, href: '/customers' },
   { label: 'Orders', icon: ReceiptText, href: '/orders' },
   { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers', entitlement: 'inventory.edit' },
@@ -53,7 +60,7 @@ export const tabletNavigationItems: AppNavigationItem[] = [
   moreNavigationItems[0],
   moreNavigationItems[1],
   reportNavigationItem,
-  moreNavigationItems[6],
+  moreNavigationItems[7],
 ];
 
 export function isNavigationItemActive(pathname: string, href: Href): boolean {

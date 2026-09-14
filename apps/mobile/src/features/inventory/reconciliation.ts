@@ -19,6 +19,7 @@ export function createReconciliationReportVariables(
       reconciliationDate: timestamp,
       reference: input.reference || undefined,
       remarks: input.remarks || undefined,
+      sharedWithCashiers: input.sharedWithCashiers,
     },
   };
 }

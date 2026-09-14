@@ -33,7 +33,10 @@ export type Entitlement =
     | "purchases.split_item"
     | "purchases.ai_import";
 
-const cashierEntitlements: readonly Entitlement[] = ["inventory.view"];
+const cashierEntitlements: readonly Entitlement[] = [
+    "inventory.view",
+    "inventory.reconcile",
+];
 const managerEntitlements: readonly Entitlement[] = [
     ...cashierEntitlements,
     "manager.actions",

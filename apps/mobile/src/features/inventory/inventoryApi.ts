@@ -34,6 +34,16 @@ const saveReconciliationDraftMutation = `
   }
 `;
 
+const reconciliationDraftsQuery = `
+  query InventoryReconciliationDrafts {
+    inventoryReconciliationDrafts {
+      id status items { productId countedQuantity }
+      reference remarks reconciliationDate sharedWithCashiers
+      createdBy ownedByCurrentUser createdAt updatedAt
+    }
+  }
+`;
+
 const createProductMutation = `
   mutation CreateProduct($newProductData: NewProductInput!) {
     newProduct(newProductData: $newProductData) { success message errors product { id } }
@@ -87,6 +97,25 @@ export const inventoryApi = {
   load: billingApi.load,
   listJobs: () => listOutboxJobs(scope()),
   refresh: (signal?: AbortSignal) => billingApi.refresh(signal),
+  async loadReconciliationDrafts() {
+    const session = context();
+    const data = await requestPos<{
+      inventoryReconciliationDrafts: Array<{
+        id: string;
+        status: 'DRAFT';
+        items: Array<{ productId: string; countedQuantity: number }>;
+        reference?: string;
+        remarks?: string;
+        reconciliationDate: string;
+        sharedWithCashiers: boolean;
+        createdBy: string;
+        ownedByCurrentUser: boolean;
+        createdAt: string;
+        updatedAt?: string;
+      }>;
+    }>(session.token, String(session.tenant.id), reconciliationDraftsQuery);
+    return data.inventoryReconciliationDrafts;
+  },
   async loadProductReferences(): Promise<ProductReferenceData> {
     const session = context();
     const tenantId = String(session.tenant.id);

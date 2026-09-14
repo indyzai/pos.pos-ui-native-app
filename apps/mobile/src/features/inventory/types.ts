@@ -20,6 +20,9 @@ export type StockReconciliationRecord = StockReconciliationInput & {
   status: 'DRAFT' | 'COMPLETED';
   createdAt: string;
   completedAt?: string;
+  sharedWithCashiers?: boolean;
+  createdBy?: string;
+  ownedByCurrentUser?: boolean;
 };
 
 export type StockReconciliationLine = {
@@ -43,6 +46,9 @@ export type StockReconciliationReport = {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  sharedWithCashiers?: boolean;
+  createdBy?: string;
+  ownedByCurrentUser?: boolean;
 };
 
 export type StockReconciliationReportInput = {
@@ -50,6 +56,7 @@ export type StockReconciliationReportInput = {
   draftId?: string;
   reference?: string;
   remarks?: string;
+  sharedWithCashiers?: boolean;
 };
 
 export type InventorySummary = {

@@ -19,7 +19,7 @@ describe('role-scoped local database manifest', () => {
     expect(manifest.collections.has('products')).toBe(true);
     expect(manifest.collections.has('sales')).toBe(true);
     expect(manifest.collections.has('sync_outbox')).toBe(true);
-    expect(manifest.collections.has('stock_counts')).toBe(false);
+    expect(manifest.collections.has('stock_counts')).toBe(true);
     expect(manifest.collections.has('purchase_orders')).toBe(false);
   });
 
