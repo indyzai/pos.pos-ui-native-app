@@ -15,7 +15,12 @@ import { useAppTheme } from '@indyzai/pos-ui';
 import { authApi, type DeviceRegistrationDetails } from '../../auth/authApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { development, env } from '@indyzai/pos-core/env';
-import { getRuntimeApiUrls, setApiEnvironment, type ApiEnvironment } from '../../config/runtimeEnvironment';
+import {
+  canSwitchApiEnvironment,
+  getRuntimeApiUrls,
+  setApiEnvironment,
+  type ApiEnvironment,
+} from '../../config/runtimeEnvironment';
 import { DeviceLogViewer } from '@indyzai/pos-ui/device-logs';
 
 export function DeviceSettingsSection({
@@ -41,7 +46,7 @@ export function DeviceSettingsSection({
 
   useEffect(() => {
     void authApi.getDeviceRegistrationDetails().then(setDetails);
-    if (development) {
+    if (development || !canSwitchApiEnvironment) {
       void getRuntimeApiUrls().then(({ environment, posApiUrl, posBaseUrl, authApiUrl }) => {
         setApiEnvironmentState(environment);
         setApiUrls({ posApiUrl, posBaseUrl, authApiUrl });
@@ -208,7 +213,7 @@ export function DeviceSettingsSection({
 
       <SectionTitle icon={Globe2} title="API configuration" />
       <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
-        {development && (
+        {development && canSwitchApiEnvironment && (
           <View style={[s.environmentRow, { borderBottomColor: c.outlineMuted }]}>
             <View style={s.environmentCopy}>
               <Text style={[s.environmentTitle, { color: c.text }]}>Use production APIs</Text>

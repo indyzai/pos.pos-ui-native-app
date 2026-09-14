@@ -12,11 +12,13 @@ export function ReconcileStockModal({
   busy,
   onClose,
   onSave,
+  onSaveDraft,
 }: {
   product: InventoryProduct | null;
   busy: boolean;
   onClose: () => void;
   onSave: (input: StockReconciliationInput) => Promise<void>;
+  onSaveDraft: (input: StockReconciliationInput) => Promise<void>;
 }) {
   const { themeColors: c } = useAppTheme();
   const [quantity, setQuantity] = useState('');
@@ -28,18 +30,18 @@ export function ReconcileStockModal({
     setRemarks('');
   }, [product]);
   if (!product) return null;
-  const save = async () => {
+  const value = () => {
     const countedQuantity = Number(quantity);
     if (!Number.isFinite(countedQuantity) || countedQuantity < 0) {
       showSnackbar('Invalid stock', 'Counted quantity must be zero or greater.');
-      return;
+      return undefined;
     }
-    await onSave({
+    return {
       productId: product.id,
       countedQuantity,
       reference: reference.trim(),
       remarks: remarks.trim(),
-    });
+    };
   };
   return (
     <Modal transparent visible animationType="slide" onRequestClose={onClose}>
@@ -69,14 +71,29 @@ export function ReconcileStockModal({
           />
           <Field label="Reference (optional)" value={reference} onChangeText={setReference} />
           <Field label="Remarks (optional)" value={remarks} onChangeText={setRemarks} multiline />
-          <AppPressable
-            disabled={busy}
-            onPress={() => void save()}
-            style={[styles.save, { backgroundColor: c.primary, opacity: busy ? 0.65 : 1 }]}
-          >
-            <Check size={18} color="#fff" />
-            <Text style={styles.saveText}>{busy ? 'Saving…' : 'Save count'}</Text>
-          </AppPressable>
+          <View style={styles.actions}>
+            <AppPressable
+              disabled={busy}
+              onPress={() => {
+                const input = value();
+                if (input) void onSaveDraft(input);
+              }}
+              style={[styles.draft, { borderColor: c.outline, opacity: busy ? 0.65 : 1 }]}
+            >
+              <Text style={[styles.draftText, { color: c.text }]}>Save draft</Text>
+            </AppPressable>
+            <AppPressable
+              disabled={busy}
+              onPress={() => {
+                const input = value();
+                if (input) void onSave(input);
+              }}
+              style={[styles.save, { backgroundColor: c.primary, opacity: busy ? 0.65 : 1 }]}
+            >
+              <Check size={18} color="#fff" />
+              <Text style={styles.saveText}>{busy ? 'Saving…' : 'Reconcile'}</Text>
+            </AppPressable>
+          </View>
         </View>
       </AppKeyboardSafeView>
     </Modal>
@@ -114,7 +131,18 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, fontWeight: '800', marginBottom: 6, textTransform: 'uppercase' },
   input: { minHeight: 46, borderWidth: 1, borderRadius: 13, paddingHorizontal: 13, fontSize: 14 },
   notes: { minHeight: 76, paddingTop: 12, textAlignVertical: 'top' },
+  actions: { flexDirection: 'row', gap: 10 },
+  draft: {
+    flex: 1,
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  draftText: { fontSize: 14, fontWeight: '900' },
   save: {
+    flex: 1,
     height: 50,
     borderRadius: 14,
     flexDirection: 'row',

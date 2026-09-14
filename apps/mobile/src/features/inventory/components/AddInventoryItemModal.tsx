@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Plus, X } from 'lucide-react-native';
+import { Plus, Save, X } from 'lucide-react-native';
 import { AppDropdown } from '@indyzai/pos-ui';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui';
 import { AppPressable } from '@indyzai/pos-ui';
@@ -9,13 +9,15 @@ import { useAppTheme } from '@indyzai/pos-ui';
 import { AppPaperProvider } from '@indyzai/pos-ui';
 import { ProductIcon, productIconOptions, type ProductIconKey } from '../../billing/components/productIcons';
 import { inventoryApi } from '../inventoryApi';
-import type { CreateInventoryItemInput, ProductReferenceData } from '../types';
+import type { CreateInventoryItemInput, InventoryProduct, ProductReferenceData } from '../types';
 
 export function AddInventoryItemModal({
   visible,
   busy,
   quickAdd = false,
   embedded = false,
+  product,
+  allowPriceEdit = true,
   onClose,
   onSave,
 }: {
@@ -23,6 +25,8 @@ export function AddInventoryItemModal({
   busy: boolean;
   quickAdd?: boolean;
   embedded?: boolean;
+  product?: InventoryProduct | null;
+  allowPriceEdit?: boolean;
   onClose: () => void;
   onSave: (input: CreateInventoryItemInput) => Promise<void>;
 }) {
@@ -48,25 +52,28 @@ export function AddInventoryItemModal({
 
   useEffect(() => {
     if (!visible) return;
-    setName('');
-    setPrice('');
+    setName(product?.name ?? '');
+    setPrice(product ? String(product.price) : '');
     setCostPrice('');
-    setStock('0');
+    setStock(product ? String(product.stock) : '0');
     setMinStock('0');
-    setBarcode('');
-    setSkuCode('');
+    setBarcode(product?.barcode ?? '');
+    setSkuCode(product?.sku ?? '');
     setNotes('');
     setCategoryId(undefined);
     setUnitId(undefined);
     setTaxId(undefined);
-    setIconKey('package');
+    setIconKey((product?.details?.iconKey as ProductIconKey) ?? 'package');
     let active = true;
     setLoading(true);
     void inventoryApi.loadProductReferences().then(
       (value) => {
         if (!active) return;
         setReferences(value);
-        setCategoryId(value.categories[0]?.id);
+        setCategoryId(
+          value.categories.find((category) => category.name === product?.category)?.id ??
+            value.categories[0]?.id,
+        );
         setUnitId(value.units[0]?.id);
         setLoading(false);
       },
@@ -79,7 +86,7 @@ export function AddInventoryItemModal({
     return () => {
       active = false;
     };
-  }, [visible]);
+  }, [product, visible]);
 
   const save = async () => {
     const selling = Number(price),
@@ -125,7 +132,7 @@ export function AddInventoryItemModal({
             <View style={s.header}>
               <View style={s.heading}>
                 <Text style={[s.title, { color: c.text }]}>
-                  {quickAdd ? 'Quick add product' : 'Add inventory item'}
+                  {product ? 'Edit inventory item' : quickAdd ? 'Quick add product' : 'Add inventory item'}
                 </Text>
                 {quickAdd ? (
                   <Text style={[s.subtitle, { color: c.textSecondary }]}>
@@ -156,6 +163,7 @@ export function AddInventoryItemModal({
                   value={price}
                   onChangeText={setPrice}
                   keyboardType="decimal-pad"
+                  editable={!product || allowPriceEdit}
                 />
               </View>
               {!quickAdd ? (
@@ -268,8 +276,18 @@ export function AddInventoryItemModal({
               onPress={() => void save()}
               style={[s.save, { backgroundColor: c.primary, opacity: busy || loading ? 0.6 : 1 }]}
             >
-              <Plus size={18} color="#fff" />
-              <Text style={s.saveText}>{busy ? 'Adding…' : quickAdd ? 'Quick add product' : 'Add item'}</Text>
+              {product ? <Save size={18} color="#fff" /> : <Plus size={18} color="#fff" />}
+              <Text style={s.saveText}>
+                {busy
+                  ? product
+                    ? 'Saving…'
+                    : 'Adding…'
+                  : product
+                    ? 'Save changes'
+                    : quickAdd
+                      ? 'Quick add product'
+                      : 'Add item'}
+              </Text>
             </AppPressable>
           </ScrollView>
         </View>

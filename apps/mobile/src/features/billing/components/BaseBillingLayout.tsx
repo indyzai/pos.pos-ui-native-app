@@ -462,6 +462,7 @@ export function BaseBillingLayout({
         item.id.toLowerCase() === value.toLowerCase(),
     );
     if (product) {
+      setSearch('');
       logger.info('Barcode scanned and product matched', {
         barcode: value,
         productId: product.id,

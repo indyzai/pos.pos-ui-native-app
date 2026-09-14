@@ -71,12 +71,12 @@ const management: CollectionName[] = [
     "expenses",
     "waybill_jobs",
     "scrap_purchase_jobs",
+    "purchase_orders",
+    "purchase_order_lines",
 ];
 
 const administration: CollectionName[] = [
     "suppliers",
-    "purchase_orders",
-    "purchase_order_lines",
     "goods_receipts",
     "goods_receipt_lines",
 ];

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
     AppHeader as SharedHeader,
@@ -110,7 +111,7 @@ export function AppHeader({
             isOnline={isOnline}
             pendingQueueCount={pendingQueueCount}
             storage={local}
-            refreshJob={refreshJob}
+            refreshJob={Platform.OS === 'android' ? refreshJob : undefined}
             onCounterPress={() => (isCounterOpen ? setSummaryOpen(true) : setCounterOpen(true))}
             onPendingSyncPress={() => router.push('/settings?section=data')}
             onProfile={() => router.push('/profile')}

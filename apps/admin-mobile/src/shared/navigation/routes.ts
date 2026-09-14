@@ -6,6 +6,7 @@ import {
     Clock,
     LayoutGrid,
     Package,
+    ShoppingBag,
     ReceiptText,
     Settings,
     Users,
@@ -31,6 +32,7 @@ export const moreNavigationItems: AppNavigationItem[] = [
     { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers' },
     { label: 'Expenses', icon: Wallet, href: '/expenses' },
     { label: 'Shifts', icon: Clock, href: '/shifts' },
+    { label: 'Purchases', icon: ShoppingBag, href: '/purchases' },
     { label: 'Settings', icon: Settings, href: '/settings' },
 ];
 
@@ -39,7 +41,7 @@ export const tabletNavigationItems = [
     orderNavigationItem,
     moreNavigationItems[0],
     moreNavigationItems[1],
-    moreNavigationItems[5],
+    moreNavigationItems[6],
 ];
 
 export function isNavigationItemActive(pathname: string, href: Href): boolean {

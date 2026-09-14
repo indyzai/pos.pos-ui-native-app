@@ -10,6 +10,48 @@ export type StockReconciliationInput = {
   remarks?: string;
 };
 
+export type StockReconciliationRecord = StockReconciliationInput & {
+  id: string;
+  productName: string;
+  previousQuantity: number;
+  variance: number;
+  lossQuantity: number;
+  lossValue: number;
+  status: 'DRAFT' | 'COMPLETED';
+  createdAt: string;
+  completedAt?: string;
+};
+
+export type StockReconciliationLine = {
+  productId: string;
+  productName: string;
+  previousQuantity: number;
+  countedQuantity: number;
+  variance: number;
+  lossQuantity: number;
+  lossValue: number;
+};
+
+export type StockReconciliationReport = {
+  id: string;
+  lines: StockReconciliationLine[];
+  reference?: string;
+  remarks?: string;
+  status: 'DRAFT' | 'COMPLETED';
+  totalLossQuantity: number;
+  totalLossValue: number;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+};
+
+export type StockReconciliationReportInput = {
+  items: Array<{ productId: string; countedQuantity: number }>;
+  draftId?: string;
+  reference?: string;
+  remarks?: string;
+};
+
 export type InventorySummary = {
   totalProducts: number;
   lowStock: number;
@@ -34,6 +76,10 @@ export type CreateInventoryItemInput = {
   notes?: string;
   iconKey: ProductIconKey;
   status?: 'ACTIVE' | 'INCOMPLETE';
+};
+
+export type UpdateInventoryItemInput = CreateInventoryItemInput & {
+  productId: string;
 };
 
 export type ProductReferenceData = {

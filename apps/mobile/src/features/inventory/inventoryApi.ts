@@ -2,8 +2,14 @@ import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
-import { createReconciliationVariables } from './reconciliation';
-import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
+import { createReconciliationReportVariables } from './reconciliation';
+import type {
+  CreateInventoryItemInput,
+  ProductReferenceData,
+  StockReconciliationInput,
+  StockReconciliationReportInput,
+  UpdateInventoryItemInput,
+} from './types';
 import {
   createOutboxJob,
   listOutboxJobs,
@@ -22,9 +28,21 @@ const reconciliationMutation = `
   }
 `;
 
+const saveReconciliationDraftMutation = `
+  mutation SaveInventoryReconciliationDraft($input: InventoryReconciliationInput!) {
+    saveInventoryReconciliationDraft(input: $input)
+  }
+`;
+
 const createProductMutation = `
   mutation CreateProduct($newProductData: NewProductInput!) {
     newProduct(newProductData: $newProductData) { success message errors product { id } }
+  }
+`;
+
+const updateProductMutation = `
+  mutation UpdateProduct($id: String!, $input: UpdateProductInput!) {
+    updateProduct(id: $id, input: $input) { success message errors product { id } }
   }
 `;
 
@@ -124,20 +142,73 @@ export const inventoryApi = {
     await billingApi.refresh();
     return job;
   },
-  async reconcile(input: StockReconciliationInput): Promise<OutboxJob> {
+  async update(input: UpdateInventoryItemInput): Promise<OutboxJob> {
     const session = context();
-    const job = await runTracked('UPDATE_STOCK', async () => {
-      const data = await requestPos<{ recordInventoryReconciliation?: { id: string } }>(
-        session.token,
-        String(session.tenant.id),
-        reconciliationMutation,
-        createReconciliationVariables(input),
-      );
-      if (!data.recordInventoryReconciliation?.id)
-        throw new Error('Server did not acknowledge the stock update.');
-      return String(data.recordInventoryReconciliation.id);
+    const job = await runTracked('UPDATE_PRODUCT', async () => {
+      const data = await requestPos<{
+        updateProduct: { success: boolean; product?: { id: string }; message?: string };
+      }>(session.token, String(session.tenant.id), updateProductMutation, {
+        id: input.productId,
+        input: {
+          name: input.name,
+          price: input.price,
+          costPrice: input.costPrice,
+          quantity: input.stock,
+          minStock: input.minStock,
+          barcode: input.barcode || undefined,
+          skuCode: input.skuCode || undefined,
+          notes: input.notes || undefined,
+          categoryId: input.categoryId,
+          category: input.category || undefined,
+          unitId: input.unitId,
+          taxId: input.taxId,
+          details: { iconKey: input.iconKey },
+          status: input.status || 'ACTIVE',
+        },
+      });
+      if (!data.updateProduct?.success || !data.updateProduct.product?.id)
+        throw new Error(data.updateProduct?.message || 'Server did not acknowledge the product update.');
+      return String(data.updateProduct.product.id);
     });
     await billingApi.refresh();
     return job;
+  },
+  async reconcileReport(input: StockReconciliationReportInput): Promise<OutboxJob> {
+    const session = context();
+    const job = await runTracked('UPDATE_STOCK', async () => {
+      const data = await requestPos<{ recordInventoryReconciliation?: Array<{ id: string }> }>(
+        session.token,
+        String(session.tenant.id),
+        reconciliationMutation,
+        createReconciliationReportVariables(input),
+      );
+      const movements = data.recordInventoryReconciliation;
+      if (!movements?.length || !movements.every((movement) => movement.id))
+        throw new Error('Server did not acknowledge the stock update.');
+      return movements.map((movement) => String(movement.id)).join(',');
+    });
+    await billingApi.refresh();
+    return job;
+  },
+  async saveReconciliationDraft(input: StockReconciliationReportInput): Promise<OutboxJob> {
+    const session = context();
+    return runTracked('SAVE_STOCK_DRAFT', async () => {
+      const data = await requestPos<{ saveInventoryReconciliationDraft?: string }>(
+        session.token,
+        String(session.tenant.id),
+        saveReconciliationDraftMutation,
+        createReconciliationReportVariables(input),
+      );
+      if (!data.saveInventoryReconciliationDraft)
+        throw new Error('Server did not acknowledge the reconciliation draft.');
+      return String(data.saveInventoryReconciliationDraft);
+    });
+  },
+  reconcile(input: StockReconciliationInput): Promise<OutboxJob> {
+    return this.reconcileReport({
+      items: [{ productId: input.productId, countedQuantity: input.countedQuantity }],
+      reference: input.reference,
+      remarks: input.remarks,
+    });
   },
 };

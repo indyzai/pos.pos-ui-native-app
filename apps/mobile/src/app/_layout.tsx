@@ -15,6 +15,7 @@ import { AppHeaderProvider } from '@indyzai/pos-ui';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '@indyzai/pos-ui/snackbar';
 import { AppPaperProvider } from '@indyzai/pos-ui';
+import { hasEntitlement } from '@indyzai/pos-auth/access';
 import {
   moreNavigationItems,
   navigationItemsForRole,
@@ -71,6 +72,11 @@ function RootNavigator() {
       pathname !== '/profile'
     ) {
       const role = resolveStoreAccessRole(session.tenant.role, session.user.role);
+      if (
+        pathname === '/inventory-reconciliation' &&
+        hasEntitlement('inventory.reconcile', role, role, 'pos')
+      )
+        return;
       const allowed = navigationItemsForRole(
         [...primaryNavigationItems, ...moreNavigationItems, reportNavigationItem],
         role,
@@ -113,6 +119,8 @@ function RootNavigator() {
             <Stack.Screen name="profile" />
             <Stack.Screen name="device-setup" />
             <Stack.Screen name="settings" />
+            <Stack.Screen name="inventory-reconciliation" />
+            <Stack.Screen name="purchases" />
           </Stack>
         </View>
       </View>

@@ -89,6 +89,7 @@ function RootNavigator() {
                         <Stack.Screen name="profile" />
                         <Stack.Screen name="device-setup" />
                         <Stack.Screen name="settings" />
+                        <Stack.Screen name="purchases" />
                     </Stack>
                 </View>
             </View>

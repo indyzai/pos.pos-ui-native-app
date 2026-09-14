@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AlertCircle, CheckCircle2, Clock3, ReceiptText, RotateCcw, Search } from 'lucide-react-native';
-import { AppPressable } from '@indyzai/pos-ui';
+import { AppPressable, DataStateMessage } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui';
-import { useBottomNavigationClearance } from '@indyzai/pos-ui';
+import { useBottomNavigation, useBottomNavigationClearance } from '@indyzai/pos-ui';
 import { useAppHeader } from '@indyzai/pos-ui';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { formatCurrency } from '@indyzai/pos-ui/currency';
@@ -14,6 +14,7 @@ import type { SalesOrder } from './types';
 import { refundableQuantity } from './refundPolicy';
 import { canPerformManagerActions } from '../../config/appAccess';
 import { createLogger } from '@indyzai/pos-core';
+import { ReceiptDialog, type ReceiptData } from '../billing/components/ReceiptDialog';
 
 const logger = createLogger('Orders');
 
@@ -23,10 +24,12 @@ export function OrdersScreen() {
   const managerAccess = canPerformManagerActions(auth.session?.tenant.role, auth.session?.user.role);
   const data = useOrders();
   const bottomClearance = useBottomNavigationClearance();
-  const { setFeatureRefresh, setRefreshJob } = useAppHeader();
+  const { setCenterItem } = useBottomNavigation();
+  const { setFeatureLoading, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const [tab, setTab] = useState<'orders' | 'refunds'>('orders');
   const [search, setSearch] = useState('');
   const [refundOrder, setRefundOrder] = useState<SalesOrder>();
+  const [bill, setBill] = useState<ReceiptData>();
   const controller = useRef<AbortController | undefined>(undefined);
   const featureRefreshRef = useRef<() => Promise<void>>(async () => undefined);
   const currencyCode = String(auth.session?.organization?.settings.currency || 'INR');
@@ -58,7 +61,56 @@ export function OrdersScreen() {
     setFeatureRefresh(() => featureRefreshRef.current());
     return () => setFeatureRefresh(undefined);
   }, [setFeatureRefresh]);
+  useEffect(() => {
+    if (data.loading || data.refreshing)
+      setFeatureLoading({
+        id: 'orders',
+        title: 'Loading orders',
+        message: 'Updating local sales and refunds',
+      });
+    else setFeatureLoading(undefined);
+    return () => setFeatureLoading(undefined);
+  }, [data.loading, data.refreshing, setFeatureLoading]);
   useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    setCenterItem({
+      label: data.refreshing ? 'Refreshing' : 'Refresh',
+      icon: RotateCcw,
+      onPress: () => void featureRefreshRef.current(),
+    });
+    return () => setCenterItem(null);
+  }, [data.refreshing, setCenterItem]);
+  const viewBill = (order: SalesOrder) => {
+    const active = auth.session?.organization?.activeSession;
+    setBill({
+      id: order.billId,
+      businessName: auth.session?.organization?.name || auth.session?.tenant.name || 'IndyzAI',
+      branchName: active?.branchName || 'Branch',
+      counterName: active?.counterName || 'Counter',
+      createdAt: order.saleDate,
+      items: order.items.map((item) => ({
+        id: item.productId,
+        name: item.name,
+        category: '',
+        price: item.unitPrice,
+        stock: 0,
+        emoji: '',
+        color: '',
+        quantity: item.quantity,
+        discount: item.discountAmount,
+      })),
+      totals: {
+        subtotal: order.subtotal,
+        discount: order.discountAmount,
+        tax: order.taxAmount,
+        total: order.totalAmount,
+        rounding: 0,
+      },
+      payment: { method: (order.paymentType?.code || order.paymentMethod || 'CASH') as never },
+      customer: order.customerName ? { id: '', name: order.customerName, type: 'CUSTOMER' } : undefined,
+      currencyCode,
+    });
+  };
   const query = search.trim().toLowerCase();
   const orders = useMemo(
     () =>
@@ -102,7 +154,14 @@ export function OrdersScreen() {
           <Text style={[s.title, { color: c.text }]}>Orders</Text>
           <Text style={[s.subtitle, { color: c.textSecondary }]}>Sales history, receipts and refunds</Text>
         </View>
-        {data.error ? <Text style={[s.error, { color: c.error }]}>{data.error}</Text> : null}
+        {data.error ? (
+          <DataStateMessage
+            kind="error"
+            title="Orders could not be updated"
+            message={data.error}
+            onRetry={() => void refresh()}
+          />
+        ) : null}
         <View style={[s.search, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
           <Search size={17} color={c.textSecondary} />
           <TextInput
@@ -129,8 +188,10 @@ export function OrdersScreen() {
         </View>
         {tab === 'orders'
           ? orders.map((order) => (
-              <View
+              <AppPressable
                 key={order.id}
+                accessibilityLabel={`View bill ${order.billId}`}
+                onPress={() => viewBill(order)}
                 style={[s.card, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}
               >
                 <View style={s.cardTop}>
@@ -173,7 +234,7 @@ export function OrdersScreen() {
                     </AppPressable>
                   ) : null}
                 </View>
-              </View>
+              </AppPressable>
             ))
           : refunds.map((refund) => (
               <View
@@ -206,10 +267,13 @@ export function OrdersScreen() {
               </View>
             ))}
         {(tab === 'orders' ? !orders.length : !refunds.length) && (
-          <View style={s.empty}>
-            <ReceiptText size={42} color={c.outline} />
-            <Text style={[s.emptyText, { color: c.textSecondary }]}>No {tab} found</Text>
-          </View>
+          <DataStateMessage
+            kind="empty"
+            title={`No ${tab} found`}
+            message={
+              search ? 'Try changing the search text.' : `No ${tab} have been saved for this workspace yet.`
+            }
+          />
         )}
       </ScrollView>
       {managerAccess ? (
@@ -244,6 +308,7 @@ export function OrdersScreen() {
           }}
         />
       ) : null}
+      <ReceiptDialog receipt={bill} onClose={() => setBill(undefined)} />
     </View>
   );
 }

@@ -1,6 +1,10 @@
 export { EyeIcon, GoogleIcon, MicrosoftIcon } from "./AuthIcons";
 export { appStorageKeys, type PosApplication } from "./storageKeys";
-export { createAuthApi, type AuthApi, type AuthApiConfiguration } from "./createAuthApi";
+export {
+    createAuthApi,
+    type AuthApi,
+    type AuthApiConfiguration,
+} from "./createAuthApi";
 export {
     AuthSessionProvider,
     getActiveAuthSession,
@@ -28,4 +32,9 @@ export {
     canAccessAdminApp,
     canPerformManagerActions,
     normalizeRole,
+    entitlementsForRole,
+    hasEntitlement,
+    roleEntitlementMap,
+    type AppSurface,
+    type Entitlement,
 } from "./appAccess";

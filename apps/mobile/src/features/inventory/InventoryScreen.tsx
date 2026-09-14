@@ -19,13 +19,14 @@ import {
   PackageX,
   Plus,
   Search,
+  ScanLine,
   X,
 } from 'lucide-react-native';
-import { AppPressable } from '@indyzai/pos-ui';
+import { useRouter } from 'expo-router';
+import { AppPressable, DataStateMessage } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui';
 import { InventoryCard } from './components/InventoryCard';
-import { ReconcileStockModal } from './components/ReconcileStockModal';
 import { useInventory } from './hooks/useInventory';
 import type { InventoryFilter, InventoryProduct } from './types';
 import { useAppHeader } from '@indyzai/pos-ui';
@@ -33,21 +34,33 @@ import { useBottomNavigation } from '@indyzai/pos-ui';
 import { AddInventoryItemModal } from './components/AddInventoryItemModal';
 import { useBottomNavigationClearance } from '@indyzai/pos-ui';
 import { createLogger } from '@indyzai/pos-core';
+import { BarcodeScannerModal } from '../billing/components/BarcodeScannerModal';
+import { hasEntitlement, type AppSurface } from '@indyzai/pos-auth/access';
+import { useAuthSession } from '@indyzai/pos-auth/session';
 
 const logger = createLogger('Inventory');
 
-export function InventoryScreen() {
+export function InventoryScreen({ surface = 'pos' }: { surface?: AppSurface }) {
   const { themeColors: c } = useAppTheme();
   const { width } = useWindowDimensions();
   const bottomClearance = useBottomNavigationClearance();
+  const router = useRouter();
+  const auth = useAuthSession();
+  const canEditPrice = hasEntitlement(
+    'pricing.edit',
+    auth.session?.tenant.role,
+    auth.session?.user.role,
+    surface,
+  );
   const data = useInventory();
-  const { setFeatureRefresh, setRefreshJob } = useAppHeader();
+  const { setFeatureLoading, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const { setCenterItem } = useBottomNavigation();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [filter, setFilter] = useState<InventoryFilter>('all');
-  const [selected, setSelected] = useState<InventoryProduct | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<InventoryProduct | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const refreshRef = useRef(data.refresh);
   const refreshController = useRef<AbortController | undefined>(undefined);
   refreshRef.current = data.refresh;
@@ -55,6 +68,16 @@ export function InventoryScreen() {
     setFeatureRefresh(() => refreshRef.current());
     return () => setFeatureRefresh(undefined);
   }, [setFeatureRefresh]);
+  useEffect(() => {
+    if (data.loading || data.refreshing)
+      setFeatureLoading({
+        id: 'inventory',
+        title: 'Loading inventory',
+        message: 'Updating local product data',
+      });
+    else setFeatureLoading(undefined);
+    return () => setFeatureLoading(undefined);
+  }, [data.loading, data.refreshing, setFeatureLoading]);
   useEffect(
     () => () => {
       refreshController.current?.abort();
@@ -142,14 +165,28 @@ export function InventoryScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.heading}>
-          <View>
+          <View style={styles.headingCopy}>
             <Text style={[styles.title, { color: c.text }]}>Inventory</Text>
             <Text style={[styles.subtitle, { color: c.textSecondary }]}>
               Manage products and reconcile stock levels
             </Text>
           </View>
+          <AppPressable
+            onPress={() => router.push('/inventory-reconciliation')}
+            style={[styles.reconcileButton, { backgroundColor: c.primary }]}
+          >
+            <Boxes size={18} color="#fff" />
+            <Text style={styles.reconcileButtonText}>Reconcile stock</Text>
+          </AppPressable>
         </View>
-        {data.error ? <Text style={[styles.error, { color: c.error }]}>{data.error}</Text> : null}
+        {data.error ? (
+          <DataStateMessage
+            kind="error"
+            title="Inventory could not be updated"
+            message={data.error}
+            onRetry={() => void refresh()}
+          />
+        ) : null}
         {data.jobs[0] ? <SyncJobStatus job={data.jobs[0]} /> : null}
         <View style={styles.stats}>
           <Stat icon={Package} label="Products" value={String(summary.total)} color={c.primary} />
@@ -163,20 +200,30 @@ export function InventoryScreen() {
           />
         </View>
         <View style={[styles.toolbar, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
-          <View style={[styles.search, { backgroundColor: c.background, borderColor: c.outline }]}>
-            <Search size={18} color={c.textSecondary} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search name or barcode"
-              placeholderTextColor={c.textSecondary}
-              style={[styles.searchInput, { color: c.text }]}
-            />
-            {search ? (
-              <AppPressable onPress={() => setSearch('')}>
-                <X size={17} color={c.textSecondary} />
-              </AppPressable>
-            ) : null}
+          <View style={styles.searchRow}>
+            <View style={[styles.search, { backgroundColor: c.background, borderColor: c.outline }]}>
+              <Search size={18} color={c.textSecondary} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search name or barcode"
+                placeholderTextColor={c.textSecondary}
+                style={[styles.searchInput, { color: c.text }]}
+              />
+              {search ? (
+                <AppPressable onPress={() => setSearch('')}>
+                  <X size={17} color={c.textSecondary} />
+                </AppPressable>
+              ) : null}
+            </View>
+            <AppPressable
+              accessibilityLabel="Scan inventory barcode"
+              onPress={() => setScannerOpen(true)}
+              style={[styles.scanButton, { backgroundColor: c.primary }]}
+            >
+              <ScanLine size={20} color="#fff" />
+              <Text style={styles.scanText}>Scan</Text>
+            </AppPressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {categories.map((item) => (
@@ -196,50 +243,53 @@ export function InventoryScreen() {
                 key={product.id}
                 style={{ width: width >= 1050 ? '31.8%' : width >= 620 ? '48.5%' : '100%' }}
               >
-                <InventoryCard product={product} onPress={() => setSelected(product)} />
+                <InventoryCard product={product} onPress={() => setEditingProduct(product)} />
               </View>
             ))}
           </View>
         ) : (
-          <View style={styles.empty}>
-            <Boxes size={48} color={c.outline} />
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No inventory found</Text>
-            <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-              Try another search or refresh the product catalog.
-            </Text>
-          </View>
+          <DataStateMessage
+            kind="empty"
+            title="No inventory found"
+            message={
+              search || category !== 'All' || filter !== 'all'
+                ? 'Try changing the search or filters.'
+                : 'Add your first product or refresh the catalog.'
+            }
+          />
         )}
       </ScrollView>
-      <ReconcileStockModal
-        product={selected}
-        busy={data.reconciling}
-        onClose={() => setSelected(null)}
-        onSave={async (input) => {
-          logger.info('Reconciling stock for product', {
-            productId: selected?.id,
-            productName: selected?.name,
-            countedQuantity: input.countedQuantity,
-            remarks: input.remarks,
-          });
-          try {
-            const job = await data.reconcile(input);
-            logger.info('Stock reconciled successfully', { jobId: job.id, productId: selected?.id });
-            setSelected(null);
-            showSnackbar('Stock reconciled', `Queue ${shortId(job.id)} completed.`);
-          } catch (error) {
-            logger.error('Stock reconciliation failed', {
-              productId: selected?.id,
-              error: error instanceof Error ? error.message : String(error),
-            });
-            showSnackbar('Reconciliation failed', error instanceof Error ? error.message : 'Try again.');
-          }
+      <BarcodeScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={(value) => {
+          setSearch(value);
+          setScannerOpen(false);
+          const match = data.products.find((product) => product.barcode === value);
+          if (match) setEditingProduct(match);
+          else showSnackbar('Barcode not found', 'No local inventory item matches this barcode.');
         }}
       />
       <AddInventoryItemModal
-        visible={addOpen}
+        visible={addOpen || !!editingProduct}
+        product={editingProduct}
+        allowPriceEdit={canEditPrice}
         busy={data.creating}
-        onClose={() => setAddOpen(false)}
+        onClose={() => {
+          setAddOpen(false);
+          setEditingProduct(null);
+        }}
         onSave={async (input) => {
+          if (editingProduct) {
+            try {
+              await data.update({ ...input, productId: editingProduct.id });
+              setEditingProduct(null);
+              showSnackbar('Item updated', `${input.name} was updated successfully.`);
+            } catch (error) {
+              showSnackbar('Could not update item', error instanceof Error ? error.message : 'Try again.');
+            }
+            return;
+          }
           logger.info('Adding inventory item', {
             name: input.name,
             category: input.category,
@@ -274,7 +324,14 @@ function SyncJobStatus({ job }: { job: ReturnType<typeof useInventory>['jobs'][n
   const complete = job.status === 'COMPLETED';
   const color = failed ? c.error : complete ? '#16A34A' : '#D97706';
   const Icon = failed ? AlertCircle : complete ? CheckCircle2 : Clock3;
-  const operation = job.operation === 'CREATE_PRODUCT' ? 'Add item' : 'Update stock';
+  const operation =
+    job.operation === 'CREATE_PRODUCT'
+      ? 'Add item'
+      : job.operation === 'UPDATE_PRODUCT'
+        ? 'Edit item'
+        : job.operation === 'SAVE_STOCK_DRAFT'
+          ? 'Save reconciliation draft'
+          : 'Update stock';
   return (
     <View style={[styles.job, { backgroundColor: `${color}12`, borderColor: `${color}45` }]}>
       <Icon size={18} color={color} />
@@ -344,6 +401,17 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 18,
   },
+  headingCopy: { flex: 1 },
+  reconcileButton: {
+    minHeight: 42,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  reconcileButtonText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   title: { fontSize: 25, fontWeight: '900' },
   subtitle: { marginTop: 4, fontSize: 13 },
   error: { marginBottom: 12, fontSize: 12, fontWeight: '700' },
@@ -376,6 +444,7 @@ const styles = StyleSheet.create({
   statLabel: { marginTop: 2, fontSize: 10, fontWeight: '700' },
   toolbar: { borderWidth: 1, borderRadius: 18, padding: 12, gap: 11, marginBottom: 14 },
   search: {
+    flex: 1,
     height: 46,
     borderWidth: 1,
     borderRadius: 14,
@@ -385,6 +454,16 @@ const styles = StyleSheet.create({
     gap: 9,
   },
   searchInput: { flex: 1, fontSize: 14 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  scanButton: {
+    height: 46,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  scanText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   chips: { gap: 8 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

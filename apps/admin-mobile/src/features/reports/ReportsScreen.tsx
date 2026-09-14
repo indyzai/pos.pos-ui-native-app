@@ -8,7 +8,7 @@ import {
     ShoppingBag,
 } from 'lucide-react-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { AppPressable, SectionMenu } from '@indyzai/pos-ui';
+import { AppPressable, DataStateMessage, SectionMenu } from '@indyzai/pos-ui';
 import { useBottomNavigationClearance } from '@indyzai/pos-ui';
 import { useBottomNavigation } from '@indyzai/pos-ui';
 import { useAppHeader } from '@indyzai/pos-ui';
@@ -30,7 +30,7 @@ export function ReportsScreen() {
     const data = useOrders();
     const bottomClearance = useBottomNavigationClearance();
     const { setCenterItem } = useBottomNavigation();
-    const { setFeatureRefresh, setRefreshJob } = useAppHeader();
+    const { setFeatureLoading, setFeatureRefresh, setRefreshJob } = useAppHeader();
     const [period, setPeriod] = useState<ReportPeriod>(30);
     const controller = useRef<AbortController | undefined>(undefined);
     const featureRefreshRef = useRef<() => Promise<void>>(async () => undefined);
@@ -80,6 +80,16 @@ export function ReportsScreen() {
         setFeatureRefresh(() => featureRefreshRef.current());
         return () => setFeatureRefresh(undefined);
     }, [setFeatureRefresh]);
+    useEffect(() => {
+        if (data.loading || data.refreshing)
+            setFeatureLoading({
+                id: 'admin-reports',
+                title: 'Loading reports',
+                message: 'Calculating from local sales data',
+            });
+        else setFeatureLoading(undefined);
+        return () => setFeatureLoading(undefined);
+    }, [data.loading, data.refreshing, setFeatureLoading]);
     useEffect(() => {
         setCenterItem({
             label: data.refreshing ? 'Refreshing' : 'Refresh',
@@ -144,7 +154,21 @@ export function ReportsScreen() {
                         </AppPressable>
                     ))}
                 </View>
-                {!!data.error && <Text style={[s.error, { color: c.error }]}>{data.error}</Text>}
+                {!!data.error && (
+                    <DataStateMessage
+                        kind="error"
+                        title="Reports could not be updated"
+                        message={data.error}
+                        onRetry={() => void refresh()}
+                    />
+                )}
+                {!data.error && !data.loading && data.orders.length === 0 ? (
+                    <DataStateMessage
+                        kind="empty"
+                        title="No report data"
+                        message="There are no sales for the selected period."
+                    />
+                ) : null}
                 <View style={s.metrics}>
                     <Metric
                         columns={columns}

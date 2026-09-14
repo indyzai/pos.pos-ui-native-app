@@ -23,25 +23,25 @@ describe('role-scoped local database manifest', () => {
     expect(manifest.collections.has('purchase_orders')).toBe(false);
   });
 
-  test('manager receives store operations but not administration purchasing data', () => {
+  test('manager receives store operations and purchase-order data', () => {
     const manifest = getRoleDataManifest(scope('manager'));
     expect(manifest.detailMode).toBe('store');
     expect(manifest.collections.has('stock_counts')).toBe(true);
     expect(manifest.collections.has('transfers')).toBe(true);
-    expect(manifest.collections.has('purchase_orders')).toBe(false);
+    expect(manifest.collections.has('purchase_orders')).toBe(true);
   });
 
   test('application profiles provision only their required tables', () => {
     const store = getRoleDataManifest({ ...scope('admin'), appProfile: 'store' });
     const admin = getRoleDataManifest({ ...scope('admin'), appProfile: 'admin' });
-    expect(store.collections.has('purchase_orders')).toBe(false);
+    expect(store.collections.has('purchase_orders')).toBe(true);
     expect(admin.collections.has('purchase_orders')).toBe(true);
 
     const sql =
       'CREATE TABLE `products` (`id` text);--> statement-breakpoint' +
       'CREATE TABLE `purchase_orders` (`id` text);';
     expect(schemaSqlForProfile(sql, 'store')).toContain('products');
-    expect(schemaSqlForProfile(sql, 'store')).not.toContain('purchase_orders');
+    expect(schemaSqlForProfile(sql, 'store')).toContain('purchase_orders');
   });
 
   test('admin receives purchasing data', () => {

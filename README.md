@@ -165,3 +165,8 @@ Configure custom API endpoints by setting environment variables in `.env` or Exp
 | `EXPO_PUBLIC_POS_API_URL` | `https://api.indyzai.com/pos/api/graphql` | Main POS GraphQL backend endpoint |
 | `EXPO_PUBLIC_AUTH_API_URL` | `https://api.indyzai.com/auth` | Authentication endpoint |
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | Default environment (`development`, `staging`, `production`) |
+
+
+Before running in xcode
+npx expo prebuild --platform ios
+open ios/*.xcworkspace  

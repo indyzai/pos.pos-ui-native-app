@@ -1,17 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { inventoryApi } from '../inventoryApi';
-import type { CreateInventoryItemInput, StockReconciliationInput } from '../types';
-import { payloadsFromRecords, replaceLocalPayloads, useLocalProducts } from '@indyzai/pos-database';
+import type {
+  CreateInventoryItemInput,
+  StockReconciliationInput,
+  StockReconciliationRecord,
+  UpdateInventoryItemInput,
+} from '../types';
+import { createLocalFirstTableHook, createScopeKey } from '@indyzai/pos-database';
 import type { LocalRecord } from '@indyzai/pos-database';
 import type { Product } from '../../billing/types/billing';
+import { createStockReconciliationRecord } from '../reconciliation';
+
+const useInventoryProducts = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
+const useStockCounts = createLocalFirstTableHook<StockReconciliationRecord>({
+  table: 'stock_counts',
+  entityType: 'STOCK_RECONCILIATION',
+  query: { includeDeleted: true },
+});
 
 export function useInventory() {
   const auth = useAuthSession();
   const local = useLocalDatabase();
-  const [projectionError, setProjectionError] = useState('');
   const queryClient = useQueryClient();
   const ready = !auth.initializing && !!auth.session && local.status === 'ready';
   const queryKey = ['billing-cache', auth.session?.user.id, auth.session?.tenant.id];
@@ -24,15 +36,8 @@ export function useInventory() {
     refetchOnWindowFocus: false,
     retry: false,
   });
-  const localProducts = useLocalProducts<LocalRecord<Product>>();
-  useEffect(() => {
-    if (!local.database || !query.data) return;
-    void replaceLocalPayloads(local.database, 'products', query.data.cache.products).then(
-      () => setProjectionError(''),
-      (reason) =>
-        setProjectionError(reason instanceof Error ? reason.message : 'Unable to update local stock.'),
-    );
-  }, [local.database, query.data]);
+  const productTable = useInventoryProducts();
+  const stockCounts = useStockCounts();
   const jobs = useQuery({
     queryKey: ['inventory-outbox-jobs', auth.session?.user.id, auth.session?.tenant.id],
     queryFn: inventoryApi.listJobs,
@@ -50,13 +55,57 @@ export function useInventory() {
     },
   });
   const reconcile = useMutation({
-    mutationFn: (input: StockReconciliationInput) => inventoryApi.reconcile(input),
+    mutationFn: async (input: StockReconciliationInput) => {
+      if (!local.database) throw new Error('Local inventory database is not ready.');
+      const productRecord = productTable.data.find((record) => record.payload.id === input.productId);
+      if (!productRecord) throw new Error('The selected product is not available locally.');
+      const history = createStockReconciliationRecord(productRecord.payload, input, 'COMPLETED');
+      const queued = await stockCounts.createMutation({
+        payload: history,
+        operation: 'CREATE',
+        localId: history.id,
+        idempotencyKey: `stock-reconciliation:${history.id}`,
+      });
+      const apiJob = await inventoryApi.reconcile(input);
+      await stockCounts.resolveMutation({
+        jobId: queued.job.payload.offlineId,
+        serverId: apiJob.entityId || apiJob.id,
+        payload: history,
+      });
+      await local.database.collection<LocalRecord<Product>>('products').put({
+        ...productRecord,
+        payload: { ...productRecord.payload, stock: input.countedQuantity },
+        updatedAt: Date.now(),
+      });
+      return apiJob;
+    },
     retry: false,
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
       void queryClient.invalidateQueries({ queryKey: ['inventory-outbox-jobs'] });
     },
   });
+  const saveDraft = async (input: StockReconciliationInput) => {
+    if (!local.database) throw new Error('Local inventory database is not ready.');
+    const productRecord = productTable.data.find((record) => record.payload.id === input.productId);
+    if (!productRecord) throw new Error('The selected product is not available locally.');
+    const payload = createStockReconciliationRecord(productRecord.payload, input, 'DRAFT');
+    const id = payload.id;
+    await local.database.collection<LocalRecord<StockReconciliationRecord>>('stock_counts').put({
+      id,
+      scope: createScopeKey(local.database.scope),
+      tenantId: local.database.scope.tenantId,
+      storeId: local.database.scope.storeIds[0] ?? null,
+      remoteId: null,
+      payload,
+      serverVersion: 0,
+      syncStatus: 'API',
+      updatedAt: Date.now(),
+      deletedAt: null,
+    });
+    await stockCounts.reload();
+    return payload;
+  };
   const create = useMutation({
     mutationFn: (input: CreateInventoryItemInput) => inventoryApi.create(input),
     retry: false,
@@ -65,20 +114,40 @@ export function useInventory() {
       void queryClient.invalidateQueries({ queryKey: ['inventory-outbox-jobs'] });
     },
   });
-  const error = refresh.error ?? reconcile.error ?? create.error ?? query.error;
+  const update = useMutation({
+    mutationFn: async (input: UpdateInventoryItemInput) => {
+      const job = await inventoryApi.update(input);
+      await productTable.reload();
+      return job;
+    },
+    retry: false,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
+      void queryClient.invalidateQueries({ queryKey: ['inventory-outbox-jobs'] });
+    },
+  });
+  const error = refresh.error ?? reconcile.error ?? create.error ?? update.error ?? query.error;
   return useMemo(
     () => ({
-      products: payloadsFromRecords(localProducts.records),
+      products: productTable.data.map((record) => record.payload),
+      reconciliationHistory: stockCounts.data.map((record) => record.payload),
       jobs: jobs.data ?? [],
       updated: query.data?.cache.updated,
-      loading: query.isLoading,
+      loading: query.isLoading || productTable.loading || stockCounts.loading,
       refreshing: refresh.isPending,
       reconciling: reconcile.isPending,
-      creating: create.isPending,
-      error: local.error || auth.error || projectionError || (error instanceof Error ? error.message : ''),
+      creating: create.isPending || update.isPending,
+      error:
+        local.error ||
+        auth.error ||
+        productTable.error ||
+        stockCounts.error ||
+        (error instanceof Error ? error.message : ''),
       refresh: (signal?: AbortSignal) => refresh.mutateAsync(signal),
       reconcile: (input: StockReconciliationInput) => reconcile.mutateAsync(input),
+      saveDraft,
       create: (input: CreateInventoryItemInput) => create.mutateAsync(input),
+      update: (input: UpdateInventoryItemInput) => update.mutateAsync(input),
     }),
     [
       auth.error,
@@ -86,12 +155,13 @@ export function useInventory() {
       error,
       jobs.data,
       local.error,
-      localProducts.records,
-      projectionError,
+      productTable,
       query.data,
       query.isLoading,
       reconcile,
       refresh,
+      stockCounts,
+      update,
     ],
   );
 }
