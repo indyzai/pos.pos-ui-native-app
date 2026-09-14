@@ -340,7 +340,6 @@ jobs:
           releaseFiles: apps/mobile/release/indyz-pos-${{ needs.metadata.outputs.pos_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
-          changesNotSentForReview: true
           releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.pos_version }})
           whatsNewDirectory: distribution/whatsnew
 
@@ -527,7 +526,6 @@ jobs:
           releaseFiles: apps/admin-mobile/release/indyz-pos-admin-${{ needs.metadata.outputs.admin_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
-          changesNotSentForReview: true
           releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.admin_version }})
           whatsNewDirectory: distribution/whatsnew
 
