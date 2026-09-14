@@ -6,29 +6,39 @@ import type { DatabaseAppProfile } from "../types";
 
 export const hasNativeDatabase = Platform.OS !== "web";
 
-let sqlite: SQLite.SQLiteDatabase | undefined;
-let database: ReturnType<typeof drizzle<typeof schema>> | undefined;
 let appProfile: DatabaseAppProfile = "store";
+const sqliteByProfile: Partial<
+    Record<DatabaseAppProfile, SQLite.SQLiteDatabase>
+> = {};
+const databaseByProfile: Partial<
+    Record<DatabaseAppProfile, ReturnType<typeof drizzle<typeof schema>>>
+> = {};
+
+export function databaseNameForProfile(profile: DatabaseAppProfile): string {
+    return profile === "admin" ? "indyz-pos-admin.db" : "indyz-pos.db";
+}
+
+export function getConfiguredDatabaseProfile(): DatabaseAppProfile {
+    return appProfile;
+}
 
 export function configureDatabaseProfile(profile: DatabaseAppProfile): void {
-    if (sqlite && profile !== appProfile) {
-        throw new Error(
-            "The local database profile cannot change while it is open.",
-        );
-    }
     appProfile = profile;
 }
 
 export function getSQLiteClient(): SQLite.SQLiteDatabase {
     if (!hasNativeDatabase)
         throw new Error("SQLite is only available in the native application.");
-    const databaseName =
-        appProfile === "admin" ? "indyz-pos-admin.db" : "indyz-pos.db";
-    return (sqlite ??= SQLite.openDatabaseSync(databaseName, {
-        enableChangeListener: true,
-    }));
+    return (sqliteByProfile[appProfile] ??= SQLite.openDatabaseSync(
+        databaseNameForProfile(appProfile),
+        {
+            enableChangeListener: true,
+        },
+    ));
 }
 
 export function getDatabase(): ReturnType<typeof drizzle<typeof schema>> {
-    return (database ??= drizzle(getSQLiteClient(), { schema }));
+    return (databaseByProfile[appProfile] ??= drizzle(getSQLiteClient(), {
+        schema,
+    }));
 }

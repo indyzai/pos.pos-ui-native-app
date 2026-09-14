@@ -266,7 +266,7 @@ export function DataSettingsSection() {
                 />
                 <Detail
                     label="Database"
-                    value={Platform.OS === 'web' ? 'indyz-pos-local-v1' : 'indyz-pos.db'}
+                    value={Platform.OS === 'web' ? 'indyz-pos-admin-local-v1' : 'indyz-pos-admin.db'}
                 />
                 <Detail
                     label="Adapter"

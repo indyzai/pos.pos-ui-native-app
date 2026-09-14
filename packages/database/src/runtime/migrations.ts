@@ -1,18 +1,22 @@
 import { initialSchemaSql } from "./initialSchema.generated";
-import { getSQLiteClient, hasNativeDatabase } from "./client";
+import {
+    getConfiguredDatabaseProfile,
+    getSQLiteClient,
+    hasNativeDatabase,
+} from "./client";
 import {
     schemaSqlForProfile,
     type DatabaseAppProfile,
 } from "@indyzai/pos-database";
 
 export const localSchemaVersion = 2;
-let initialized = false;
+const initializedProfiles = new Set<DatabaseAppProfile>();
 
 /** Creates the new-app schema once. Future schema changes must use forward-only migrations. */
 export function initializeDatabase(
-    profile: DatabaseAppProfile = "store",
+    profile: DatabaseAppProfile = getConfiguredDatabaseProfile(),
 ): void {
-    if (initialized || !hasNativeDatabase) return;
+    if (initializedProfiles.has(profile) || !hasNativeDatabase) return;
     const sqlite = getSQLiteClient();
     sqlite.execSync("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
     const version =
@@ -47,5 +51,5 @@ export function initializeDatabase(
             );
         });
     }
-    initialized = true;
+    initializedProfiles.add(profile);
 }

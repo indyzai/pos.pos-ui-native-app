@@ -16,8 +16,8 @@ fi
 # Fetch latest tags from remote to ensure we have up-to-date info
 git fetch --tags
 
-# Get the latest tag (sorted by version)
-LATEST_TAG=$(git tag --list --sort=-version:refname | grep "^${PREFIX}[0-9]" | head -n1 || echo "")
+# Get the latest release tag (sorted by version, excluding alpha/pre-releases)
+LATEST_TAG=$(git tag --list --sort=-version:refname | grep -E "^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+$" | head -n1 || echo "")
 
 if [ -z "$LATEST_TAG" ]; then
   # No tags exist, start with v0.0.0 and increment patch to v0.0.1 (common for first release)
