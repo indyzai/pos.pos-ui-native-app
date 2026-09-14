@@ -1,6 +1,8 @@
 import { requestPos } from '../../core/api/posApi';
 import type { CounterSession } from '../sales/salesOutbox';
 
+export { requiresOpenCounter } from './organizationSettings';
+
 export type OrganizationDetails = {
   id: string;
   name: string;
@@ -133,16 +135,6 @@ export async function openCounterSession(
     { input: { counterId: Number(counterId), openingBalance } },
   );
   if (!data.openCounter?.id) throw new Error('The counter session was not opened.');
-}
-
-export function requiresOpenCounter(settings: Record<string, unknown> | undefined): boolean {
-  const features = (settings?.features ?? {}) as Record<string, unknown>;
-  const configured =
-    features.requireOpenCounterForBilling ??
-    features.requireCounterSessionForBilling ??
-    settings?.requireOpenCounterForBilling ??
-    settings?.requireCounterSessionForBilling;
-  return configured === undefined ? true : configured !== false;
 }
 
 export async function updateOrganizationFeatures(

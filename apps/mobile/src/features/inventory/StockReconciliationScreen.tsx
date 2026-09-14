@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Check, ClipboardList, Save } from 'lucide-react-native';
+import { ArrowLeft, Check, ClipboardList, Save, ScanLine, Search, X } from 'lucide-react-native';
 import { AppPressable, useAppTheme } from '@indyzai/pos-ui';
 import { showSnackbar } from '@indyzai/pos-ui/snackbar';
 import { useAuthSession } from '@indyzai/pos-auth/session';
@@ -15,6 +15,7 @@ import { hasEntitlement } from '@indyzai/pos-auth/access';
 import type { Product } from '../billing/types/billing';
 import type { StockReconciliationReport } from './types';
 import { inventoryApi } from './inventoryApi';
+import { BarcodeScannerModal } from '../billing/components/BarcodeScannerModal';
 
 const useProducts = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 const useReconciliations = createLocalFirstTableHook<StockReconciliationReport>({
@@ -36,6 +37,8 @@ export function StockReconciliationScreen() {
   const [remarks, setRemarks] = useState('');
   const [editingId, setEditingId] = useState<string>();
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const allowed = hasEntitlement(
     'inventory.reconcile',
     auth.session?.tenant.role,
@@ -49,13 +52,6 @@ export function StockReconciliationScreen() {
     if (product) setCounts((current) => ({ ...current, [product.id]: String(product.stock) }));
   }, [counts, params.productId, products.data]);
 
-  useEffect(() => {
-    if (editingId || params.productId || Object.keys(counts).length || !products.data.length) return;
-    setCounts(
-      Object.fromEntries(products.data.map((record) => [record.payload.id, String(record.payload.stock)])),
-    );
-  }, [counts, editingId, params.productId, products.data]);
-
   const selected = useMemo(
     () =>
       products.data.flatMap((record) => {
@@ -68,6 +64,35 @@ export function StockReconciliationScreen() {
       }),
     [counts, products.data],
   );
+  const addedProducts = useMemo(
+    () => products.data.map((record) => record.payload).filter((product) => counts[product.id] !== undefined),
+    [counts, products.data],
+  );
+  const hasInvalidCounts = selected.length !== addedProducts.length;
+  const suggestions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return [];
+    return products.data
+      .filter(({ payload }) => {
+        if (counts[payload.id] !== undefined) return false;
+        return (
+          payload.name.toLowerCase().includes(query) ||
+          payload.barcode?.toLowerCase().includes(query) ||
+          payload.sku?.toLowerCase().includes(query)
+        );
+      })
+      .slice(0, 8);
+  }, [counts, products.data, search]);
+  const addProduct = (product: Product) => {
+    setCounts((current) => ({ ...current, [product.id]: String(product.stock) }));
+    setSearch('');
+  };
+  const removeProduct = (productId: string) =>
+    setCounts((current) => {
+      const next = { ...current };
+      delete next[productId];
+      return next;
+    });
 
   const buildReport = (status: StockReconciliationReport['status']): StockReconciliationReport => {
     const now = new Date().toISOString();
@@ -100,6 +125,8 @@ export function StockReconciliationScreen() {
 
   const saveDraft = async () => {
     if (!selected.length) return;
+    if (hasInvalidCounts)
+      return showSnackbar('Invalid count', 'Enter a valid count for every added product.');
     setSaving(true);
     try {
       const report = buildReport('DRAFT');
@@ -143,6 +170,8 @@ export function StockReconciliationScreen() {
 
   const submit = async () => {
     if (!selected.length) return showSnackbar('Select products', 'Enter a count for at least one product.');
+    if (hasInvalidCounts)
+      return showSnackbar('Invalid count', 'Enter a valid count for every added product.');
     setSaving(true);
     try {
       const report = buildReport('COMPLETED');
@@ -233,10 +262,52 @@ export function StockReconciliationScreen() {
           placeholderTextColor={c.textSecondary}
           style={[s.field, { color: c.text, borderColor: c.outline }]}
         />
+        <View style={s.searchRow}>
+          <View style={[s.searchBox, { borderColor: c.outline, backgroundColor: c.background }]}>
+            <Search size={18} color={c.textSecondary} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search name, SKU, or barcode"
+              placeholderTextColor={c.textSecondary}
+              style={[s.searchInput, { color: c.text }]}
+            />
+            {search ? (
+              <AppPressable accessibilityLabel="Clear product search" onPress={() => setSearch('')}>
+                <X size={17} color={c.textSecondary} />
+              </AppPressable>
+            ) : null}
+          </View>
+          <AppPressable
+            accessibilityLabel="Scan product barcode"
+            onPress={() => setScannerOpen(true)}
+            style={[s.scanButton, { backgroundColor: c.primary }]}
+          >
+            <ScanLine size={20} color="#fff" />
+          </AppPressable>
+        </View>
+        {suggestions.map(({ payload: product }) => (
+          <AppPressable
+            key={product.id}
+            onPress={() => addProduct(product)}
+            style={[s.suggestion, { borderColor: c.outlineMuted }]}
+          >
+            <View style={s.productCopy}>
+              <Text style={[s.productName, { color: c.text }]}>{product.name}</Text>
+              <Text style={[s.productStock, { color: c.textSecondary }]}>System stock {product.stock}</Text>
+            </View>
+            <Text style={{ color: c.primary, fontWeight: '800' }}>Add</Text>
+          </AppPressable>
+        ))}
         {products.loading ? (
           <Text style={[s.loading, { color: c.textSecondary }]}>Loading local inventory…</Text>
         ) : null}
-        {products.data.map(({ payload: product }) => (
+        {!products.loading && !addedProducts.length ? (
+          <Text style={[s.emptySelection, { color: c.textSecondary }]}>
+            Search or scan to add products to this count.
+          </Text>
+        ) : null}
+        {addedProducts.map((product) => (
           <View key={product.id} style={[s.productRow, { borderBottomColor: c.outlineMuted }]}>
             <View style={s.productCopy}>
               <Text style={[s.productName, { color: c.text }]}>{product.name}</Text>
@@ -250,11 +321,17 @@ export function StockReconciliationScreen() {
               keyboardType="decimal-pad"
               style={[s.count, { color: c.text, borderColor: c.outline, backgroundColor: c.background }]}
             />
+            <AppPressable
+              accessibilityLabel={`Remove ${product.name}`}
+              onPress={() => removeProduct(product.id)}
+            >
+              <X size={18} color={c.textSecondary} />
+            </AppPressable>
           </View>
         ))}
         <View style={s.actions}>
           <AppPressable
-            disabled={saving || !selected.length}
+            disabled={saving || !selected.length || hasInvalidCounts}
             onPress={() => void saveDraft()}
             style={[s.secondary, { borderColor: c.primary, opacity: selected.length ? 1 : 0.5 }]}
           >
@@ -262,7 +339,7 @@ export function StockReconciliationScreen() {
             <Text style={[s.actionText, { color: c.primary }]}>Save draft</Text>
           </AppPressable>
           <AppPressable
-            disabled={saving || !selected.length}
+            disabled={saving || !selected.length || hasInvalidCounts}
             onPress={() => void submit()}
             style={[s.primary, { backgroundColor: c.primary, opacity: selected.length ? 1 : 0.5 }]}
           >
@@ -298,6 +375,23 @@ export function StockReconciliationScreen() {
           );
         })}
       </View>
+      <BarcodeScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={(value) => {
+          setScannerOpen(false);
+          const normalized = value.trim().toLowerCase();
+          const product = products.data.find(
+            ({ payload }) =>
+              payload.barcode?.toLowerCase() === normalized || payload.sku?.toLowerCase() === normalized,
+          )?.payload;
+          if (product) addProduct(product);
+          else {
+            setSearch(value);
+            showSnackbar('Product not found', 'No local inventory item matches this barcode.');
+          }
+        }}
+      />
     </ScrollView>
   );
 }
@@ -311,6 +405,30 @@ const s = StyleSheet.create({
   subtitle: { marginTop: 3, fontSize: 12 },
   panel: { borderWidth: 1, borderRadius: 18, padding: 14 },
   field: { height: 44, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, marginBottom: 10 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  searchBox: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchInput: { flex: 1 },
+  scanButton: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  suggestion: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: 11,
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptySelection: { paddingVertical: 20, textAlign: 'center', fontSize: 12 },
   loading: { paddingVertical: 18, textAlign: 'center', fontSize: 12, fontWeight: '700' },
   productRow: {
     minHeight: 62,

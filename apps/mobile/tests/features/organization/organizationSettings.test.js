@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { requiresOpenCounter } from '../../../src/features/organization/organizationApi';
+import { requiresOpenCounter } from '../../../src/features/organization/organizationSettings';
 
 test('billing requires an open counter by default', () => {
   expect(requiresOpenCounter(undefined)).toBe(true);

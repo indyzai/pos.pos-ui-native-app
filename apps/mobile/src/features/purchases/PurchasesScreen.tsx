@@ -213,7 +213,7 @@ export function PurchasesScreen({ surface = 'pos' }: { surface?: AppSurface }) {
     return () => setCenterItem(null);
   }, [bottomNavigationHidden, setCenterItem]);
 
-  const addProduct = (product: Product) =>
+  const addProduct = (product: Product) => {
     setLines((current) =>
       current.some((line) => line.productId === product.id)
         ? current
@@ -229,6 +229,22 @@ export function PurchasesScreen({ surface = 'pos' }: { surface?: AppSurface }) {
             },
           ],
     );
+    setNewProductName('');
+    setNewProductPrice('');
+  };
+  const productSuggestions = useMemo(() => {
+    const query = newProductName.trim().toLowerCase();
+    if (!query) return [];
+    return products.data
+      .filter(
+        ({ payload }) =>
+          !lines.some((line) => line.productId === payload.id) &&
+          (payload.name.toLowerCase().includes(query) ||
+            !!payload.sku?.toLowerCase().includes(query) ||
+            !!payload.barcode?.toLowerCase().includes(query)),
+      )
+      .slice(0, 8);
+  }, [lines, newProductName, products.data]);
   const updateLine = (index: number, values: Partial<Line>) =>
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...values } : line)));
   const addNewProduct = () => {
@@ -463,21 +479,10 @@ export function PurchasesScreen({ surface = 'pos' }: { surface?: AppSurface }) {
             style={[s.input, { color: c.text, borderColor: c.outline }]}
           />
           <Text style={[s.section, { color: c.text }]}>Add products</Text>
-          <ScrollView horizontal>
-            {products.data.map(({ payload }) => (
-              <AppPressable
-                key={payload.id}
-                onPress={() => addProduct(payload)}
-                style={[s.product, { borderColor: c.outline }]}
-              >
-                <Text style={{ color: c.text }}>{payload.name}</Text>
-              </AppPressable>
-            ))}
-          </ScrollView>
           <View style={[s.inlineProduct, { borderColor: c.outlineMuted }]}>
             <View style={s.inlineProductFields}>
               <TextInput
-                placeholder="New product name"
+                placeholder="Search or enter a new product"
                 placeholderTextColor={c.textSecondary}
                 value={newProductName}
                 onChangeText={setNewProductName}
@@ -492,9 +497,24 @@ export function PurchasesScreen({ surface = 'pos' }: { surface?: AppSurface }) {
                 style={[s.input, s.inlineCost, { color: c.text, borderColor: c.outline }]}
               />
             </View>
+            {productSuggestions.map(({ payload }) => (
+              <AppPressable
+                key={payload.id}
+                onPress={() => addProduct(payload)}
+                style={[s.productSuggestion, { borderColor: c.outlineMuted }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: c.text, fontWeight: '800' }}>{payload.name}</Text>
+                  <Text style={{ color: c.textSecondary, fontSize: 11 }}>
+                    {payload.sku || payload.barcode || 'Existing product'} · ₹{payload.price}
+                  </Text>
+                </View>
+                <Text style={{ color: c.primary, fontWeight: '800' }}>Select</Text>
+              </AppPressable>
+            ))}
             <AppPressable onPress={addNewProduct} style={[s.button, { backgroundColor: c.primary }]}>
               <Plus size={17} color="#fff" />
-              <Text style={s.white}>Add new product</Text>
+              <Text style={s.white}>Create “{newProductName.trim() || 'new product'}”</Text>
             </AppPressable>
           </View>
           {lines.map((line, index) => (
@@ -667,6 +687,15 @@ const s = StyleSheet.create({
   input: { height: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12 },
   section: { fontWeight: '900', marginTop: 8 },
   product: { padding: 10, borderWidth: 1, borderRadius: 10, marginRight: 8 },
+  productSuggestion: {
+    minHeight: 50,
+    paddingHorizontal: 11,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   inlineProduct: { borderWidth: 1, borderRadius: 12, padding: 10, gap: 8 },
   inlineProductFields: { flexDirection: 'row', gap: 8 },
   inlineName: { flex: 1 },

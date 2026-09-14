@@ -222,7 +222,7 @@ export function InventoryScreen({ surface = 'pos' }: { surface?: AppSurface }) {
               style={[styles.scanButton, { backgroundColor: c.primary }]}
             >
               <ScanLine size={20} color="#fff" />
-              <Text style={styles.scanText}>Scan</Text>
+              {width >= 620 ? <Text style={styles.scanText}>Scan</Text> : null}
             </AppPressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -456,11 +456,13 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   scanButton: {
+    minWidth: 46,
     height: 46,
     borderRadius: 14,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 7,
   },
   scanText: { color: '#fff', fontSize: 12, fontWeight: '900' },

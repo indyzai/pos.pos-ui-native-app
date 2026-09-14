@@ -20,7 +20,7 @@ import type {
 } from './types/billing';
 import { billingReferenceRepository } from './data/billingReferenceRepository';
 import type { BillingCalculationPolicy } from './domain/billingTotals';
-import { requiresOpenCounter } from '../organization/organizationApi';
+import { requiresOpenCounter } from '../organization/organizationSettings';
 import { waybillRepository } from '../logistics/waybillRepository';
 import { syncWaybillJobs, waybillJobFromSale } from '../logistics/waybillSync';
 import { productBatchRepository } from './data/productBatchRepository';

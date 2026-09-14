@@ -56,7 +56,7 @@ export const roleEntitlementMap: Readonly<
     cashier: cashierEntitlements,
     user: cashierEntitlements,
     guest: cashierEntitlements,
-    member: managerEntitlements,
+    member: cashierEntitlements,
     manager: managerEntitlements,
     admin: adminEntitlements,
     owner: adminEntitlements,
