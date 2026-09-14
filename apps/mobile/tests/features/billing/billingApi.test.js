@@ -1,4 +1,5 @@
 import { beforeEach, expect, mock, test } from 'bun:test';
+mock.module('react-native', () => ({ Platform: { OS: 'web' } }));
 const storage = new Map();
 let tenant = '1';
 let failWrite = false;
