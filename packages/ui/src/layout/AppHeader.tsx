@@ -98,6 +98,7 @@ export function AppHeader({
   const { width } = useWindowDimensions();
   const isPhone = width < 600;
   const showActionLabels = width >= 768;
+  const showStorageLabel = showActionLabels || (isPhone && Boolean(refreshJob));
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDark, mode, setMode, themeColors } = useAppTheme();
   const Logo = variant === 'admin' ? AdminLogo : PosLogo;
@@ -156,12 +157,17 @@ export function AppHeader({
           accessibilityLabel={refreshJob ? `Cancel ${refreshJob.text}, job ${refreshJob.id}` : storage.status === 'error' ? storage.error || 'Retry local storage' : `${isOnline ? 'Online' : 'Offline'}; local storage ${storage.status}; ${pendingQueueCount} mutations pending`}
           disabled={!refreshJob && storage.status !== 'error' && pendingQueueCount === 0}
           onPress={() => void (refreshJob ? refreshJob.cancel() : storage.status === 'error' ? storage.retry() : onPendingSyncPress?.())}
-          style={[s.themeToggle, !showActionLabels && s.iconAction, { backgroundColor: storageColors.bg, borderWidth: 1, borderColor: storageColors.border }]}
+          style={[
+            s.themeToggle,
+            !showStorageLabel && s.iconAction,
+            isPhone && refreshJob && s.phoneRefreshAction,
+            { backgroundColor: storageColors.bg, borderWidth: 1, borderColor: storageColors.border },
+          ]}
         >
-          {refreshJob ? (isPhone ? <View style={s.cancelProgress}><ActivityIndicator size={28} color={themeColors.primary} /><X size={12} color={themeColors.primary} strokeWidth={3} style={s.cancelProgressIcon} /></View> : <ActivityIndicator size="small" color={themeColors.primary} />) : storage.status === 'error' ? <RefreshCw size={14} color={storageColors.text} /> : isOnline ? <Wifi size={14} color={storageColors.text} /> : <WifiOff size={14} color={storageColors.text} />}
+          {refreshJob ? <ActivityIndicator size="small" color={themeColors.primary} /> : storage.status === 'error' ? <RefreshCw size={14} color={storageColors.text} /> : isOnline ? <Wifi size={14} color={storageColors.text} /> : <WifiOff size={14} color={storageColors.text} />}
           {!refreshJob && pendingQueueCount > 0 && <View style={[s.queueBadge, { backgroundColor: storageColors.border }]}><Text style={s.queueBadgeText}>{pendingQueueCount > 99 ? '99+' : pendingQueueCount}</Text></View>}
-          {showActionLabels && <Text style={[s.toggleText, { color: storageColors.text }]}>{refreshJob ? `${refreshJob.text} · ${refreshJob.id.slice(-6).toUpperCase()}` : storage.status === 'ready' ? `${isOnline ? 'Online' : 'Offline'} · Storage ready` : storage.status === 'error' ? '↻ Storage' : '◌ Preparing'}</Text>}
-          {refreshJob && !isPhone && <X size={13} color={themeColors.textSecondary} />}
+          {showStorageLabel && <Text numberOfLines={1} style={[s.toggleText, isPhone && s.phoneRefreshText, { color: storageColors.text }]}>{storage.status === 'ready' ? `${isOnline ? 'Online' : 'Offline'} · Storage ready` : storage.status === 'error' ? '↻ Storage' : '◌ Preparing'}</Text>}
+          {refreshJob && <X size={13} color={storageColors.text} strokeWidth={2.7} />}
         </AppPressable>
         <AppPressable onPress={() => setMode(mode === 'light' ? 'dark' : 'light')} style={[s.themeToggle, !showActionLabels && s.iconAction, { backgroundColor: themeColors.primarySoft }]}>
           {mode === 'light' ? <Sun size={14} color={themeColors.primary} /> : <Moon size={14} color={themeColors.primary} />}
@@ -225,7 +231,7 @@ const s = StyleSheet.create({
   counterStatus: { height: 20, maxWidth: 170, paddingHorizontal: 6, borderRadius: 10, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 3.5, flexShrink: 1 }, phoneCounterStatus: { paddingHorizontal: 5, gap: 3, flexShrink: 0 }, counterStatusText: { fontSize: 10, fontWeight: '800', flexShrink: 1 },
   avatar: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, headerActions: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0 },
   themeToggle: { height: 34, paddingHorizontal: 10, borderRadius: 17, alignItems: 'center', flexDirection: 'row', gap: 5, justifyContent: 'center' }, iconAction: { width: 32, paddingHorizontal: 0 }, phoneControl: { width: 32, height: 32, borderRadius: 16 }, toggleText: { fontSize: 11, fontWeight: '900' },
-  queueBadge: { position: 'absolute', top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' }, queueBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '900' }, cancelProgress: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }, cancelProgressIcon: { position: 'absolute' }, avatarText: { fontSize: 12, fontWeight: '800' },
+  queueBadge: { position: 'absolute', top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' }, queueBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '900' }, phoneRefreshAction: { maxWidth: 154, paddingHorizontal: 8, gap: 4 }, phoneRefreshText: { maxWidth: 105, fontSize: 9 }, avatarText: { fontSize: 12, fontWeight: '800' },
   themeMenu: { position: 'absolute', zIndex: 40, top: 72, right: 16, width: 210, padding: 8, borderRadius: 16, borderWidth: 1, boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.14)', elevation: 20 }, menuOverlay: { flex: 1 }, menuBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'transparent' }, menuName: { fontSize: 14, fontWeight: '900', paddingHorizontal: 8, paddingTop: 6 }, menuRole: { fontSize: 11, paddingHorizontal: 8, paddingTop: 2, paddingBottom: 6 }, menuDivider: { height: StyleSheet.hairlineWidth, marginVertical: 6, marginHorizontal: 4 },
   themeOption: { height: 38, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10 }, themeIcon: { width: 18, alignItems: 'center' }, themeText: { fontSize: 13, fontWeight: '800' },
 });
