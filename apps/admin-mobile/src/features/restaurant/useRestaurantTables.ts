@@ -1,12 +1,16 @@
 import { useEffect, useMemo } from 'react';
-import { replaceLocalPayloads, useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
-import type { LocalRecord } from '@indyzai/pos-database';
+import { createLocalFirstTableHook, replaceLocalPayloads, useLocalDatabase } from '@indyzai/pos-database';
 import { restaurantApi } from './restaurantApi';
 import type { RestaurantTable } from './types';
 
+const useRestaurantTable = createLocalFirstTableHook<RestaurantTable>({
+    table: 'restaurant_tables',
+    entityType: 'RESTAURANT_TABLE',
+});
+
 export function useRestaurantTables(enabled: boolean, branchId?: string) {
     const local = useLocalDatabase();
-    const records = useLocalCollection<LocalRecord<RestaurantTable>>('restaurant_tables');
+    const records = useRestaurantTable();
 
     useEffect(() => {
         if (!enabled || !local.database) return;
@@ -28,10 +32,10 @@ export function useRestaurantTables(enabled: boolean, branchId?: string) {
     return useMemo(
         () =>
             enabled
-                ? records.records
+                ? records.data
                       .map((record) => record.payload)
                       .filter((table) => !branchId || table.branchId === branchId)
                 : [],
-        [branchId, enabled, records.records],
+        [branchId, enabled, records.data],
     );
 }

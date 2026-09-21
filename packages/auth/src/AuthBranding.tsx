@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Moon, Sparkles, Sun } from "lucide-react-native";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { AppPressable } from "@indyzai/pos-ui";
+import { AppPressable } from "@indyzai/pos-ui-native";
 import { getOptionalAuthUi } from "./authUi";
 
 export function AuthBranding({

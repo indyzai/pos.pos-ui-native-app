@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppTheme } from '@indyzai/pos-ui';
-import { createLogger } from '@indyzai/pos-core';
+import { useAppTheme } from '@indyzai/pos-ui-native';
+import { createLogger } from '@indyzai/pos-utils';
 import { SignupScreen } from '../auth/ui';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';

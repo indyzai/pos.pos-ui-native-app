@@ -2,13 +2,13 @@ import { ExternalLink, ShoppingCart } from 'lucide-react-native';
 import { ActivityIndicator, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
-import { AppPressable } from '@indyzai/pos-ui';
-import { BottomNavigationProvider } from '@indyzai/pos-ui';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui-native';
+import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { useState } from 'react';
-import { createLogger } from '@indyzai/pos-core';
+import { createLogger } from '@indyzai/pos-utils';
 
 const logger = createLogger('Admin:billing');
 

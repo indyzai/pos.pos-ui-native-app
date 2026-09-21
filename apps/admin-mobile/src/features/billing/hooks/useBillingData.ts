@@ -5,12 +5,9 @@ import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
 import {
+    createLocalFirstTableHook,
     payloadsFromRecords,
-    useLocalCollection,
-    useLocalCustomers,
-    useLocalProducts,
 } from '@indyzai/pos-database';
-import type { LocalRecord } from '@indyzai/pos-database';
 import type {
     BillingPaymentMethod,
     BillingTaxRate,
@@ -19,6 +16,25 @@ import type {
     ProductBatch,
     ServiceUser,
 } from '../types/billing';
+
+const useProductTable = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
+const useCustomerTable = createLocalFirstTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });
+const usePaymentMethodTable = createLocalFirstTableHook<BillingPaymentMethod>({
+    table: 'payment_methods',
+    entityType: 'PAYMENT_METHOD',
+});
+const useServiceUserTable = createLocalFirstTableHook<ServiceUser>({
+    table: 'service_users',
+    entityType: 'SERVICE_USER',
+});
+const useProductBatchTable = createLocalFirstTableHook<ProductBatch>({
+    table: 'product_batches',
+    entityType: 'PRODUCT_BATCH',
+});
+const useTaxRateTable = createLocalFirstTableHook<BillingTaxRate>({
+    table: 'tax_rates',
+    entityType: 'TAX_RATE',
+});
 
 export function useBillingData() {
     const queryClient = useQueryClient();
@@ -37,12 +53,12 @@ export function useBillingData() {
         refetchOnReconnect: false,
         retry: false,
     });
-    const localProducts = useLocalProducts<LocalRecord<Product>>();
-    const localCustomers = useLocalCustomers<LocalRecord<Customer>>();
-    const localPaymentMethods = useLocalCollection<LocalRecord<BillingPaymentMethod>>('payment_methods');
-    const localServiceUsers = useLocalCollection<LocalRecord<ServiceUser>>('service_users');
-    const localProductBatches = useLocalCollection<LocalRecord<ProductBatch>>('product_batches');
-    const localTaxRates = useLocalCollection<LocalRecord<BillingTaxRate>>('tax_rates');
+    const localProducts = useProductTable();
+    const localCustomers = useCustomerTable();
+    const localPaymentMethods = usePaymentMethodTable();
+    const localServiceUsers = useServiceUserTable();
+    const localProductBatches = useProductBatchTable();
+    const localTaxRates = useTaxRateTable();
 
     const syncMutation = useMutation({
         networkMode: 'always',
@@ -126,21 +142,21 @@ export function useBillingData() {
             ...query.data,
             cache: {
                 ...query.data.cache,
-                products: payloadsFromRecords(localProducts.records),
-                customers: payloadsFromRecords(localCustomers.records),
-                paymentMethods: payloadsFromRecords(localPaymentMethods.records),
-                serviceUsers: payloadsFromRecords(localServiceUsers.records),
-                productBatches: payloadsFromRecords(localProductBatches.records),
-                taxRates: payloadsFromRecords(localTaxRates.records),
+                products: payloadsFromRecords(localProducts.data),
+                customers: payloadsFromRecords(localCustomers.data),
+                paymentMethods: payloadsFromRecords(localPaymentMethods.data),
+                serviceUsers: payloadsFromRecords(localServiceUsers.data),
+                productBatches: payloadsFromRecords(localProductBatches.data),
+                taxRates: payloadsFromRecords(localTaxRates.data),
             },
         };
     }, [
-        localCustomers.records,
-        localPaymentMethods.records,
-        localProductBatches.records,
-        localProducts.records,
-        localServiceUsers.records,
-        localTaxRates.records,
+        localCustomers.data,
+        localPaymentMethods.data,
+        localProductBatches.data,
+        localProducts.data,
+        localServiceUsers.data,
+        localTaxRates.data,
         query.data,
         ready,
     ]);

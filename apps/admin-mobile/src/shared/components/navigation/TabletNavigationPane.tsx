@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { useAppTheme } from '@indyzai/pos-ui';
-import { AppPressable } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui-native';
+import { AppPressable } from '@indyzai/pos-ui-native';
 import { isNavigationItemActive, tabletNavigationItems } from '../../navigation/routes';
 
 export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {

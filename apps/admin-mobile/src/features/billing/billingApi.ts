@@ -1,5 +1,5 @@
 import { requestPos, requestPosBootstrap, requestPosHasUpdates } from '../../core/api/posApi';
-import { SerialQueue } from '@indyzai/pos-core/sync';
+import { SerialQueue } from '@indyzai/pos-sync';
 import { readBillingSnapshot, writeBillingSnapshot } from './data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';

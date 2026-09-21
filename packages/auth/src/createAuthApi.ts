@@ -1,4 +1,4 @@
-import { requestJson } from "@indyzai/pos-backend";
+import { requestJson } from "@indyzai/pos-api";
 import * as AuthSession from "expo-auth-session";
 import * as Application from "expo-application";
 import Constants, { ExecutionEnvironment } from "expo-constants";
@@ -13,7 +13,7 @@ import type {
     RegistrationPayload,
 } from "./types";
 import { appStorageKeys, type PosApplication } from "./storageKeys";
-import { createLogger } from "@indyzai/pos-core";
+import { createLogger } from "@indyzai/pos-utils";
 export type {
     AuthTenant,
     AuthUser,

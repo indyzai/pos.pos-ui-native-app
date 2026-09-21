@@ -10,11 +10,11 @@ import {
     View,
 } from 'react-native';
 import { Banknote, Calculator, ChevronDown, ChevronUp, LockKeyhole, X } from 'lucide-react-native';
-import { AppPressable } from '@indyzai/pos-ui';
-import { AppKeyboardSafeView } from '@indyzai/pos-ui';
-import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { createLogger } from '@indyzai/pos-core';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui-native';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
+import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
+import { createLogger } from '@indyzai/pos-utils';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 import type { CounterSession } from '../../sales/salesOutbox';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';

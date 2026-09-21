@@ -8,7 +8,7 @@ import {
     View,
     useWindowDimensions,
 } from "react-native";
-import { AppPressable } from "@indyzai/pos-ui";
+import { AppPressable } from "@indyzai/pos-ui-native";
 import { AuthBranding } from "./AuthBranding";
 import { EyeIcon } from "./AuthIcons";
 import { getAuthUi, type AuthThemeColors } from "./authUi";

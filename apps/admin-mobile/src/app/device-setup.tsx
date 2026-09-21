@@ -1,7 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { DeviceSetupScreen } from '@indyzai/pos-auth/device-setup';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 

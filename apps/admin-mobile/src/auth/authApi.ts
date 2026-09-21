@@ -1,5 +1,5 @@
 import { createAuthApi } from '@indyzai/pos-auth/api';
-import { env } from '@indyzai/pos-core/env';
+import { env } from '@indyzai/pos-config';
 import { getRuntimeApiUrls } from '../config/runtimeEnvironment';
 
 export const authApi = createAuthApi({

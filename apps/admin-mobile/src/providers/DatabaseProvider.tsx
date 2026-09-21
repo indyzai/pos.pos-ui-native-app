@@ -5,7 +5,7 @@ import {
     useRequiredLocalDatabase,
     type DatabaseState,
 } from '@indyzai/pos-database/react';
-import { createLogger } from '@indyzai/pos-core';
+import { createLogger } from '@indyzai/pos-utils';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { createAdminLocalDatabase } from '@indyzai/pos-database/admin';
@@ -16,8 +16,8 @@ import {
     type LocalDatabase,
 } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { kvStore } from '@indyzai/pos-core/storage';
-import { queryClient } from '@indyzai/pos-core/query';
+import { kvStore } from '@indyzai/pos-storage-native';
+import { queryClient } from '@indyzai/pos-state';
 import { billingApi } from '../features/billing/billingApi';
 
 const logger = createLogger('Database:admin');

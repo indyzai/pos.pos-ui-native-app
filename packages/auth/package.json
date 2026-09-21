@@ -12,14 +12,14 @@
     "./session": "./src/createAuthSession.tsx",
     "./ui": "./src/authUiExports.ts",
     "./storage-keys": "./src/storageKeys.ts",
-    "./access": "./src/appAccess.ts",
     "./callback": "./src/AuthCallbackScreen.tsx",
     "./device-setup": "./src/DeviceSetupScreen.tsx"
   },
   "dependencies": {
-    "@indyzai/pos-backend": "workspace:*",
-    "@indyzai/pos-core": "workspace:*",
-    "@indyzai/pos-ui": "workspace:*",
+    "@indyzai/pos-api": "workspace:*",
+    "@indyzai/pos-permissions": "workspace:*",
+    "@indyzai/pos-utils": "workspace:*",
+    "@indyzai/pos-ui-native": "workspace:*",
     "expo-application": "~57.0.2",
     "expo-auth-session": "~57.0.11",
     "expo-constants": "~57.0.17",

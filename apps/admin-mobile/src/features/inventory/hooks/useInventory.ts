@@ -4,9 +4,10 @@ import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { inventoryApi } from '../inventoryApi';
 import type { CreateInventoryItemInput, StockReconciliationInput } from '../types';
-import { payloadsFromRecords, replaceLocalPayloads, useLocalProducts } from '@indyzai/pos-database';
-import type { LocalRecord } from '@indyzai/pos-database';
+import { createLocalFirstTableHook, payloadsFromRecords, replaceLocalPayloads } from '@indyzai/pos-database';
 import type { Product } from '../../billing/types/billing';
+
+const useProductTable = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 
 export function useInventory() {
     const auth = useAuthSession();
@@ -24,7 +25,7 @@ export function useInventory() {
         refetchOnWindowFocus: false,
         retry: false,
     });
-    const localProducts = useLocalProducts<LocalRecord<Product>>();
+    const localProducts = useProductTable();
     useEffect(() => {
         if (!local.database || !query.data) return;
         void replaceLocalPayloads(local.database, 'products', query.data.cache.products).then(
@@ -72,7 +73,7 @@ export function useInventory() {
     const error = refresh.error ?? reconcile.error ?? create.error ?? query.error;
     return useMemo(
         () => ({
-            products: payloadsFromRecords(localProducts.records),
+            products: payloadsFromRecords(localProducts.data),
             jobs: jobs.data ?? [],
             updated: query.data?.cache.updated,
             loading: query.isLoading,
@@ -91,7 +92,7 @@ export function useInventory() {
             error,
             jobs.data,
             local.error,
-            localProducts.records,
+            localProducts.data,
             projectionError,
             query.data,
             query.isLoading,

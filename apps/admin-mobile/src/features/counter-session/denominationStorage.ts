@@ -1,4 +1,4 @@
-import { kvStore } from '@indyzai/pos-core/storage';
+import { kvStore } from '@indyzai/pos-storage-native';
 import type { DenominationCounts } from './types';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 

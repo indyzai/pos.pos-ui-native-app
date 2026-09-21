@@ -1,7 +1,7 @@
 import { configureAuthUi, LoginScreen, SignupScreen } from '@indyzai/pos-auth/ui';
-import { AdminLogo } from '@indyzai/pos-ui';
-import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { AdminLogo } from '@indyzai/pos-ui-native';
+import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 
 configureAuthUi({
     useTheme: useAppTheme,

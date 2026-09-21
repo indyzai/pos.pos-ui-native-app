@@ -37,4 +37,4 @@ export {
     roleEntitlementMap,
     type AppSurface,
     type Entitlement,
-} from "./appAccess";
+} from "@indyzai/pos-permissions";

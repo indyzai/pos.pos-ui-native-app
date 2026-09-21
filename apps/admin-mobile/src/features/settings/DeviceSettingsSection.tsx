@@ -9,14 +9,14 @@ import {
     ShieldCheck,
     type LucideIcon,
 } from 'lucide-react-native';
-import { AppPressable } from '@indyzai/pos-ui';
-import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui-native';
+import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 import { authApi, type DeviceRegistrationDetails } from '../../auth/authApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { development, env } from '@indyzai/pos-core/env';
+import { development, env } from '@indyzai/pos-config';
 import { getRuntimeApiUrls, setApiEnvironment, type ApiEnvironment } from '../../config/runtimeEnvironment';
-import { DeviceLogViewer } from '@indyzai/pos-ui/device-logs';
+import { DeviceLogViewer } from '@indyzai/pos-ui-native/device-logs';
 
 export function DeviceSettingsSection({
     registerSave,

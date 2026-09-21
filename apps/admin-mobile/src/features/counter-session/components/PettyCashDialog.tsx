@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Wallet, X } from 'lucide-react-native';
-import { AppPressable } from '@indyzai/pos-ui';
-import { AppKeyboardSafeView } from '@indyzai/pos-ui';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui-native';
+import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 
 type Input = { type: 'INCOME' | 'EXPENSE'; amount: number; description?: string };
 

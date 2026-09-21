@@ -7,7 +7,7 @@ import {
     showSnackbar,
     useAppHeader,
     useNetworkStatus,
-} from '@indyzai/pos-ui';
+} from '@indyzai/pos-ui-native';
 import { useLocalDatabase } from '../../../providers/DatabaseProvider';
 import { useOfflineQueueCount } from '@indyzai/pos-database';
 import { authApi } from '../../../auth/authApi';

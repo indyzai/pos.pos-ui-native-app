@@ -9,7 +9,7 @@ import {
     View,
     useWindowDimensions,
 } from "react-native";
-import { AppPressable } from "@indyzai/pos-ui";
+import { AppPressable } from "@indyzai/pos-ui-native";
 import { getAuthUi } from "./authUi";
 import { AuthBranding } from "./AuthBranding";
 import { EyeIcon, GoogleIcon, MicrosoftIcon } from "./AuthIcons";

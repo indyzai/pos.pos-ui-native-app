@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import { createLogger } from '@indyzai/pos-core';
+import { createLogger } from '@indyzai/pos-utils';
 
 WebBrowser.maybeCompleteAuthSession();
 

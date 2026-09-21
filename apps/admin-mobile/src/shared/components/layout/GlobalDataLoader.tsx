@@ -1,4 +1,4 @@
-import { GlobalDataLoaderView, useAppHeader } from '@indyzai/pos-ui';
+import { GlobalDataLoaderView, useAppHeader } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '../../../auth/AuthSessionContext';
 
 export function GlobalDataLoader() {

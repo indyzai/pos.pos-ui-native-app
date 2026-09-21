@@ -5,9 +5,11 @@ import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { ordersApi } from './ordersApi';
 import type { SalesOrder } from './types';
 import type { RefundSelection } from './refundPolicy';
-import { payloadsFromRecords, replaceLocalPayloads, useLocalCollection } from '@indyzai/pos-database';
-import type { LocalRecord } from '@indyzai/pos-database';
+import { createLocalFirstTableHook, payloadsFromRecords, replaceLocalPayloads } from '@indyzai/pos-database';
 import type { RefundRecord } from './types';
+
+const useOrderTable = createLocalFirstTableHook<SalesOrder>({ table: 'orders', entityType: 'ORDER' });
+const useRefundTable = createLocalFirstTableHook<RefundRecord>({ table: 'refunds', entityType: 'REFUND' });
 
 export function useOrders() {
     const auth = useAuthSession();
@@ -25,8 +27,8 @@ export function useOrders() {
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
     });
-    const localOrders = useLocalCollection<LocalRecord<SalesOrder>>('orders');
-    const localRefunds = useLocalCollection<LocalRecord<RefundRecord>>('refunds', { includeDeleted: false });
+    const localOrders = useOrderTable();
+    const localRefunds = useRefundTable();
     useEffect(() => {
         if (!local.database || !query.data) return;
         void Promise.all([
@@ -64,8 +66,8 @@ export function useOrders() {
     });
     return {
         ready,
-        orders: payloadsFromRecords(localOrders.records),
-        refunds: payloadsFromRecords(localRefunds.records),
+        orders: payloadsFromRecords(localOrders.data),
+        refunds: payloadsFromRecords(localRefunds.data),
         loading: query.isFetching,
         refreshing: refreshMutation.isPending,
         refunding: refundMutation.isPending,

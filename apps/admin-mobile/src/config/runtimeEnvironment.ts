@@ -1,5 +1,5 @@
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { createRuntimeEnvironmentManager, type ApiEnvironment } from '@indyzai/pos-backend/runtime-env';
+import { createRuntimeEnvironmentManager, type ApiEnvironment } from '@indyzai/pos-api/runtime-env';
 
 export type { ApiEnvironment };
 

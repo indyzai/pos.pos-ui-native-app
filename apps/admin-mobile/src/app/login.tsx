@@ -1,11 +1,11 @@
 import { Redirect, useRouter } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 import { LoginScreen } from '../auth/ui';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
-import { createLogger } from '@indyzai/pos-core';
+import { createLogger } from '@indyzai/pos-utils';
 
 const logger = createLogger('Auth:admin-app');
 

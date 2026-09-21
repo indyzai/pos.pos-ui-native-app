@@ -1,4 +1,4 @@
-import { createPosApiClient } from '@indyzai/pos-backend/pos-api';
+import { createPosApiClient } from '@indyzai/pos-api/pos-api';
 import { getRuntimeApiUrls } from '../../config/runtimeEnvironment';
 
 const client = createPosApiClient({

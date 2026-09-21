@@ -1,11 +1,15 @@
 import * as Crypto from 'expo-crypto';
-import { createScopeKey, useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
-import type { LocalRecord } from '@indyzai/pos-database';
+import { createLocalFirstTableHook, useLocalDatabase } from '@indyzai/pos-database';
 import type { BillingOrderContext, CartItem, Customer, HeldOrder, ScrapExchange } from '../types/billing';
+
+const useHeldOrderTable = createLocalFirstTableHook<HeldOrder>({
+    table: 'held_orders',
+    entityType: 'HELD_ORDER',
+});
 
 export function useHeldOrders(enabledScope?: string) {
     const local = useLocalDatabase();
-    const collection = useLocalCollection<LocalRecord<HeldOrder>>('held_orders');
+    const collection = useHeldOrderTable();
 
     const hold = async (
         items: CartItem[],
@@ -24,29 +28,28 @@ export function useHeldOrders(enabledScope?: string) {
             scrapExchange,
             heldAt: new Date().toISOString(),
         };
-        const scopeKey = createScopeKey(local.database.scope);
-        await local.database.collection<LocalRecord<HeldOrder>>('held_orders').put({
-            id: `${scopeKey}:held_orders:${order.id}`,
-            scope: scopeKey,
-            tenantId: local.database.scope.tenantId,
-            storeId: local.database.scope.storeIds[0] ?? null,
-            remoteId: order.id,
+        await collection.createMutation({
             payload: order,
-            serverVersion: 0,
-            syncStatus: 'PENDING',
-            updatedAt: Date.parse(order.heldAt),
-            deletedAt: null,
+            operation: 'CREATE',
+            localId: order.id,
+            idempotencyKey: `held-order:${order.id}`,
         });
     };
 
     const remove = async (id: string) => {
         if (!local.database) return;
-        const record = collection.records.find((item) => item.payload.id === id);
-        if (record) await local.database.collection('held_orders').remove(record.id);
+        const record = collection.data.find((item) => item.payload.id === id);
+        if (record)
+            await collection.createMutation({
+                payload: record.payload,
+                operation: 'DELETE',
+                localId: record.id,
+                idempotencyKey: `held-order:${record.id}:delete`,
+            });
     };
 
     return {
-        orders: enabledScope ? collection.records.map((record) => record.payload) : [],
+        orders: enabledScope ? collection.data.map((record) => record.payload) : [],
         hold,
         remove,
         reload: collection.reload,

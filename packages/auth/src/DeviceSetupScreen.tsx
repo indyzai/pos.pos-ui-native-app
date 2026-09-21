@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppPressable } from '@indyzai/pos-ui/pressable';
-import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { createLogger } from '@indyzai/pos-core';
+import { AppPressable } from '@indyzai/pos-ui-native/pressable';
+import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
+import { createLogger } from '@indyzai/pos-utils';
 
 const logger = createLogger('Auth:device-setup');
 

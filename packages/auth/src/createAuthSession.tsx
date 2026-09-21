@@ -10,7 +10,7 @@ import {
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import type { AuthTenant, AuthUser } from "./types";
 import type { createAuthApi } from "./createAuthApi";
-import { createLogger } from "@indyzai/pos-core";
+import { createLogger } from "@indyzai/pos-utils";
 import { AuthBranding } from "./AuthBranding";
 
 const sessionLogger = createLogger("Auth:session");

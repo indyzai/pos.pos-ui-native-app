@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { requestPos } from '../../core/api/posApi';
-import { SerialQueue } from '@indyzai/pos-core/sync';
+import { SerialQueue } from '@indyzai/pos-sync';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { ordersRepository } from './ordersRepository';

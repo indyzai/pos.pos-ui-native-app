@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AlertCircle, CheckCircle2, Clock3, ReceiptText, RotateCcw, Search } from 'lucide-react-native';
-import { AppPressable, DataStateMessage } from '@indyzai/pos-ui';
-import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '@indyzai/pos-ui';
-import { useBottomNavigation, useBottomNavigationClearance } from '@indyzai/pos-ui';
-import { useAppHeader } from '@indyzai/pos-ui';
+import { AppPressable, DataStateMessage } from '@indyzai/pos-ui-native';
+import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
+import { useAppTheme } from '@indyzai/pos-ui-native';
+import { useBottomNavigation, useBottomNavigationClearance } from '@indyzai/pos-ui-native';
+import { useAppHeader } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { formatCurrency } from '@indyzai/pos-ui/currency';
+import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 import { RefundDialog } from './components/RefundDialog';
 import { useOrders } from './useOrders';
 import type { SalesOrder } from './types';
 import { refundableQuantity } from './refundPolicy';
-import { createLogger } from '@indyzai/pos-core';
+import { createLogger } from '@indyzai/pos-utils';
 import {
     ReceiptDialog,
     type ReceiptData,
-} from '../../../../mobile/src/features/billing/components/ReceiptDialog';
+} from '../../../../pos-mobile/src/features/billing/components/ReceiptDialog';
 
 const logger = createLogger('Orders');
 

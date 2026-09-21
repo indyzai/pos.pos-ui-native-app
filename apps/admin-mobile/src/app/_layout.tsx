@@ -3,18 +3,18 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@indyzai/pos-core/query';
-import { ThemeProvider, useAppTheme } from '@indyzai/pos-ui';
+import { queryClient } from '@indyzai/pos-state';
+import { ThemeProvider, useAppTheme } from '@indyzai/pos-ui-native';
 import { AuthSessionProvider, useAuthSession } from '../auth/AuthSessionContext';
 import { DatabaseProvider } from '../providers/DatabaseProvider';
 import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';
 import { GlobalDataLoader } from '../shared/components/layout/GlobalDataLoader';
-import { AppHeaderProvider } from '@indyzai/pos-ui';
+import { AppHeaderProvider } from '@indyzai/pos-ui-native';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
-import { SnackbarProvider } from '@indyzai/pos-ui/snackbar';
-import { AppPaperProvider } from '@indyzai/pos-ui';
+import { SnackbarProvider } from '@indyzai/pos-ui-native/snackbar';
+import { AppPaperProvider } from '@indyzai/pos-ui-native';
 
 export default function RootLayout() {
     return (

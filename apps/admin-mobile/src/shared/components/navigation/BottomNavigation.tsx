@@ -3,11 +3,11 @@ import { CircleOff, Menu, X, type LucideIcon } from 'lucide-react-native';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import { Modal, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@indyzai/pos-ui/tokens';
-import { useBottomNavigation } from '@indyzai/pos-ui';
-import { useAppTheme } from '@indyzai/pos-ui';
-import { AppPressable } from '@indyzai/pos-ui';
-import { BOTTOM_NAVIGATION_HEIGHT } from '@indyzai/pos-ui';
+import { colors } from '@indyzai/pos-ui-native/tokens';
+import { useBottomNavigation } from '@indyzai/pos-ui-native';
+import { useAppTheme } from '@indyzai/pos-ui-native';
+import { AppPressable } from '@indyzai/pos-ui-native';
+import { BOTTOM_NAVIGATION_HEIGHT } from '@indyzai/pos-ui-native';
 import {
     isNavigationItemActive,
     moreNavigationItems,

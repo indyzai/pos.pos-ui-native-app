@@ -2,17 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Send, Trash2 } from 'lucide-react-native';
-import { AppPressable } from '@indyzai/pos-ui';
-import { showSnackbar } from '@indyzai/pos-ui/snackbar';
-import { useAppTheme } from '@indyzai/pos-ui';
+import { AppPressable } from '@indyzai/pos-ui-native';
+import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
+import { useAppTheme } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { clearLocalUiData } from '@indyzai/pos-database/maintenance';
-import { useLocalCollection, useLocalDatabase } from '@indyzai/pos-database';
+import { createLocalFirstTableHook, useLocalDatabase } from '@indyzai/pos-database';
 import type { CollectionName, LocalRecord, SyncStatus } from '@indyzai/pos-database';
 import { waybillRepository } from '../logistics/waybillRepository';
 import type { WaybillJob } from '../logistics/types';
-import { createLogger } from '@indyzai/pos-core';
+import { createLogger } from '@indyzai/pos-utils';
 import { billingApi } from '../billing/billingApi';
 
 const logger = createLogger('Settings:data');
@@ -35,19 +35,20 @@ type SyncErrorPayload = {
     errorMessage?: string;
     createdAt?: number | string;
 };
+const useOutboxTable = createLocalFirstTableHook<OutboxPayload>({ table: 'sync_outbox' });
+const useSyncStateTable = createLocalFirstTableHook<SyncStatePayload>({ table: 'sync_state' });
+const useSyncErrorTable = createLocalFirstTableHook<SyncErrorPayload>({ table: 'sync_errors' });
+const useConflictTable = createLocalFirstTableHook<Record<string, unknown>>({ table: 'sync_conflicts' });
 
 export function DataSettingsSection() {
     const { themeColors: c } = useAppTheme();
     const queryClient = useQueryClient();
     const { session } = useAuthSession();
     const local = useLocalDatabase();
-    const outbox = useLocalCollection<LocalRecord<OutboxPayload>>('sync_outbox', { includeDeleted: true });
-    const states = useLocalCollection<LocalRecord<SyncStatePayload>>('sync_state', { includeDeleted: true });
-    const errors = useLocalCollection<LocalRecord<SyncErrorPayload>>('sync_errors', {
-        includeDeleted: true,
-        limit: 20,
-    });
-    const conflicts = useLocalCollection('sync_conflicts', { includeDeleted: true, limit: 20 });
+    const outbox = useOutboxTable();
+    const states = useSyncStateTable();
+    const errors = useSyncErrorTable();
+    const conflicts = useConflictTable();
     const [waybillJobs, setWaybillJobs] = useState<WaybillJob[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [syncing, setSyncing] = useState(false);
@@ -64,12 +65,12 @@ export function DataSettingsSection() {
             CONFLICT: 0,
             SYNCED: 0,
         };
-        for (const record of outbox.records) result[record.syncStatus]++;
+        for (const record of outbox.data) result[record.syncStatus]++;
         for (const job of waybillJobs) {
             result[normalizeStatus(job.status)]++;
         }
         return result;
-    }, [outbox.records, waybillJobs]);
+    }, [outbox.data, waybillJobs]);
 
     const loadWaybillJobs = async () => {
         if (!session || local.status !== 'ready') return;
@@ -216,7 +217,7 @@ export function DataSettingsSection() {
         await refresh();
     };
 
-    const recent = [...outbox.records]
+    const recent = [...outbox.data]
         .filter((record) => showCompleted || (record.syncStatus !== 'SYNCED' && record.syncStatus !== 'API'))
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, 20);
@@ -230,7 +231,7 @@ export function DataSettingsSection() {
         }))
         .slice(0, 20);
     const problems = [
-        ...errors.records.map((record) => ({
+        ...errors.data.map((record) => ({
             source: 'error' as const,
             record,
             id: record.id,
@@ -239,7 +240,7 @@ export function DataSettingsSection() {
             timestamp: record.payload.createdAt || record.updatedAt,
             error: record.payload.errorMessage,
         })),
-        ...conflicts.records.map((record) => {
+        ...conflicts.data.map((record) => {
             const payload = record.payload as Record<string, unknown>;
             return {
                 source: 'conflict' as const,
@@ -317,7 +318,7 @@ export function DataSettingsSection() {
                 <Summary label="Failed" value={counts.FAILED} color={c.error} />
                 <Summary
                     label="Conflicts"
-                    value={counts.CONFLICT + conflicts.records.length}
+                    value={counts.CONFLICT + conflicts.data.length}
                     color={c.error}
                 />
                 <Summary label="Synced" value={counts.SYNCED} color={c.success} />
@@ -394,15 +395,15 @@ export function DataSettingsSection() {
 
             <SectionHeader icon={<CheckCircle2 size={18} color={c.primary} />} title="Pull cursors" />
             <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
-                {!states.records.length ? (
+                {!states.data.length ? (
                     <Empty text="No collection has completed a pull sync yet." />
                 ) : (
-                    states.records.map((record, index) => (
+                    states.data.map((record, index) => (
                         <Detail
                             key={record.id}
                             label={record.payload.collection || record.remoteId || 'Collection'}
                             value={formatTime(record.payload.lastSyncedAt || record.updatedAt)}
-                            last={index === states.records.length - 1}
+                            last={index === states.data.length - 1}
                         />
                     ))
                 )}

@@ -1,0 +1,36 @@
+{
+  "name": "@indyzai/pos-ui-native",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./pressable": "./src/AppPressable.tsx",
+    "./currency": "./src/currency.ts",
+    "./snackbar": "./src/Snackbar.tsx",
+    "./device-logs": "./src/DeviceLogViewer.tsx",
+    "./theme": "./src/theme/ThemeProvider.tsx",
+    "./tokens": "./src/theme/tokens.ts",
+    "./paper": "./src/theme/AppPaperProvider.tsx",
+    "./layout": "./src/layout/AppHeaderProvider.tsx",
+    "./app-header": "./src/layout/AppHeader.tsx",
+    "./placeholder": "./src/layout/ModulePlaceholder.tsx",
+    "./navigation": "./src/navigation/BottomNavigationProvider.tsx",
+    "./components": "./src/components/AppBottomSheetShell.tsx",
+    "./branding": "./src/branding/PosLogo.tsx"
+  },
+  "dependencies": {
+    "@indyzai/pos-utils": "workspace:*",
+    "lucide-react-native": "^1.41.0",
+    "react-native-paper": "^5.15.3"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-paper": "^5.15.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "^15.15.5"
+  }
+}
