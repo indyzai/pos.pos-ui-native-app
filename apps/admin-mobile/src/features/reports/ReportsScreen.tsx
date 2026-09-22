@@ -37,8 +37,14 @@ export function ReportsScreen() {
     const initialRefresh = useRef<string | undefined>(undefined);
     const currency = String(session?.organization?.settings.currency || 'INR');
     const metrics = useMemo(
-        () => buildReportMetrics(data.orders, data.refunds, period),
-        [data.orders, data.refunds, period],
+        () =>
+            buildReportMetrics(data.orders, data.refunds, period, new Date(), {
+                timeZone:
+                    typeof session?.organization?.settings.timezone === 'string'
+                        ? session.organization.settings.timezone
+                        : undefined,
+            }),
+        [data.orders, data.refunds, period, session?.organization?.settings.timezone],
     );
     const money = (value: number) => formatCurrency(value, currency);
     const refresh = async () => {

@@ -1,0 +1,19 @@
+{
+  "name": "@indyzai/feature-orders",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@indyzai/pos-application": "workspace:*",
+    "@indyzai/pos-sync": "workspace:*",
+    "@indyzai/pos-database": "workspace:*",
+    "@indyzai/feature-billing": "workspace:*",
+    "drizzle-orm": "^0.45.2"
+  }
+}

@@ -15,6 +15,8 @@ import { AppHeaderProvider } from '@indyzai/pos-ui-native';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '@indyzai/pos-ui-native/snackbar';
 import { AppPaperProvider } from '@indyzai/pos-ui-native';
+import { isRouteFeatureEnabled } from '@indyzai/feature-flags';
+import { useFeatureToggles } from '../features/organization/useFeatureToggles';
 
 export default function RootLayout() {
     return (
@@ -50,6 +52,7 @@ function RootNavigator() {
     const pathname = usePathname();
     const router = useRouter();
     const { authenticated, initializing } = useAuthSession();
+    const { flags } = useFeatureToggles();
     useEffect(() => {
         if (
             !initializing &&
@@ -58,7 +61,10 @@ function RootNavigator() {
         ) {
             router.replace('/login');
         }
-    }, [authenticated, initializing, pathname, router]);
+        if (!initializing && authenticated && !isRouteFeatureEnabled(pathname, flags)) {
+            router.replace('/settings');
+        }
+    }, [authenticated, initializing, pathname, router, flags]);
     const headerHidden = ['/', '/login', '/signup', '/auth/callback', '/device-setup'].includes(pathname);
     const showLeftNavigation = !headerHidden && width >= 700 && width > height;
     return (

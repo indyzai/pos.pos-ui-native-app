@@ -1,7 +1,1 @@
-export type RestaurantTable = {
-    id: string;
-    branchId: string;
-    name: string;
-    capacity: number;
-    status: string;
-};
+export * from '@indyzai/feature-restaurant/types';

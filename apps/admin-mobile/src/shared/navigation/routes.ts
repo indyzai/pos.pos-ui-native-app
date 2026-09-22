@@ -1,5 +1,6 @@
 import type { Href } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
+import { isRouteFeatureEnabled, type FeatureToggles } from '@indyzai/feature-flags';
 import {
     ArrowLeftRight,
     ChartPie,
@@ -15,6 +16,12 @@ import {
 
 export type AppNavigationItem = { label: string; icon: LucideIcon; href: Href };
 
+export function visibleNavigationItems(items: readonly AppNavigationItem[], flags: FeatureToggles) {
+    return items.filter((item) =>
+        isRouteFeatureEnabled(typeof item.href === 'string' ? item.href : item.href.pathname, flags),
+    );
+}
+
 export const primaryNavigationItems: AppNavigationItem[] = [
     { label: 'Reports', icon: ChartPie, href: '/reports' },
     { label: 'Inventory', icon: Package, href: '/inventory' },
@@ -27,7 +34,6 @@ export const orderNavigationItem: AppNavigationItem = {
 };
 
 export const moreNavigationItems: AppNavigationItem[] = [
-    { label: 'POS Billing', icon: LayoutGrid, href: '/billing' },
     { label: 'Customers', icon: Users, href: '/customers' },
     { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers' },
     { label: 'Expenses', icon: Wallet, href: '/expenses' },
@@ -41,7 +47,7 @@ export const tabletNavigationItems = [
     orderNavigationItem,
     moreNavigationItems[0],
     moreNavigationItems[1],
-    moreNavigationItems[6],
+    moreNavigationItems[5],
 ];
 
 export function isNavigationItemActive(pathname: string, href: Href): boolean {

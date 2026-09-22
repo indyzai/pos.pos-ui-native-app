@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@indyzai/feature-reports": "workspace:*",
     "@indyzai/pos-auth": "workspace:*",
     "@indyzai/pos-api": "workspace:*",
     "@indyzai/pos-config": "workspace:*",
@@ -41,7 +42,18 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "^15.15.5",
-    "react-native-web": "^0.21.2"
+    "react-native-web": "^0.21.2",
+    "@indyzai/feature-billing": "workspace:*",
+    "@indyzai/feature-orders": "workspace:*",
+    "@indyzai/feature-printers": "workspace:*",
+    "@indyzai/feature-inventory": "workspace:*",
+    "@indyzai/feature-purchase": "workspace:*",
+    "@indyzai/feature-organization": "workspace:*",
+    "@indyzai/feature-flags": "workspace:*",
+    "@indyzai/feature-catalog": "workspace:*",
+    "@indyzai/feature-customers": "workspace:*",
+    "@indyzai/feature-restaurant": "workspace:*",
+    "@indyzai/feature-scrap": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

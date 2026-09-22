@@ -1,4 +1,5 @@
 import { requestPos, requestPosBootstrap, requestPosHasUpdates } from '../../core/api/posApi';
+import { purchasesApi } from '../purchases/purchasesApi';
 import { SerialQueue } from '@indyzai/pos-sync';
 import { readBillingSnapshot, writeBillingSnapshot } from './data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
@@ -297,6 +298,7 @@ export const billingApi = {
         }),
     sync: (signal?: AbortSignal) =>
         syncQueue.run(async () => {
+            if (getActiveDatabase()) await purchasesApi.pushPending(signal);
             const c = await context();
             const cache = await read(c);
             const scrapJobs = await scrapPurchaseRepository.read(c.key);

@@ -19,6 +19,11 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
 import { billingApi } from '../features/billing/billingApi';
+import { purchasesApi } from '../features/purchases/purchasesApi';
+import { startBillingOutboxWorker } from '@indyzai/pos-sync';
+import { useOfflineQueueCount } from '@indyzai/pos-database';
+import { useNetworkStatus } from '@indyzai/pos-ui-native';
+import { AppState } from 'react-native';
 
 const logger = createLogger('Database:admin');
 
@@ -116,6 +121,33 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     }, [initialize]);
 
     const value = useMemo<DatabaseState>(() => ({ ...state, retry: initialize }), [initialize, state]);
-    return <LocalDatabaseProvider value={value}>{children}</LocalDatabaseProvider>;
+    return (
+        <LocalDatabaseProvider value={value}>
+            {state.database && state.status === 'ready' && session ? (
+                <AdminOutboxProcessor database={state.database} />
+            ) : null}
+            {children}
+        </LocalDatabaseProvider>
+    );
+}
+function AdminOutboxProcessor({ database }: { database: LocalDatabase }) {
+    const pendingSyncCount = useOfflineQueueCount();
+    const isOnline = useNetworkStatus(authApi, { pendingSyncCount });
+    useEffect(() => {
+        const worker = startBillingOutboxWorker(
+            database,
+            () => purchasesApi.pushPending(),
+            async () => isOnline,
+            ['PURCHASE'],
+        );
+        const subscription = AppState.addEventListener('change', (status) => {
+            if (status === 'active' && isOnline) worker.wake();
+        });
+        return () => {
+            subscription.remove();
+            worker.stop();
+        };
+    }, [database, isOnline]);
+    return null;
 }
 export { useLocalDatabase, useRequiredLocalDatabase };

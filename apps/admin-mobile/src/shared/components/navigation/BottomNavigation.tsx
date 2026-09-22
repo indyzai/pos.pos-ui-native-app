@@ -13,10 +13,13 @@ import {
     moreNavigationItems,
     primaryNavigationItems,
     orderNavigationItem,
+    visibleNavigationItems,
 } from '../../navigation/routes';
+import { useFeatureToggles } from '../../../features/organization/useFeatureToggles';
 
 /** Global Material navigation shell. Modules populate its raised center action. */
 export function BottomNavigation() {
+    const { flags } = useFeatureToggles();
     const insets = useSafeAreaInsets();
     const { width, height } = useWindowDimensions();
     const { centerItem } = useBottomNavigation();
@@ -42,7 +45,7 @@ export function BottomNavigation() {
             ]}
         >
             <View style={s.items}>
-                {primaryNavigationItems.map((item) => (
+                {visibleNavigationItems(primaryNavigationItems, flags).map((item) => (
                     <NavigationItem
                         key={item.label}
                         {...item}
@@ -137,6 +140,7 @@ function MoreMenu({
     bottomOffset: number;
 }) {
     const router = useRouter();
+    const { flags } = useFeatureToggles();
     const { themeColors: c } = useAppTheme();
     return (
         <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -155,21 +159,23 @@ function MoreMenu({
                         </AppPressable>
                     </View>
                     <ScrollView contentContainerStyle={s.menuGrid} showsVerticalScrollIndicator={false}>
-                        {moreNavigationItems.map(({ icon: Icon, label, href }) => (
-                            <AppPressable
-                                key={label}
-                                onPress={() => {
-                                    onClose();
-                                    router.replace(href);
-                                }}
-                                style={[s.menuItem, { backgroundColor: c.surfaceMuted }]}
-                            >
-                                <View style={[s.menuIcon, { backgroundColor: c.primarySoft }]}>
-                                    <Icon size={20} color={c.primary} strokeWidth={2} />
-                                </View>
-                                <Text style={[s.menuLabel, { color: c.text }]}>{label}</Text>
-                            </AppPressable>
-                        ))}
+                        {visibleNavigationItems(moreNavigationItems, flags).map(
+                            ({ icon: Icon, label, href }) => (
+                                <AppPressable
+                                    key={label}
+                                    onPress={() => {
+                                        onClose();
+                                        router.replace(href);
+                                    }}
+                                    style={[s.menuItem, { backgroundColor: c.surfaceMuted }]}
+                                >
+                                    <View style={[s.menuIcon, { backgroundColor: c.primarySoft }]}>
+                                        <Icon size={20} color={c.primary} strokeWidth={2} />
+                                    </View>
+                                    <Text style={[s.menuLabel, { color: c.text }]}>{label}</Text>
+                                </AppPressable>
+                            ),
+                        )}
                     </ScrollView>
                 </View>
             </View>

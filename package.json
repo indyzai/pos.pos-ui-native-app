@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "packages/features/*"
+    "packages/*"
   ],
   "dependencies": {},
   "devDependencies": {
@@ -24,7 +23,7 @@
     "admin:ios": "bun run --filter @indyzai/admin-mobile ios",
     "both": "bun run --filter @indyzai/pos-mobile --filter @indyzai/admin-mobile start",
     "test": "bun test",
-    "typecheck": "bun x tsc -p apps/pos-mobile/tsconfig.json --noEmit && bun x tsc -p apps/admin-mobile/tsconfig.json --noEmit",
+    "typecheck": "bun x tsc -p packages/tsconfig.json --noEmit && bun x tsc -p apps/pos-mobile/tsconfig.json --noEmit && bun x tsc -p apps/admin-mobile/tsconfig.json --noEmit",
     "format": "bun run --filter '*' format",
     "format:check": "bun run --filter '*' format:check"
   },

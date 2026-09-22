@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import { canAccessApp } from '../../src/config/appAccess.js';
 
 describe('administration app access', () => {
-    test('accepts tenant users and administrators', () => {
+    test('accepts administrative roles only', () => {
         expect(canAccessApp('admin')).toBe(true);
         expect(canAccessApp('OWNER')).toBe(true);
-        expect(canAccessApp('member', 'user')).toBe(true);
-        expect(canAccessApp('guest', 'user')).toBe(true);
+        expect(canAccessApp('member', 'user')).toBe(false);
+        expect(canAccessApp('guest', 'user')).toBe(false);
         expect(canAccessApp('member', 'superadmin')).toBe(true);
         expect(canAccessApp('manager', 'super-admin')).toBe(true);
     });

@@ -28,6 +28,7 @@
     "./migrations": "./src/runtime/migrations.ts",
     "./react": "./src/react.tsx",
     "./react-hooks": "./src/hooks.ts",
+    "./table-mutations": "./src/tableMutations.ts",
     "./schema": "./src/runtime/schema/index.ts",
     "./sqlite": "./src/adapters/sqlite.ts",
     "./web-client": "./src/runtime/webClient.ts",

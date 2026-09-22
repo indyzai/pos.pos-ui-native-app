@@ -16,6 +16,17 @@
       "name": "@indyzai/admin-mobile",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+        "@indyzai/feature-catalog": "workspace:*",
+        "@indyzai/feature-flags": "workspace:*",
+        "@indyzai/feature-inventory": "workspace:*",
+        "@indyzai/feature-orders": "workspace:*",
+        "@indyzai/feature-organization": "workspace:*",
+        "@indyzai/feature-printers": "workspace:*",
+        "@indyzai/feature-purchase": "workspace:*",
+        "@indyzai/feature-reports": "workspace:*",
+        "@indyzai/feature-restaurant": "workspace:*",
+        "@indyzai/feature-scrap": "workspace:*",
         "@indyzai/pos-api": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-config": "workspace:*",
@@ -67,6 +78,18 @@
       "name": "@indyzai/pos-mobile",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+        "@indyzai/feature-catalog": "workspace:*",
+        "@indyzai/feature-customers": "workspace:*",
+        "@indyzai/feature-flags": "workspace:*",
+        "@indyzai/feature-inventory": "workspace:*",
+        "@indyzai/feature-orders": "workspace:*",
+        "@indyzai/feature-organization": "workspace:*",
+        "@indyzai/feature-printers": "workspace:*",
+        "@indyzai/feature-purchase": "workspace:*",
+        "@indyzai/feature-reports": "workspace:*",
+        "@indyzai/feature-restaurant": "workspace:*",
+        "@indyzai/feature-scrap": "workspace:*",
         "@indyzai/pos-api": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-config": "workspace:*",
@@ -127,30 +150,6 @@
       "name": "@indyzai/pos-application",
       "version": "1.0.0",
     },
-    "packages/auth": {
-      "name": "@indyzai/pos-auth",
-      "version": "1.0.0",
-      "dependencies": {
-        "@indyzai/pos-api": "workspace:*",
-        "@indyzai/pos-permissions": "workspace:*",
-        "@indyzai/pos-ui-native": "workspace:*",
-        "@indyzai/pos-utils": "workspace:*",
-        "expo-application": "~57.0.2",
-        "expo-auth-session": "~57.0.11",
-        "expo-constants": "~57.0.17",
-        "expo-linear-gradient": "~57.0.1",
-        "expo-local-authentication": "~57.0.2",
-        "expo-secure-store": "~57.0.3",
-        "expo-web-browser": "~57.0.2",
-        "lucide-react-native": "^1.41.0",
-      },
-      "peerDependencies": {
-        "react": "19.2.3",
-        "react-native": "0.86.3",
-        "react-native-safe-area-context": "~5.7.0",
-        "react-native-svg": "^15.15.5",
-      },
-    },
     "packages/config": {
       "name": "@indyzai/pos-config",
       "version": "1.0.0",
@@ -185,31 +184,141 @@
       "name": "@indyzai/pos-domain",
       "version": "1.0.0",
     },
-    "packages/features/dashboard": {
+    "packages/feature-auth": {
+      "name": "@indyzai/pos-auth",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/pos-api": "workspace:*",
+        "@indyzai/pos-permissions": "workspace:*",
+        "@indyzai/pos-ui-native": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
+        "expo-application": "~57.0.2",
+        "expo-auth-session": "~57.0.11",
+        "expo-constants": "~57.0.17",
+        "expo-linear-gradient": "~57.0.1",
+        "expo-local-authentication": "~57.0.2",
+        "expo-secure-store": "~57.0.3",
+        "expo-web-browser": "~57.0.2",
+        "lucide-react-native": "^1.41.0",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
+        "react-native-safe-area-context": "~5.7.0",
+        "react-native-svg": "^15.15.5",
+      },
+    },
+    "packages/feature-billing": {
+      "name": "@indyzai/feature-billing",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-flags": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+        "expo-crypto": "~57.0.2",
+      },
+    },
+    "packages/feature-catalog": {
+      "name": "@indyzai/feature-catalog",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+      },
+    },
+    "packages/feature-customers": {
+      "name": "@indyzai/feature-customers",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+        "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+      },
+    },
+    "packages/feature-dashboard": {
       "name": "@indyzai/feature-dashboard",
       "version": "1.0.0",
     },
-    "packages/features/finance": {
+    "packages/feature-finance": {
       "name": "@indyzai/feature-finance",
       "version": "1.0.0",
     },
-    "packages/features/inventory": {
+    "packages/feature-flags": {
+      "name": "@indyzai/feature-flags",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/pos-auth": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+      },
+    },
+    "packages/feature-inventory": {
       "name": "@indyzai/feature-inventory",
       "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+      },
     },
-    "packages/features/organization": {
+    "packages/feature-orders": {
+      "name": "@indyzai/feature-orders",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+        "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+      },
+    },
+    "packages/feature-organization": {
       "name": "@indyzai/feature-organization",
       "version": "1.0.0",
     },
-    "packages/features/purchase": {
+    "packages/feature-printers": {
+      "name": "@indyzai/feature-printers",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+      },
+    },
+    "packages/feature-purchase": {
       "name": "@indyzai/feature-purchase",
       "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+      },
     },
-    "packages/features/reports": {
+    "packages/feature-reports": {
       "name": "@indyzai/feature-reports",
       "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-orders": "workspace:*",
+      },
     },
-    "packages/features/users": {
+    "packages/feature-restaurant": {
+      "name": "@indyzai/feature-restaurant",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/pos-database": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+      },
+    },
+    "packages/feature-scrap": {
+      "name": "@indyzai/feature-scrap",
+      "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+      },
+    },
+    "packages/feature-users": {
       "name": "@indyzai/feature-users",
       "version": "1.0.0",
     },
@@ -261,6 +370,10 @@
     "packages/sync": {
       "name": "@indyzai/pos-sync",
       "version": "1.0.0",
+      "dependencies": {
+        "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
+      },
     },
     "packages/ui-core": {
       "name": "@indyzai/pos-ui-core",
@@ -570,25 +683,41 @@
 
     "@indyzai/admin-mobile": ["@indyzai/admin-mobile@workspace:apps/admin-mobile"],
 
-    "@indyzai/feature-dashboard": ["@indyzai/feature-dashboard@workspace:packages/features/dashboard"],
+    "@indyzai/feature-billing": ["@indyzai/feature-billing@workspace:packages/feature-billing"],
 
-    "@indyzai/feature-finance": ["@indyzai/feature-finance@workspace:packages/features/finance"],
+    "@indyzai/feature-catalog": ["@indyzai/feature-catalog@workspace:packages/feature-catalog"],
 
-    "@indyzai/feature-inventory": ["@indyzai/feature-inventory@workspace:packages/features/inventory"],
+    "@indyzai/feature-customers": ["@indyzai/feature-customers@workspace:packages/feature-customers"],
 
-    "@indyzai/feature-organization": ["@indyzai/feature-organization@workspace:packages/features/organization"],
+    "@indyzai/feature-dashboard": ["@indyzai/feature-dashboard@workspace:packages/feature-dashboard"],
 
-    "@indyzai/feature-purchase": ["@indyzai/feature-purchase@workspace:packages/features/purchase"],
+    "@indyzai/feature-finance": ["@indyzai/feature-finance@workspace:packages/feature-finance"],
 
-    "@indyzai/feature-reports": ["@indyzai/feature-reports@workspace:packages/features/reports"],
+    "@indyzai/feature-flags": ["@indyzai/feature-flags@workspace:packages/feature-flags"],
 
-    "@indyzai/feature-users": ["@indyzai/feature-users@workspace:packages/features/users"],
+    "@indyzai/feature-inventory": ["@indyzai/feature-inventory@workspace:packages/feature-inventory"],
+
+    "@indyzai/feature-orders": ["@indyzai/feature-orders@workspace:packages/feature-orders"],
+
+    "@indyzai/feature-organization": ["@indyzai/feature-organization@workspace:packages/feature-organization"],
+
+    "@indyzai/feature-printers": ["@indyzai/feature-printers@workspace:packages/feature-printers"],
+
+    "@indyzai/feature-purchase": ["@indyzai/feature-purchase@workspace:packages/feature-purchase"],
+
+    "@indyzai/feature-reports": ["@indyzai/feature-reports@workspace:packages/feature-reports"],
+
+    "@indyzai/feature-restaurant": ["@indyzai/feature-restaurant@workspace:packages/feature-restaurant"],
+
+    "@indyzai/feature-scrap": ["@indyzai/feature-scrap@workspace:packages/feature-scrap"],
+
+    "@indyzai/feature-users": ["@indyzai/feature-users@workspace:packages/feature-users"],
 
     "@indyzai/pos-api": ["@indyzai/pos-api@workspace:packages/api"],
 
     "@indyzai/pos-application": ["@indyzai/pos-application@workspace:packages/application"],
 
-    "@indyzai/pos-auth": ["@indyzai/pos-auth@workspace:packages/auth"],
+    "@indyzai/pos-auth": ["@indyzai/pos-auth@workspace:packages/feature-auth"],
 
     "@indyzai/pos-config": ["@indyzai/pos-config@workspace:packages/config"],
 

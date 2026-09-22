@@ -2,12 +2,18 @@ import { StyleSheet, Text, View } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { AppPressable } from '@indyzai/pos-ui-native';
-import { isNavigationItemActive, tabletNavigationItems } from '../../navigation/routes';
+import {
+    isNavigationItemActive,
+    tabletNavigationItems,
+    visibleNavigationItems,
+} from '../../navigation/routes';
+import { useFeatureToggles } from '../../../features/organization/useFeatureToggles';
 
 export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {
     const { themeColors: c } = useAppTheme();
     const pathname = usePathname();
     const router = useRouter();
+    const { flags } = useFeatureToggles();
     return (
         <View
             style={[
@@ -16,7 +22,7 @@ export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {
                 { backgroundColor: c.surface, borderRightColor: c.outline },
             ]}
         >
-            {tabletNavigationItems.map(({ icon: Icon, label, href }) => {
+            {visibleNavigationItems(tabletNavigationItems, flags).map(({ icon: Icon, label, href }) => {
                 const active = isNavigationItemActive(pathname, href);
                 return (
                     <AppPressable
