@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { resolveWholesaleTier, wholesaleTiers } from '../../../src/features/billing/domain/wholesalePricing';
+import { resolveWholesaleTier, wholesaleTiers } from '@indyzai/feature-billing/domain/wholesalePricing';
 
 const product = {
     id: '1',

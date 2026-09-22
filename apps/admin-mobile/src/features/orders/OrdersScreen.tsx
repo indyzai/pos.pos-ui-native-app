@@ -10,8 +10,8 @@ import { useAuthSession } from '@indyzai/pos-auth/session';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 import { RefundDialog } from './components/RefundDialog';
 import { useOrders } from './useOrders';
-import type { SalesOrder } from './types';
-import { refundableQuantity } from './refundPolicy';
+import type { SalesOrder } from '@indyzai/feature-orders/types';
+import { refundableQuantity } from '@indyzai/feature-orders/refundPolicy';
 import { createLogger } from '@indyzai/pos-utils';
 import {
     ReceiptDialog,

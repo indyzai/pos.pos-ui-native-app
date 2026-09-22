@@ -3,7 +3,7 @@ import {
   createReconciliationVariables,
   createReconciliationReportVariables,
   createStockReconciliationRecord,
-} from '../../../src/features/inventory/reconciliation';
+} from '@indyzai/feature-inventory/reconciliation';
 
 test('stock reconciliation builds the production API payload', () => {
   expect(

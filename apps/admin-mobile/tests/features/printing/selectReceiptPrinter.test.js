@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import {
     selectAutoPrintReceiptPrinter,
     selectReceiptPrinter,
-} from '../../../src/features/printing/selectReceiptPrinter';
+} from '@indyzai/feature-printers/selectReceiptPrinter';
 
 const printer = (overrides = {}) => ({
     id: '1',

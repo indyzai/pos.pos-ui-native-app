@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { canManageWaybills } from '../../../src/features/logistics/permissions';
-import { syncWaybillJobs, waybillJobFromSale } from '../../../src/features/logistics/waybillSync';
+import { canManageWaybills } from '@indyzai/feature-orders/logistics/permissions';
+import { syncWaybillJobs, waybillJobFromSale } from '@indyzai/feature-orders/logistics/waybillSync';
 
 test('only roles accepted by the logistics API auto-create waybills', () => {
   expect(canManageWaybills('owner')).toBe(true);

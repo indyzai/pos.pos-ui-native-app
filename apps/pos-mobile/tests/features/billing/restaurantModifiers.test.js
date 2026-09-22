@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import {
   restaurantModifiers,
   toggleRestaurantModifier,
-} from '../../../src/features/billing/domain/restaurantModifiers';
+} from '@indyzai/feature-billing/domain/restaurantModifiers';
 
 const modifiers = [
   { id: 'small', label: 'Small', group: 'size', price: 0, singleSelect: true },

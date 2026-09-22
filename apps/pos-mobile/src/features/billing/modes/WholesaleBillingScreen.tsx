@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
-import type { BillingModeConfig } from '../domain/billingMode';
-import type { Product } from '../types/billing';
-import { useFeatureToggles } from '../../organization/useFeatureToggles';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { BulkQuantityDialog } from '../components/BulkQuantityDialog';
-import { canManageWaybills } from '../../logistics/permissions';
+import { canManageWaybills } from '@indyzai/feature-orders/logistics/permissions';
 
 export function WholesaleBillingScreen({ mode }: { mode: BillingModeConfig }) {
   const { isEnabled } = useFeatureToggles();

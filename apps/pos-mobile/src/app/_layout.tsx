@@ -16,7 +16,7 @@ import { TabletNavigationPane } from '../shared/components/navigation/TabletNavi
 import { SnackbarProvider } from '@indyzai/pos-ui-native/snackbar';
 import { AppPaperProvider } from '@indyzai/pos-ui-native';
 import { hasEntitlement } from '@indyzai/pos-permissions';
-import { useFeatureToggles } from '../features/organization/useFeatureToggles';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import {
     moreNavigationItems,
     navigationItemsForRole,

@@ -9,7 +9,7 @@ import {
     tabletNavigationItems,
 } from '../../navigation/routes';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { useFeatureToggles } from '../../../features/organization/useFeatureToggles';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {
     const { themeColors: c } = useAppTheme();

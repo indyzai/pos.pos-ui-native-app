@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { resolveBillingMode } from './domain/billingMode';
+import { resolveBillingMode } from '@indyzai/feature-billing/domain/billingMode';
 import { RetailBillingScreen } from './modes/RetailBillingScreen';
 import { RestaurantBillingScreen } from './modes/RestaurantBillingScreen';
 import { PharmacyBillingScreen } from './modes/PharmacyBillingScreen';

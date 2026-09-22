@@ -33,11 +33,11 @@ import type {
     PaymentMethod,
     Product,
     ScrapExchange,
-} from '../types/billing';
+} from '@indyzai/feature-billing/types/billing';
 import { useAppHeader } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { useFeatureToggles } from '../../organization/useFeatureToggles';
-import { billingPolicy } from '../domain/billingTotals';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
+import { billingPolicy } from '@indyzai/feature-billing/domain/billingTotals';
 import { useHeldOrders } from '../hooks/useHeldOrders';
 import { HeldOrdersDialog } from './HeldOrdersDialog';
 import { CustomerPickerDialog } from './CustomerPickerDialog';
@@ -49,11 +49,11 @@ import { printingApi } from '../../printing/printingApi';
 import { BillingSessionStats } from './BillingSessionStats';
 import { BillingModeBadge } from './BillingModeBadge';
 import { ScrapExchangeDialog } from './ScrapExchangeDialog';
-import { canManageScrap } from '../../scrap/permissions';
+import { canManageScrap } from '@indyzai/feature-scrap/permissions';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { usePermissions } from '@indyzai/pos-auth/permissions';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
-import type { BillingModeConfig } from '../domain/billingMode';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
 import { createLogger } from '@indyzai/pos-utils';
 
 const logger = createLogger('Billing:ui');

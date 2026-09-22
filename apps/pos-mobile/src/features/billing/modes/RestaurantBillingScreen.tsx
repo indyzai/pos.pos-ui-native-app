@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
-import type { BillingModeConfig } from '../domain/billingMode';
-import type { Product } from '../types/billing';
-import { useFeatureToggles } from '../../organization/useFeatureToggles';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useRestaurantTables } from '../../restaurant/useRestaurantTables';
 import { RestaurantTableSelector } from '../../restaurant/RestaurantTableSelector';
 import { RestaurantOrderModeSelector, type RestaurantOrderMode } from '../components/RestaurantOrderMode';
-import type { RestaurantTable } from '../../restaurant/types';
+import type { RestaurantTable } from '@indyzai/feature-restaurant/types';
 import { RestaurantItemDialog } from '../components/RestaurantItemDialog';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 

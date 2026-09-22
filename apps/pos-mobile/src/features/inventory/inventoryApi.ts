@@ -2,14 +2,14 @@ import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
-import { createReconciliationReportVariables } from './reconciliation';
+import { createReconciliationReportVariables } from '@indyzai/feature-inventory/reconciliation';
 import type {
   CreateInventoryItemInput,
   ProductReferenceData,
   StockReconciliationInput,
   StockReconciliationReportInput,
   UpdateInventoryItemInput,
-} from './types';
+} from '@indyzai/feature-inventory/types';
 import {
   createOutboxJob,
   listOutboxJobs,

@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { InventoryProduct } from '../types';
+import type { InventoryProduct } from '@indyzai/feature-inventory/types';
 
 export function InventoryCard({ product, onPress }: { product: InventoryProduct; onPress: () => void }) {
     const { isDark, themeColors: c } = useAppTheme();

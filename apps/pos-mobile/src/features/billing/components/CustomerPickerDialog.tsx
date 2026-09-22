@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { Customer } from '../types/billing';
+import type { Customer } from '@indyzai/feature-billing/types/billing';
 
 export function CustomerPickerDialog({
   visible,

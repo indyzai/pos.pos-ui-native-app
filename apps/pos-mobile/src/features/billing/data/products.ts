@@ -1,4 +1,4 @@
-import type { Product } from '../types/billing';
+import type { Product } from '@indyzai/feature-billing/types/billing';
 export const categories = ['All', 'Quick picks', 'Beverages', 'Snacks', 'Grocery'];
 export const products: Product[] = [
   {

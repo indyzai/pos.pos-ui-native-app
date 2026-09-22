@@ -4,9 +4,9 @@ import { Minus, Plus, UtensilsCrossed, X } from 'lucide-react-native';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { CartCustomization, Product } from '../types/billing';
+import type { CartCustomization, Product } from '@indyzai/feature-billing/types/billing';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
-import { restaurantModifiers, toggleRestaurantModifier } from '../domain/restaurantModifiers';
+import { restaurantModifiers, toggleRestaurantModifier } from '@indyzai/feature-billing/domain/restaurantModifiers';
 
 export function RestaurantItemDialog({
   product,

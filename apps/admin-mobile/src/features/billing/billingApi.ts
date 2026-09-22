@@ -1,35 +1,35 @@
 import { requestPos, requestPosBootstrap, requestPosHasUpdates } from '../../core/api/posApi';
 import { purchasesApi } from '../purchases/purchasesApi';
 import { SerialQueue } from '@indyzai/pos-sync';
-import { readBillingSnapshot, writeBillingSnapshot } from './data/billingRepository';
+import { readBillingSnapshot, writeBillingSnapshot } from '@indyzai/feature-billing/data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { fetchCatalog } from '../products/catalogApi';
+import { fetchCatalog } from '@indyzai/feature-catalog/catalogApi';
 import {
     createPendingSale,
     syncPendingSales,
     type CounterSession,
     type PendingSale,
-} from '../sales/salesOutbox';
-import type { CartItem, CheckoutPayment, Product } from './types/billing';
+} from '@indyzai/feature-billing/salesOutbox';
+import type { CartItem, CheckoutPayment, Product } from '@indyzai/feature-billing/types/billing';
 import type {
     BillingOrderContext,
     BillingPaymentMethod,
     BillingTaxRate,
     Customer,
     ServiceUser,
-} from './types/billing';
-import { billingReferenceRepository } from './data/billingReferenceRepository';
-import type { BillingCalculationPolicy } from './domain/billingTotals';
+} from '@indyzai/feature-billing/types/billing';
+import { billingReferenceRepository } from '@indyzai/feature-billing/data/billingReferenceRepository';
+import type { BillingCalculationPolicy } from '@indyzai/feature-billing/domain/billingTotals';
 import { requiresOpenCounter } from '../organization/organizationApi';
-import { waybillRepository } from '../logistics/waybillRepository';
-import { syncWaybillJobs, waybillJobFromSale } from '../logistics/waybillSync';
-import { productBatchRepository } from './data/productBatchRepository';
-import { normalizeProductBatches } from './domain/productBatches';
-import type { ProductBatch } from './types/billing';
-import { scrapPurchaseRepository } from '../scrap/scrapPurchaseRepository';
-import { scrapPurchaseJob, syncScrapPurchaseJobs } from '../scrap/scrapSync';
-import { canManageScrap } from '../scrap/permissions';
+import { waybillRepository } from '@indyzai/feature-orders/logistics/waybillRepository';
+import { syncWaybillJobs, waybillJobFromSale } from '@indyzai/feature-orders/logistics/waybillSync';
+import { productBatchRepository } from '@indyzai/feature-billing/data/productBatchRepository';
+import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
+import type { ProductBatch } from '@indyzai/feature-billing/types/billing';
+import { scrapPurchaseRepository } from '@indyzai/feature-scrap/scrapPurchaseRepository';
+import { scrapPurchaseJob, syncScrapPurchaseJobs } from '@indyzai/feature-scrap/scrapSync';
+import { canManageScrap } from '@indyzai/feature-scrap/permissions';
 import {
     applyPosBootstrap,
     bootstrapCollectionMap,

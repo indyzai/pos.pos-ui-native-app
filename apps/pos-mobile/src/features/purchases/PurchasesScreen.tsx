@@ -34,8 +34,8 @@ import { type AppSurface } from '@indyzai/pos-permissions';
 import { usePermissions } from '@indyzai/pos-auth/permissions';
 import { createLocalFirstTableHook, useLocalDatabase } from '@indyzai/pos-database';
 import { requestJson } from '@indyzai/pos-api';
-import type { Product } from '../billing/types/billing';
-import { allocatePurchaseSplits, type PurchaseItemSplit } from './domain';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { allocatePurchaseSplits, type PurchaseItemSplit } from '@indyzai/feature-purchase/domain';
 import { purchasesApi } from './purchasesApi';
 import type {
     Purchase,

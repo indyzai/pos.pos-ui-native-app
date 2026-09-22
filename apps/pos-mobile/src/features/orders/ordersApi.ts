@@ -3,7 +3,7 @@ import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { createOrdersApi } from '@indyzai/feature-orders/ordersApi';
-import { ordersRepository } from './ordersRepository';
+import { ordersRepository } from '@indyzai/feature-orders/ordersRepository';
 
 export const ordersApi = createOrdersApi({
     repository: ordersRepository,

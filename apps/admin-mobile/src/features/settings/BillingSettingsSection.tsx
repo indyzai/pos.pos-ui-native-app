@@ -4,7 +4,7 @@ import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { updateOrganizationFeatures } from '../organization/organizationApi';
-import { featureToggleLabels, useFeatureToggles } from '../organization/useFeatureToggles';
+import { featureToggleLabels, useFeatureToggles } from '@indyzai/feature-flags/react';
 
 export function BillingSettingsSection({
     registerSave,

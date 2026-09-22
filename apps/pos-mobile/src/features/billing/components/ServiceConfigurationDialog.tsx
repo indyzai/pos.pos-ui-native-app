@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { CartCustomization, Product, ServiceUser } from '../types/billing';
+import type { CartCustomization, Product, ServiceUser } from '@indyzai/feature-billing/types/billing';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 
 type PartLine = { product: Product; quantity: number };

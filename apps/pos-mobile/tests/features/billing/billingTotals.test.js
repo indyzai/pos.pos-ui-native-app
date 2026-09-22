@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { calculateBillingTotals } from '../../../src/features/billing/domain/billingTotals';
+import { calculateBillingTotals } from '@indyzai/feature-billing/domain/billingTotals';
 
 const items = [
   {

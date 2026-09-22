@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Building2, HeartPulse, PackageCheck, Store, UtensilsCrossed, Wrench } from 'lucide-react-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { BillingModeConfig } from '../domain/billingMode';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
 
 export function BillingModeBadge({ config }: { config: BillingModeConfig }) {
   const { themeColors: c } = useAppTheme();

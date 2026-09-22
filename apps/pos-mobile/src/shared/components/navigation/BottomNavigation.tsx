@@ -18,7 +18,7 @@ import {
     resolveStoreAccessRole,
 } from '../../navigation/routes';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { useFeatureToggles } from '../../../features/organization/useFeatureToggles';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 /** Global Material navigation shell. Modules populate its raised center action. */
 export function BottomNavigation() {

@@ -6,8 +6,8 @@ import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
-import { refundableQuantity, type RefundSelection } from '../refundPolicy';
-import type { RefundRecord, SalesOrder } from '../types';
+import { refundableQuantity, type RefundSelection } from '@indyzai/feature-orders/refundPolicy';
+import type { RefundRecord, SalesOrder } from '@indyzai/feature-orders/types';
 
 export function RefundDialog({
   order,

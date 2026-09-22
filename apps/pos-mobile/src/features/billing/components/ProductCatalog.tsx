@@ -6,8 +6,8 @@ import { AppPressable } from '@indyzai/pos-ui-native';
 import { colors } from '@indyzai/pos-ui-native/tokens';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { useBottomNavigationClearance } from '@indyzai/pos-ui-native';
-import type { Product } from '../types/billing';
-import { pharmacyProductStatus } from '../domain/pharmacyProduct';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { pharmacyProductStatus } from '@indyzai/feature-billing/domain/pharmacyProduct';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 import { ProductIcon } from './productIcons';
 

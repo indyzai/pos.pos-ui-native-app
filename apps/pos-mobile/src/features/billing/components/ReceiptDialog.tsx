@@ -3,8 +3,8 @@ import { CheckCircle2, Printer, Share2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { BillingOrderContext, CartItem, CheckoutPayment, Customer } from '../types/billing';
-import type { BillingTotals } from '../domain/billingTotals';
+import type { BillingOrderContext, CartItem, CheckoutPayment, Customer } from '@indyzai/feature-billing/types/billing';
+import type { BillingTotals } from '@indyzai/feature-billing/domain/billingTotals';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 
 export type ReceiptData = {

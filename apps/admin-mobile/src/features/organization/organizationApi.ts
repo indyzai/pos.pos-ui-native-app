@@ -1,5 +1,5 @@
 import { requestPos } from '../../core/api/posApi';
-import type { CounterSession } from '../sales/salesOutbox';
+import type { CounterSession } from '@indyzai/feature-billing/salesOutbox';
 
 export type OrganizationDetails = {
     id: string;

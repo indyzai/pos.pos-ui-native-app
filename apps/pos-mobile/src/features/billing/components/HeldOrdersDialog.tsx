@@ -3,7 +3,7 @@ import { ArrowLeft, Clock3, Play, Trash2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { HeldOrder } from '../types/billing';
+import type { HeldOrder } from '@indyzai/feature-billing/types/billing';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 
 const total = (order: HeldOrder) =>

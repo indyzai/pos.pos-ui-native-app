@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { inventoryApi } from '../inventoryApi';
-import type { CreateInventoryItemInput, StockReconciliationInput } from '../types';
+import type { CreateInventoryItemInput, StockReconciliationInput } from '@indyzai/feature-inventory/types';
 import { createLocalFirstTableHook, payloadsFromRecords, replaceLocalPayloads } from '@indyzai/pos-database';
-import type { Product } from '../../billing/types/billing';
+import type { Product } from '@indyzai/feature-billing/types/billing';
 
 const useProductTable = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 

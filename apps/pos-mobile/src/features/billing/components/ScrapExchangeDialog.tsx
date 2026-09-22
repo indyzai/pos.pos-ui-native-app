@@ -7,7 +7,7 @@ import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 import { createScrapExchange } from '../domain/scrapExchange';
-import type { Product, ScrapExchange } from '../types/billing';
+import type { Product, ScrapExchange } from '@indyzai/feature-billing/types/billing';
 
 type Row = { product: Product; quantity: string; rate: string };
 type Props = {

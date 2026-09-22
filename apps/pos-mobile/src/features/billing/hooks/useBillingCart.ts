@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { CartCustomization, CartItem, Product } from '../types/billing';
-import { calculateBillingTotals, type BillingCalculationPolicy } from '../domain/billingTotals';
+import type { CartCustomization, CartItem, Product } from '@indyzai/feature-billing/types/billing';
+import { calculateBillingTotals, type BillingCalculationPolicy } from '@indyzai/feature-billing/domain/billingTotals';
 
 export function useBillingCart(policy: BillingCalculationPolicy) {
   const [items, setItems] = useState<CartItem[]>([]);

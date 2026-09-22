@@ -8,11 +8,11 @@ import type {
   StockReconciliationInput,
   StockReconciliationRecord,
   UpdateInventoryItemInput,
-} from '../types';
+} from '@indyzai/feature-inventory/types';
 import { createLocalFirstTableHook, createScopeKey } from '@indyzai/pos-database';
 import type { LocalRecord } from '@indyzai/pos-database';
-import type { Product } from '../../billing/types/billing';
-import { createStockReconciliationRecord } from '../reconciliation';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { createStockReconciliationRecord } from '@indyzai/feature-inventory/reconciliation';
 
 const useInventoryProducts = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 const useStockCounts = createLocalFirstTableHook<StockReconciliationRecord>({

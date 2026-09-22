@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import {
     requiresDeviceDetails,
     validateTrackedDevices,
-} from '../../../src/features/billing/domain/electronicsTracking';
+} from '@indyzai/feature-billing/domain/electronicsTracking';
 
 const device = (id, serial) => ({
     id,

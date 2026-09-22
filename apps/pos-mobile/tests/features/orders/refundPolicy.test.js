@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { buildPendingRefund, refundableQuantity } from '../../../src/features/orders/refundPolicy';
+import { buildPendingRefund, refundableQuantity } from '@indyzai/feature-orders/refundPolicy';
 
 const order = {
   id: '10',

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { canManageScrap } from '../../../src/features/scrap/permissions';
-import { scrapPurchaseJob, syncScrapPurchaseJobs } from '../../../src/features/scrap/scrapSync';
+import { canManageScrap } from '@indyzai/feature-scrap/permissions';
+import { scrapPurchaseJob, syncScrapPurchaseJobs } from '@indyzai/feature-scrap/scrapSync';
 
 test('matches the scrap API role guard', () => {
     expect(canManageScrap('owner')).toBe(true);

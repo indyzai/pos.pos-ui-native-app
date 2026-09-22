@@ -15,7 +15,7 @@ import type {
     Product,
     ProductBatch,
     ServiceUser,
-} from '../types/billing';
+} from '@indyzai/feature-billing/types/billing';
 
 const useProductTable = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 const useCustomerTable = createLocalFirstTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });

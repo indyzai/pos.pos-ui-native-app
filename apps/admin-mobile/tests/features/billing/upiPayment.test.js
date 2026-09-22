@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { buildUpiPaymentUri } from '../../../src/features/billing/domain/upiPayment';
+import { buildUpiPaymentUri } from '@indyzai/feature-billing/domain/upiPayment';
 
 test('builds an encoded UPI payment URI from the configured account', () => {
     expect(

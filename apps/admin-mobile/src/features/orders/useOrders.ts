@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { ordersApi } from './ordersApi';
-import type { SalesOrder } from './types';
-import type { RefundSelection } from './refundPolicy';
+import type { SalesOrder } from '@indyzai/feature-orders/types';
+import type { RefundSelection } from '@indyzai/feature-orders/refundPolicy';
 import { createLocalFirstTableHook, payloadsFromRecords, replaceLocalPayloads } from '@indyzai/pos-database';
-import type { RefundRecord } from './types';
+import type { RefundRecord } from '@indyzai/feature-orders/types';
 
 const useOrderTable = createLocalFirstTableHook<SalesOrder>({ table: 'orders', entityType: 'ORDER' });
 const useRefundTable = createLocalFirstTableHook<RefundRecord>({ table: 'refunds', entityType: 'REFUND' });

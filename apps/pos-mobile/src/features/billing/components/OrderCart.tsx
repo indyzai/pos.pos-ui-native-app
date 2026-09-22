@@ -27,7 +27,7 @@ import type {
   CartItem,
   Customer,
   PaymentMethod,
-} from '../types/billing';
+} from '@indyzai/feature-billing/types/billing';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 
 type Props = {

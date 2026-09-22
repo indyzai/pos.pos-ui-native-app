@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
-import type { BillingModeConfig } from '../domain/billingMode';
-import type { Product } from '../types/billing';
-import { useFeatureToggles } from '../../organization/useFeatureToggles';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { PharmacyBatchDialog } from '../components/PharmacyBatchDialog';
 import { ElectronicsItemDialog } from '../components/ElectronicsItemDialog';
-import { requiresDeviceDetails } from '../domain/electronicsTracking';
-import { pharmacyProductStatus } from '../domain/pharmacyProduct';
+import { requiresDeviceDetails } from '@indyzai/feature-billing/domain/electronicsTracking';
+import { pharmacyProductStatus } from '@indyzai/feature-billing/domain/pharmacyProduct';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 
 export function RetailBillingScreen({ mode }: { mode: BillingModeConfig }) {

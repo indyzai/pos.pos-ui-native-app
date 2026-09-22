@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import {
     normalizeProductBatches,
     preferredProductBatch,
-} from '../../../src/features/billing/domain/productBatches';
+} from '@indyzai/feature-billing/domain/productBatches';
 
 const product = (details) => ({
     id: '1',

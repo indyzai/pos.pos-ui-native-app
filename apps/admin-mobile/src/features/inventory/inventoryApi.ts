@@ -2,8 +2,8 @@ import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { billingApi } from '../billing/billingApi';
-import { createReconciliationVariables } from './reconciliation';
-import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from './types';
+import { createReconciliationVariables } from '@indyzai/feature-inventory/reconciliation';
+import type { CreateInventoryItemInput, ProductReferenceData, StockReconciliationInput } from '@indyzai/feature-inventory/types';
 import {
     createOutboxJob,
     listOutboxJobs,

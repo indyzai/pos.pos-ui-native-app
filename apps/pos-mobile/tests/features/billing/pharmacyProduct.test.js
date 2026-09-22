@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { pharmacyProductStatus } from '../../../src/features/billing/domain/pharmacyProduct';
+import { pharmacyProductStatus } from '@indyzai/feature-billing/domain/pharmacyProduct';
 
 const product = (expiryDate) => ({
   id: 'medicine-1',

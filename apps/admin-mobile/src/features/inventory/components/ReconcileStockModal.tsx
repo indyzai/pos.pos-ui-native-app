@@ -5,7 +5,7 @@ import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { InventoryProduct, StockReconciliationInput } from '../types';
+import type { InventoryProduct, StockReconciliationInput } from '@indyzai/feature-inventory/types';
 
 export function ReconcileStockModal({
     product,

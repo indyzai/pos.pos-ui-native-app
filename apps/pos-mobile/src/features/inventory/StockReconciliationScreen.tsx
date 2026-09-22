@@ -12,8 +12,8 @@ import {
   useLocalDatabase,
 } from '@indyzai/pos-database';
 import { hasEntitlement } from '@indyzai/pos-permissions';
-import type { Product } from '../billing/types/billing';
-import type { StockReconciliationReport } from './types';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import type { StockReconciliationReport } from '@indyzai/feature-inventory/types';
 import { inventoryApi } from './inventoryApi';
 import { BarcodeScannerModal } from '../billing/components/BarcodeScannerModal';
 

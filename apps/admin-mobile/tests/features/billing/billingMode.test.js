@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { resolveBillingMode } from '../../../src/features/billing/domain/billingMode';
+import { resolveBillingMode } from '@indyzai/feature-billing/domain/billingMode';
 
 test('resolves supported business-specific billing behavior', () => {
     expect(resolveBillingMode('pharmacy')).toMatchObject({ mode: 'pharmacy', scanByDefault: true });

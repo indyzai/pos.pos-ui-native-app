@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { allocatePurchaseSplits } from '../../../src/features/purchases/domain';
+import { allocatePurchaseSplits } from '@indyzai/feature-purchase/domain';
 
 test('purchase item splits preserve quantity and allocate source cost', () => {
   expect(

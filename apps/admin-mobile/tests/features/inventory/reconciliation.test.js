@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createReconciliationVariables } from '../../../src/features/inventory/reconciliation';
+import { createReconciliationVariables } from '@indyzai/feature-inventory/reconciliation';
 
 test('stock reconciliation builds the production API payload', () => {
     expect(

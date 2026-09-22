@@ -1,5 +1,5 @@
 import * as Crypto from 'expo-crypto';
-import type { Product, ScrapExchange } from '../types/billing';
+import type { Product, ScrapExchange } from '@indyzai/feature-billing/types/billing';
 
 const money = (value: number) => Math.round(value * 100) / 100;
 

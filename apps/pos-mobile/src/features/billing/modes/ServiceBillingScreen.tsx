@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
-import type { BillingModeConfig } from '../domain/billingMode';
-import type { Product } from '../types/billing';
-import { useFeatureToggles } from '../../organization/useFeatureToggles';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { ServiceConfigurationDialog } from '../components/ServiceConfigurationDialog';
 
 export function ServiceBillingScreen({ mode }: { mode: BillingModeConfig }) {

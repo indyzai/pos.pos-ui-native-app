@@ -7,7 +7,7 @@ import {
     tabletNavigationItems,
     visibleNavigationItems,
 } from '../../navigation/routes';
-import { useFeatureToggles } from '../../../features/organization/useFeatureToggles';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {
     const { themeColors: c } = useAppTheme();

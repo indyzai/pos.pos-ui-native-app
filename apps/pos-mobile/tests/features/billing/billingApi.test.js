@@ -11,14 +11,14 @@ const productBatches = new Map();
 const scrapPurchaseJobs = new Map();
 const taxRates = new Map();
 const clone = (value) => structuredClone(value);
-mock.module('../../../src/features/billing/data/billingRepository', () => ({
+mock.module('@indyzai/feature-billing/data/billingRepository', () => ({
   readBillingSnapshot: async (key) => clone(storage.get(key) ?? { products: [], session: null, queue: [] }),
   writeBillingSnapshot: async (key, value) => {
     if (failWrite) throw new Error('Disk full');
     storage.set(key, clone(value));
   },
 }));
-mock.module('../../../src/features/billing/data/billingReferenceRepository', () => ({
+mock.module('@indyzai/feature-billing/data/billingReferenceRepository', () => ({
   billingReferenceRepository: {
     readCustomers: async (key) => clone(customers.get(key) ?? []),
     replaceCustomers: async (key, value) => customers.set(key, clone(value)),
@@ -30,19 +30,19 @@ mock.module('../../../src/features/billing/data/billingReferenceRepository', () 
     replaceTaxRates: async (key, value) => taxRates.set(key, clone(value)),
   },
 }));
-mock.module('../../../src/features/logistics/waybillRepository', () => ({
+mock.module('@indyzai/feature-orders/logistics/waybillRepository', () => ({
   waybillRepository: {
     read: async (key) => clone(waybillJobs.get(key) ?? []),
     replace: async (key, value) => waybillJobs.set(key, clone(value)),
   },
 }));
-mock.module('../../../src/features/billing/data/productBatchRepository', () => ({
+mock.module('@indyzai/feature-billing/data/productBatchRepository', () => ({
   productBatchRepository: {
     read: async (key) => clone(productBatches.get(key) ?? []),
     replace: async (key, value) => productBatches.set(key, clone(value)),
   },
 }));
-mock.module('../../../src/features/scrap/scrapPurchaseRepository', () => ({
+mock.module('@indyzai/feature-scrap/scrapPurchaseRepository', () => ({
   scrapPurchaseRepository: {
     read: async (key) => clone(scrapPurchaseJobs.get(key) ?? []),
     replace: async (key, value) => scrapPurchaseJobs.set(key, clone(value)),

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { buildReportMetrics } from '../../../src/features/reports/reportMetrics';
+import { buildReportMetrics } from '@indyzai/feature-reports';
 
 test('report metrics filter the period and calculate net sales', () => {
     const orders = [

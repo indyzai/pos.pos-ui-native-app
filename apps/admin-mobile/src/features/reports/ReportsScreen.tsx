@@ -16,7 +16,7 @@ import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 import { useOrders } from '../orders/useOrders';
-import { buildReportMetrics, type ReportPeriod } from './reportMetrics';
+import { buildReportMetrics, type ReportPeriod } from '@indyzai/feature-reports';
 import { createLogger } from '@indyzai/pos-utils';
 
 const logger = createLogger('Reports');

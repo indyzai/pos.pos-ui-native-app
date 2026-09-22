@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { resolveFeatureToggles } from '../../../src/features/organization/featureToggles.ts';
+import { resolveFeatureToggles } from '@indyzai/feature-flags';
 
 describe('organization feature toggles', () => {
   test('applies business defaults and nested server overrides', () => {

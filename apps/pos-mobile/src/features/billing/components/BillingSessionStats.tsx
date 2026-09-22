@@ -1,7 +1,7 @@
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Banknote, CreditCard, IndianRupee, UploadCloud } from 'lucide-react-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { CounterSession } from '../../sales/salesOutbox';
+import type { CounterSession } from '@indyzai/feature-billing/salesOutbox';
 
 export function BillingSessionStats({
   session,

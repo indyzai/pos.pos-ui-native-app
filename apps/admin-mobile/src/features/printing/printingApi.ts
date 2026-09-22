@@ -3,8 +3,8 @@ import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { createPrintingApi } from '@indyzai/feature-printers/printingApi';
-import { readPrinters, replacePrinters } from './printerRepository';
-import { listPendingPrintJobs, savePrintJob } from './printJobRepository';
+import { readPrinters, replacePrinters } from '@indyzai/feature-printers/printerRepository';
+import { listPendingPrintJobs, savePrintJob } from '@indyzai/feature-printers/printJobRepository';
 
 export const printingApi = createPrintingApi({
     request: requestPos,

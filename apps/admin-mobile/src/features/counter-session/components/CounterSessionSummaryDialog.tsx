@@ -15,7 +15,7 @@ import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { createLogger } from '@indyzai/pos-utils';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { CounterSession } from '../../sales/salesOutbox';
+import type { CounterSession } from '@indyzai/feature-billing/salesOutbox';
 import { counterSessionApi } from '../counterSessionApi';
 import { loadDenominationCounts, saveDenominationCounts } from '../denominationStorage';
 import type { CurrencyDenomination, DenominationCounts } from '../types';

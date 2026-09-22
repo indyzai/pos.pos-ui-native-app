@@ -15,7 +15,7 @@ import {
     orderNavigationItem,
     visibleNavigationItems,
 } from '../../navigation/routes';
-import { useFeatureToggles } from '../../../features/organization/useFeatureToggles';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 /** Global Material navigation shell. Modules populate its raised center action. */
 export function BottomNavigation() {

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { provisionalReceiptNumber } from '../../../src/features/billing/domain/receiptNumber';
+import { provisionalReceiptNumber } from '@indyzai/feature-billing/domain/receiptNumber';
 
 test('builds a readable scoped provisional receipt number', () => {
   expect(

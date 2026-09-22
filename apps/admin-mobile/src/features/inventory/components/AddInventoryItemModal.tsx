@@ -9,7 +9,7 @@ import { useAppTheme } from '@indyzai/pos-ui-native';
 import { AppPaperProvider } from '@indyzai/pos-ui-native';
 import { ProductIcon, productIconOptions, type ProductIconKey } from '../../billing/components/productIcons';
 import { inventoryApi } from '../inventoryApi';
-import type { CreateInventoryItemInput, ProductReferenceData } from '../types';
+import type { CreateInventoryItemInput, ProductReferenceData } from '@indyzai/feature-inventory/types';
 
 export function AddInventoryItemModal({
     visible,

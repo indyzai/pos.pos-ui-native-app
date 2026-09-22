@@ -28,7 +28,7 @@ import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { InventoryCard } from './components/InventoryCard';
 import { useInventory } from './hooks/useInventory';
-import type { InventoryFilter, InventoryProduct } from './types';
+import type { InventoryFilter, InventoryProduct } from '@indyzai/feature-inventory/types';
 import { useAppHeader } from '@indyzai/pos-ui-native';
 import { useBottomNavigation } from '@indyzai/pos-ui-native';
 import { AddInventoryItemModal } from './components/AddInventoryItemModal';

@@ -4,8 +4,8 @@ import { PackagePlus, X } from 'lucide-react-native';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppKeyboardSafeView } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { CartCustomization, Product } from '../types/billing';
-import { resolveWholesaleTier, wholesaleTiers } from '../domain/wholesalePricing';
+import type { CartCustomization, Product } from '@indyzai/feature-billing/types/billing';
+import { resolveWholesaleTier, wholesaleTiers } from '@indyzai/feature-billing/domain/wholesalePricing';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 
 export function BulkQuantityDialog({

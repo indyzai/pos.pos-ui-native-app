@@ -10,8 +10,8 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { clearLocalUiData } from '@indyzai/pos-database/maintenance';
 import { createLocalFirstTableHook, useLocalDatabase } from '@indyzai/pos-database';
 import type { CollectionName, LocalRecord, SyncStatus } from '@indyzai/pos-database';
-import { waybillRepository } from '../logistics/waybillRepository';
-import type { WaybillJob } from '../logistics/types';
+import { waybillRepository } from '@indyzai/feature-orders/logistics/waybillRepository';
+import type { WaybillJob } from '@indyzai/feature-orders/logistics/types';
 import { createLogger } from '@indyzai/pos-utils';
 import { billingApi } from '../billing/billingApi';
 

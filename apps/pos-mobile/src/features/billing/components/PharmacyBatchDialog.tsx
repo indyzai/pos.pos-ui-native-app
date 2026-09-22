@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
-import { batchStatus, preferredProductBatch } from '../domain/productBatches';
-import type { CartCustomization, Product, ProductBatch } from '../types/billing';
+import { batchStatus, preferredProductBatch } from '@indyzai/feature-billing/domain/productBatches';
+import type { CartCustomization, Product, ProductBatch } from '@indyzai/feature-billing/types/billing';
 
 export function PharmacyBatchDialog({
   product,

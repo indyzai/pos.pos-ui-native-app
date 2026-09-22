@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
-import type { BillingModeConfig } from '../domain/billingMode';
-import type { Product } from '../types/billing';
-import { useFeatureToggles } from '../../organization/useFeatureToggles';
+import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
+import type { Product } from '@indyzai/feature-billing/types/billing';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { ElectronicsItemDialog } from '../components/ElectronicsItemDialog';
-import { requiresDeviceDetails, validateTrackedDevices } from '../domain/electronicsTracking';
+import { requiresDeviceDetails, validateTrackedDevices } from '@indyzai/feature-billing/domain/electronicsTracking';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 
 export function ElectronicsBillingScreen({ mode }: { mode: BillingModeConfig }) {

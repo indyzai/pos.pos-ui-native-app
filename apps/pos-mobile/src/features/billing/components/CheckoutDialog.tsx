@@ -14,8 +14,8 @@ import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import type { BillingPaymentMethod, CheckoutPayment, PaymentMethod } from '../types/billing';
-import { buildUpiPaymentUri } from '../domain/upiPayment';
+import type { BillingPaymentMethod, CheckoutPayment, PaymentMethod } from '@indyzai/feature-billing/types/billing';
+import { buildUpiPaymentUri } from '@indyzai/feature-billing/domain/upiPayment';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
 
 type Props = {

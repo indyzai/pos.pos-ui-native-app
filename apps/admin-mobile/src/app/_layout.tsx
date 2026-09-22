@@ -16,7 +16,7 @@ import { TabletNavigationPane } from '../shared/components/navigation/TabletNavi
 import { SnackbarProvider } from '@indyzai/pos-ui-native/snackbar';
 import { AppPaperProvider } from '@indyzai/pos-ui-native';
 import { isRouteFeatureEnabled } from '@indyzai/feature-flags';
-import { useFeatureToggles } from '../features/organization/useFeatureToggles';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 export default function RootLayout() {
     return (
