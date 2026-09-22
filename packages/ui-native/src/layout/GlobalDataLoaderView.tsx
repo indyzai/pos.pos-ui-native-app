@@ -1,4 +1,4 @@
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useEffect, useRef } from "react";
 import { useAppTheme } from "../theme/ThemeProvider";
 
@@ -10,8 +10,17 @@ export function GlobalDataLoaderView({
     message?: string;
 }) {
     const { themeColors: c } = useAppTheme();
+    const { width: windowWidth } = useWindowDimensions();
     const progress = useRef(new Animated.Value(0)).current;
+    const opacity = useRef(new Animated.Value(0)).current;
+
     useEffect(() => {
+        Animated.timing(opacity, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+        }).start();
+
         const animation = Animated.loop(
             Animated.timing(progress, {
                 toValue: 1,
@@ -21,13 +30,18 @@ export function GlobalDataLoaderView({
         );
         animation.start();
         return () => animation.stop();
-    }, [progress]);
+    }, [opacity, progress]);
+
     return (
-        <View
+        <Animated.View
             pointerEvents="none"
             style={[
                 s.container,
-                { backgroundColor: c.surfaceMuted, borderColor: c.outline },
+                {
+                    backgroundColor: c.surfaceMuted,
+                    borderColor: c.outline,
+                    opacity,
+                },
             ]}
             accessibilityLiveRegion="polite"
         >
@@ -41,7 +55,7 @@ export function GlobalDataLoaderView({
                                 {
                                     translateX: progress.interpolate({
                                         inputRange: [0, 1],
-                                        outputRange: [-120, 520],
+                                        outputRange: [-120, Math.max(windowWidth || 520, 520)],
                                     }),
                                 },
                             ],
@@ -65,16 +79,23 @@ export function GlobalDataLoaderView({
                     </Text>
                 </View>
             </View>
-        </View>
+        </Animated.View>
     );
 }
 
 const s = StyleSheet.create({
     container: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 999,
+        elevation: 10,
         width: "100%",
         minHeight: 48,
         borderBottomWidth: 1,
         justifyContent: "center",
+        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.08)",
     },
     track: {
         position: "absolute",

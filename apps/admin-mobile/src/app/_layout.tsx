@@ -83,20 +83,22 @@ function RootNavigator() {
                     />
                 </SafeAreaView>
             )}
-            {!headerHidden && <GlobalDataLoader />}
-            <View style={{ flex: 1, flexDirection: 'row' }}>
-                {showLeftNavigation && <TabletNavigationPane collapsed={navigationCollapsed} />}
-                <View style={{ flex: 1 }}>
-                    <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-                        <Stack.Screen name="index" />
-                        <Stack.Screen name="login" />
-                        <Stack.Screen name="signup" />
-                        <Stack.Screen name="billing" />
-                        <Stack.Screen name="profile" />
-                        <Stack.Screen name="device-setup" />
-                        <Stack.Screen name="settings" />
-                        <Stack.Screen name="purchases" />
-                    </Stack>
+            <View style={{ flex: 1, position: 'relative' }}>
+                {!headerHidden && <GlobalDataLoader />}
+                <View style={{ flex: 1, flexDirection: 'row' }}>
+                    {showLeftNavigation && <TabletNavigationPane collapsed={navigationCollapsed} />}
+                    <View style={{ flex: 1 }}>
+                        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+                            <Stack.Screen name="index" />
+                            <Stack.Screen name="login" />
+                            <Stack.Screen name="signup" />
+                            <Stack.Screen name="billing" />
+                            <Stack.Screen name="profile" />
+                            <Stack.Screen name="device-setup" />
+                            <Stack.Screen name="settings" />
+                            <Stack.Screen name="purchases" />
+                        </Stack>
+                    </View>
                 </View>
             </View>
         </View>

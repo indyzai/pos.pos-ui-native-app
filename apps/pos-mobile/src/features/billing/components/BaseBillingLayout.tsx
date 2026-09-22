@@ -159,8 +159,9 @@ export function BaseBillingLayout({
     const taxRates = billing.data?.cache.taxRates || [];
     const currencyCode = String(auth.session?.organization?.settings.currency || 'INR');
 
+    const hasBillingData = Boolean(billing.data);
     useEffect(() => {
-        if (!billing.data || billing.busy) {
+        if (!hasBillingData || billing.busy) {
             setFeatureLoading({
                 id: 'billing-data',
                 title: 'Loading billing data…',
@@ -170,7 +171,7 @@ export function BaseBillingLayout({
             setFeatureLoading(undefined);
         }
         return () => setFeatureLoading(undefined);
-    }, [billing.busy, billing.data, setFeatureLoading]);
+    }, [billing.busy, hasBillingData, setFeatureLoading]);
 
     useEffect(() => {
         if (!paymentMethods.length || paymentMethods.some((method) => method.code === payment)) return;
