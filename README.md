@@ -82,4 +82,7 @@ For a native iOS build:
 ```bash
 npx expo prebuild --platform ios
 open ios/*.xcworkspace
+
+Select the IndyzAIPOS target → Build Settings.
+Add a user-defined setting:RCT_METRO_PORT = 3511
 ```

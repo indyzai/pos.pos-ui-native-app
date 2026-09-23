@@ -38,6 +38,7 @@ export type SaleInput = Record<string, unknown>;
 export type PendingSale = QueuedMutation<SaleInput> & {
     input: SaleInput;
     receiptNumber: string;
+    attempts?: number;
 };
 
 type CreateSaleParams = {
@@ -266,7 +267,7 @@ export function createPendingSale({
     };
 }
 
-/** Replays sales one at a time, retaining the failed head item and its offlineId for a safe retry. */
+/** Replays sales one at a time, retaining the failed head item and its offlineId for a safe retry. Stops if attempts reach 3. */
 export async function syncPendingSales(
     queue: PendingSale[],
     request: SaleRequest,
@@ -278,6 +279,9 @@ export async function syncPendingSales(
 ): Promise<void> {
     while (queue.length) {
         const sale = queue[0];
+        if ((sale.attempts ?? 0) >= 3) {
+            break;
+        }
         try {
             const partyId = sale.input.partyId;
             if (
@@ -300,6 +304,7 @@ export async function syncPendingSales(
                 throw new Error("Server did not acknowledge the bill.");
             await onSynced?.(sale, data.saveBill);
         } catch (error) {
+            sale.attempts = (sale.attempts ?? 0) + 1;
             sale.error =
                 error instanceof Error ? error.message : "Unable to sync bill.";
             await persist();
@@ -308,4 +313,16 @@ export async function syncPendingSales(
         queue.shift();
         await persist();
     }
+}
+
+/** Resets retry attempts and error on an individual sale so it can be retried. */
+export function retryPendingSale(sale: PendingSale): PendingSale {
+    delete sale.error;
+    sale.attempts = 0;
+    return sale;
+}
+
+/** Clears all pending sales from the queue. */
+export function clearPendingSales(queue: PendingSale[]): void {
+    queue.length = 0;
 }

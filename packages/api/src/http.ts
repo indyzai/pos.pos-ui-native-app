@@ -1,6 +1,6 @@
-let onUnauthorized: ((token: string) => Promise<void>) | undefined;
+let onUnauthorized: ((token?: string) => Promise<void>) | undefined;
 export function setUnauthorizedHandler(
-    handler: (token: string) => Promise<void>,
+    handler: (token?: string) => Promise<void>,
 ) {
     onUnauthorized = handler;
     return () => {
@@ -30,6 +30,18 @@ export type RequestOptions = {
     timeoutMs?: number;
     signal?: AbortSignal;
 };
+
+function extractToken(options: RequestOptions): string | undefined {
+    if (options.token) return options.token;
+    if (options.headers) {
+        for (const [key, value] of Object.entries(options.headers)) {
+            if (key.toLowerCase() === "authorization") {
+                return value.startsWith("Bearer ") ? value.slice(7) : value;
+            }
+        }
+    }
+    return undefined;
+}
 
 function errorMessage(body: unknown): string | undefined {
     if (!body || typeof body !== "object" || !("message" in body)) return;
@@ -84,7 +96,8 @@ export async function requestJson<T>(
                 );
         }
         if (!response.ok) {
-            if (response.status === 401) await invalidateSession(options.token);
+            const token = extractToken(options);
+            if (response.status === 401 && token) await invalidateSession(token);
             throw new ApiError(
                 errorMessage(body) ||
                     (response.status === 401
@@ -111,6 +124,7 @@ export async function requestGraphQL<T>(
     variables: Record<string, unknown> = {},
     options: Omit<RequestOptions, "method" | "body"> = {},
 ): Promise<T> {
+    const token = extractToken(options);
     const result = await requestJson<{
         data?: T;
         errors?: {
@@ -118,7 +132,9 @@ export async function requestGraphQL<T>(
             extensions?: {
                 code?: string;
                 status?: number;
+                statusCode?: number;
                 originalError?: { statusCode?: number };
+                response?: { statusCode?: number };
             };
         }[];
     }>(url, {
@@ -127,13 +143,26 @@ export async function requestGraphQL<T>(
         body: { query, variables },
     });
     if (result?.errors?.length) {
-        const unauthorized = result.errors.some(
-            (error) =>
-                error.extensions?.code === "UNAUTHENTICATED" ||
-                error.extensions?.status === 401 ||
-                error.extensions?.originalError?.statusCode === 401,
-        );
-        if (unauthorized) await invalidateSession(options.token);
+        const unauthorized = result.errors.some((error) => {
+            const code = error.extensions?.code?.toUpperCase();
+            const status =
+                error.extensions?.status ??
+                error.extensions?.statusCode ??
+                error.extensions?.originalError?.statusCode ??
+                error.extensions?.response?.statusCode;
+            const message = error.message?.toLowerCase() ?? "";
+            return (
+                code === "UNAUTHENTICATED" ||
+                code === "UNAUTHORIZED" ||
+                status === 401 ||
+                message === "unauthorized" ||
+                message.includes("unauthenticated") ||
+                message.includes("jwt expired") ||
+                message.includes("token expired") ||
+                message.includes("session expired")
+            );
+        });
+        if (unauthorized && token) await invalidateSession(token);
         throw new ApiError(
             result.errors.map((error) => error.message).join("; "),
             unauthorized ? 401 : undefined,

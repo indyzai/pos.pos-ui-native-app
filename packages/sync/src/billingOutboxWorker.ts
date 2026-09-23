@@ -5,7 +5,7 @@ const logger = createLogger("Billing:outbox-worker");
 const minimumRetryMs = 1_000;
 const maximumRetryMs = 60_000;
 
-type OutboxPayload = { entityType?: string };
+type OutboxPayload = { entityType?: string; attempts?: number };
 export type BillingOutboxRunResult = "synced" | "offline" | "empty" | "busy";
 type BillingOutboxWorker = {
     database: LocalDatabase;
@@ -45,7 +45,8 @@ export function startBillingOutboxWorker(
         return records.some(
             (record) =>
                 entityTypes.includes(record.payload.entityType ?? "") &&
-                ["PENDING", "RUNNING"].includes(record.syncStatus),
+                ["PENDING", "RUNNING"].includes(record.syncStatus) &&
+                (record.payload.attempts ?? 0) < 3,
         );
     };
 

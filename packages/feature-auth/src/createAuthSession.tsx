@@ -50,7 +50,7 @@ export type AuthOrganizationDetails = {
 export type AuthSessionConfiguration = {
     authApi: AuthApi;
     setUnauthorizedHandler: (
-        handler: (token: string) => Promise<void>,
+        handler: (token?: string) => Promise<void>,
     ) => () => void;
     loadOrganizationDetails: (
         token: string,
@@ -107,7 +107,8 @@ export function AuthSessionProvider({
         let pending: Promise<void> | undefined;
         return setUnauthorizedHandler(async (token) => {
             if (pending) return pending;
-            if ((await authApi.getAccessToken()) !== token) return;
+            const currentToken = await authApi.getAccessToken();
+            if (token && currentToken && currentToken !== token) return;
             pending = (async () => {
                 generation.current++;
                 activeSession = null;
@@ -116,7 +117,11 @@ export function AuthSessionProvider({
                 setAuthenticated(false);
                 setInitializing(false);
                 setError("Session expired. Please sign in again.");
-                await authApi.logout();
+                try {
+                    await authApi.logout();
+                } catch {
+                    // Ignore logout failure during session invalidation
+                }
             })();
             try {
                 await pending;

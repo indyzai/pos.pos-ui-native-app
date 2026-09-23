@@ -137,7 +137,8 @@ export function createPurchasesApi(options: {
                 })) {
                     if (
                         original.payload.entityType !== "PURCHASE" ||
-                        !["PENDING", "RUNNING"].includes(original.syncStatus)
+                        !["PENDING", "RUNNING"].includes(original.syncStatus) ||
+                        (original.payload.attempts ?? 0) >= 3
                     )
                         continue;
                     // Earlier acknowledgements may have rewritten this job's server ID.
@@ -155,7 +156,7 @@ export function createPurchasesApi(options: {
                         )
                     )
                         continue;
-                    signal?.throwIfAborted();
+                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                     assertCurrent(context);
                     await outbox.put({
                         ...job,
@@ -207,16 +208,19 @@ export function createPurchasesApi(options: {
                         );
                     } catch (error) {
                         assertCurrent(context);
+                        const attempts = (job.payload.attempts ?? 0) + 1;
+                        const errorMessage =
+                            error instanceof Error
+                                ? error.message
+                                : "Purchase sync failed.";
                         await outbox.put({
                             ...job,
-                            syncStatus: "PENDING",
+                            syncStatus: attempts >= 3 ? "FAILED" : "PENDING",
                             updatedAt: Date.now(),
                             payload: {
                                 ...job.payload,
-                                errorMessage:
-                                    error instanceof Error
-                                        ? error.message
-                                        : "Purchase sync failed.",
+                                attempts,
+                                errorMessage,
                             },
                         } as LocalRecord<TableOutboxPayload<Purchase>>);
                         throw error;
@@ -229,7 +233,7 @@ export function createPurchasesApi(options: {
                 const context = options.getContext();
                 const rows: ServerPurchase[] = [];
                 for (let skip = 0; ; skip += 100) {
-                    signal?.throwIfAborted();
+                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                     const response = await options.request<{
                         purchases: ServerPurchase[];
                     }>(
@@ -251,7 +255,7 @@ export function createPurchasesApi(options: {
                     ["purchase_orders"],
                     async () => {
                         assertCurrent(context);
-                        signal?.throwIfAborted();
+                        if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                         const repository =
                             context.database.collection<LocalRecord<Purchase>>(
                                 "purchase_orders",

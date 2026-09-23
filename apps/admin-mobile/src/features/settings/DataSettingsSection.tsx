@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Clock3, Database, RefreshCw, Send, Trash2 } from 'lucide-react-native';
 import { AppPressable } from '@indyzai/pos-ui-native';
@@ -23,6 +23,7 @@ type OutboxPayload = {
     operation?: string;
     status?: string;
     attemptCount?: number;
+    attempts?: number;
     errorMessage?: string;
     createdAt?: number | string;
     table?: CollectionName;
@@ -160,15 +161,43 @@ export function DataSettingsSection() {
 
     const retryOutbox = async (record: LocalRecord<OutboxPayload>) => {
         if (!local.database) return;
-        const { errorMessage: _error, ...payload } = record.payload;
+        const { errorMessage: _error, attempts: _attempts, attemptCount: _attemptCount, ...payload } = record.payload;
         await local.database.collection<LocalRecord<OutboxPayload>>('sync_outbox').put({
             ...record,
-            payload,
+            payload: {
+                ...payload,
+                attempts: 0,
+            },
             syncStatus: 'PENDING',
             updatedAt: Date.now(),
         });
         await refresh();
         void billingApi.sync().catch(() => undefined);
+    };
+
+    const clearAllOutbox = () => {
+        if (!local.database) return;
+        const pendingOrFailed = outbox.data.filter((record) =>
+            ['PENDING', 'RUNNING', 'FAILED', 'CONFLICT'].includes(record.syncStatus),
+        );
+        if (!pendingOrFailed.length) return;
+        const message = `Are you sure you want to clear ${pendingOrFailed.length} unsynced outbox item(s)?`;
+        const runClear = async () => {
+            for (const record of pendingOrFailed) {
+                await deleteOutbox(record);
+            }
+            showSnackbar('Outbox cleared', `Cleared ${pendingOrFailed.length} item(s) from sync outbox.`);
+        };
+        if (Platform.OS === 'web') {
+            if (globalThis.confirm?.(message)) {
+                void runClear();
+            }
+        } else {
+            Alert.alert('Clear sync outbox', message, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Clear all', style: 'destructive', onPress: () => void runClear() },
+            ]);
+        }
     };
 
     const deleteOutbox = async (record: LocalRecord<OutboxPayload>) => {
@@ -335,33 +364,52 @@ export function DataSettingsSection() {
                     title="Recent outbox activity"
                     compact
                 />
-                <AppPressable
-                    accessibilityLabel={
-                        showCompleted
-                            ? 'Hide completed synchronization objects'
-                            : 'Show completed synchronization objects'
-                    }
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: showCompleted }}
-                    onPress={() => setShowCompleted((value) => !value)}
-                    style={[
-                        s.completedToggle,
-                        {
-                            backgroundColor: showCompleted ? c.background : c.surfaceMuted,
-                            borderColor: showCompleted ? c.success : c.outlineMuted,
-                        },
-                    ]}
-                >
-                    <CheckCircle2 size={14} color={showCompleted ? c.success : c.textSecondary} />
-                    <Text
+                <View style={s.syncActions}>
+                    {outbox.data.some((r) => ['PENDING', 'RUNNING', 'FAILED', 'CONFLICT'].includes(r.syncStatus)) ? (
+                        <AppPressable
+                            accessibilityLabel="Clear all outbox items"
+                            onPress={clearAllOutbox}
+                            style={[
+                                s.completedToggle,
+                                {
+                                    backgroundColor: c.errorSoft,
+                                    borderColor: c.error,
+                                    gap: 4,
+                                },
+                            ]}
+                        >
+                            <Trash2 size={13} color={c.error} />
+                            <Text style={[s.completedToggleText, { color: c.error }]}>Clear all</Text>
+                        </AppPressable>
+                    ) : null}
+                    <AppPressable
+                        accessibilityLabel={
+                            showCompleted
+                                ? 'Hide completed synchronization objects'
+                                : 'Show completed synchronization objects'
+                        }
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: showCompleted }}
+                        onPress={() => setShowCompleted((value) => !value)}
                         style={[
-                            s.completedToggleText,
-                            { color: showCompleted ? c.success : c.textSecondary },
+                            s.completedToggle,
+                            {
+                                backgroundColor: showCompleted ? c.background : c.surfaceMuted,
+                                borderColor: showCompleted ? c.success : c.outlineMuted,
+                            },
                         ]}
                     >
-                        Show completed
-                    </Text>
-                </AppPressable>
+                        <CheckCircle2 size={14} color={showCompleted ? c.success : c.textSecondary} />
+                        <Text
+                            style={[
+                                s.completedToggleText,
+                                { color: showCompleted ? c.success : c.textSecondary },
+                            ]}
+                        >
+                            Show completed
+                        </Text>
+                    </AppPressable>
+                </View>
             </View>
             <View style={[s.panel, { backgroundColor: c.background, borderColor: c.outlineMuted }]}>
                 {!recent.length ? (
@@ -372,7 +420,11 @@ export function DataSettingsSection() {
                             key={record.id}
                             label={record.payload.operation || record.payload.entityType || 'Local mutation'}
                             id={record.payload.offlineId || record.remoteId || record.id}
-                            status={record.syncStatus}
+                            status={
+                                record.payload.attempts
+                                    ? `${record.syncStatus} (${record.payload.attempts}/3)`
+                                    : record.syncStatus
+                            }
                             timestamp={record.updatedAt}
                             error={record.payload.errorMessage}
                             json={{
@@ -381,7 +433,12 @@ export function DataSettingsSection() {
                                 updatedAt: record.updatedAt,
                                 payload: record.payload,
                             }}
-                            onRetry={record.syncStatus === 'FAILED' ? () => retryOutbox(record) : undefined}
+                            onRetry={
+                                ['FAILED', 'PENDING', 'CONFLICT'].includes(record.syncStatus) ||
+                                (record.payload.attempts ?? 0) > 0
+                                    ? () => retryOutbox(record)
+                                    : undefined
+                            }
                             onDelete={
                                 ['PENDING', 'RUNNING', 'FAILED', 'CONFLICT'].includes(record.syncStatus)
                                     ? () => deleteOutbox(record)

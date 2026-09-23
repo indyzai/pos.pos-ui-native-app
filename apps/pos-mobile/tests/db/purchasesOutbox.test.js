@@ -95,3 +95,40 @@ test('failed purchase keeps the mutation ID for retry', async () => {
         expect((await database.collection('sync_outbox').list())[0].syncStatus).toBe('PENDING');
     });
 });
+
+test('purchase stops retrying and marks as FAILED after 3 failed attempts', async () => {
+    await withApi(async ({ database, api, calls, setResponse }) => {
+        await createTableMutation(
+            database,
+            { table: 'purchase_orders', entityType: 'PURCHASE' },
+            { localId: draft.id, operation: 'CREATE', payload: draft },
+        );
+        setResponse(async () => {
+            throw new Error('Purchase rejected');
+        });
+        // 1st failure
+        await expect(api.pushPending()).rejects.toThrow('Purchase rejected');
+        let job = (await database.collection('sync_outbox').list())[0];
+        expect(job.syncStatus).toBe('PENDING');
+        expect(job.payload.attempts).toBe(1);
+
+        // 2nd failure
+        await expect(api.pushPending()).rejects.toThrow('Purchase rejected');
+        job = (await database.collection('sync_outbox').list())[0];
+        expect(job.syncStatus).toBe('PENDING');
+        expect(job.payload.attempts).toBe(2);
+
+        // 3rd failure
+        await expect(api.pushPending()).rejects.toThrow('Purchase rejected');
+        job = (await database.collection('sync_outbox').list())[0];
+        expect(job.syncStatus).toBe('FAILED');
+        expect(job.payload.attempts).toBe(3);
+        expect(job.payload.errorMessage).toBe('Purchase rejected');
+
+        // Subsequent pushPending skips
+        const callsCount = calls.length;
+        await api.pushPending();
+        expect(calls.length).toBe(callsCount);
+    });
+});
+

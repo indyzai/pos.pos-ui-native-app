@@ -17,6 +17,7 @@ export type QueuedMutation<TPayload> = {
     payload: TPayload;
     createdAt: string;
     error?: string;
+    attempts?: number;
 };
 
 export type OutboxJobOperation =
@@ -32,6 +33,7 @@ export type OutboxJob = {
     errorMessage?: string;
     createdAt: string;
     updatedAt: string;
+    attempts?: number;
 };
 
 type InventoryOutboxPayload = OutboxJob & {

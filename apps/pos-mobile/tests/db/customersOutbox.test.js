@@ -108,3 +108,36 @@ test('a late customer response cannot be applied after a session switch', async 
         expect((await database.collection('customers').get(customer.id)).remoteId).toBeNull();
     });
 });
+
+test('stops retrying and marks job as FAILED after 3 failed attempts', async () => {
+    await withApi(async ({ api, database, setResponse, calls }) => {
+        await api.create({ name: 'Customer' });
+        setResponse(async () => {
+            throw new Error('Server error');
+        });
+        // 1st failure
+        await expect(api.pushPending()).rejects.toThrow('Server error');
+        let job = (await database.collection('sync_outbox').list())[0];
+        expect(job.syncStatus).toBe('PENDING');
+        expect(job.payload.attempts).toBe(1);
+
+        // 2nd failure
+        await expect(api.pushPending()).rejects.toThrow('Server error');
+        job = (await database.collection('sync_outbox').list())[0];
+        expect(job.syncStatus).toBe('PENDING');
+        expect(job.payload.attempts).toBe(2);
+
+        // 3rd failure: marks as FAILED
+        await expect(api.pushPending()).rejects.toThrow('Server error');
+        job = (await database.collection('sync_outbox').list())[0];
+        expect(job.syncStatus).toBe('FAILED');
+        expect(job.payload.attempts).toBe(3);
+        expect(job.payload.errorMessage).toBe('Server error');
+
+        // Subsequent pushPending skips this job and does not throw or call API
+        const callCountBefore = calls.length;
+        await api.pushPending();
+        expect(calls.length).toBe(callCountBefore);
+    });
+});
+

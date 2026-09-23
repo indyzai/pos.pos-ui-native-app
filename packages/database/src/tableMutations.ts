@@ -40,6 +40,8 @@ export type TableOutboxPayload<
     data: TPayload;
     dependencyJobIds: string[];
     serverId?: string;
+    errorMessage?: string;
+    attempts?: number;
 };
 
 export type DependencyPayload = { jobId: string; dependsOnJobId: string };

@@ -99,14 +99,17 @@ type SaleOutboxPayload = {
     localId?: string;
     data?: PendingSale;
     dependencyJobIds?: string[];
+    errorMessage?: string;
+    attempts?: number;
 };
 const saleOutboxId = (database: LocalDatabase, offlineId: string) =>
     `${createScopeKey(database.scope)}:outbox:sale:${offlineId}`;
 async function setSaleOutboxStatus(
     database: LocalDatabase,
     sale: PendingSale,
-    syncStatus: 'PENDING' | 'RUNNING',
+    syncStatus: 'PENDING' | 'RUNNING' | 'FAILED',
     errorMessage?: string,
+    attempts?: number,
 ) {
     const now = Date.now();
     const existing = (
@@ -118,12 +121,14 @@ async function setSaleOutboxStatus(
             (record.payload.table === 'sales' && record.payload.localId === sale.id) ||
             record.payload.offlineId === sale.id,
     );
+    const resolvedAttempts = attempts ?? sale.attempts ?? existing?.payload.attempts ?? 0;
     if (existing) {
         await database.collection<LocalRecord<SaleOutboxPayload>>('sync_outbox').put({
             ...existing,
             payload: {
                 ...existing.payload,
                 ...(errorMessage ? { errorMessage } : {}),
+                attempts: resolvedAttempts,
             },
             syncStatus,
             updatedAt: now,
@@ -141,6 +146,7 @@ async function setSaleOutboxStatus(
         data: sale,
         dependencyJobIds: [],
         ...(errorMessage ? { errorMessage } : {}),
+        attempts: resolvedAttempts,
     };
     await database.collection<LocalRecord<SaleOutboxPayload>>('sync_outbox').put({
         id: saleOutboxId(database, sale.id),
@@ -410,7 +416,8 @@ export const billingApi = {
                   ).filter(
                       (record) =>
                           record.payload.entityType === 'SALE' &&
-                          (record.syncStatus === 'PENDING' || record.syncStatus === 'RUNNING'),
+                          (record.syncStatus === 'PENDING' || record.syncStatus === 'RUNNING') &&
+                          (record.payload.attempts ?? 0) < 3,
                   )
                 : [];
             const allJobs = database
@@ -487,7 +494,17 @@ export const billingApi = {
                 if (database) {
                     const message = error instanceof Error ? error.message : 'Unable to sync bill.';
                     await Promise.all(
-                        pendingSales.map((sale) => setSaleOutboxStatus(database, sale, 'PENDING', message)),
+                        pendingSales.map((sale) => {
+                            const attempts = sale.attempts ?? 1;
+                            const isFailed = attempts >= 3;
+                            return setSaleOutboxStatus(
+                                database,
+                                sale,
+                                isFailed ? 'FAILED' : 'PENDING',
+                                message,
+                                attempts,
+                            );
+                        }),
                     );
                 }
                 throw error;

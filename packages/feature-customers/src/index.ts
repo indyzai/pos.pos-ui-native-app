@@ -104,10 +104,11 @@ export function createCustomersApi(options: Options) {
                 for (const job of await outbox.list({ includeDeleted: true })) {
                     if (
                         job.payload.entityType !== "CUSTOMER" ||
-                        !["PENDING", "RUNNING"].includes(job.syncStatus)
+                        !["PENDING", "RUNNING"].includes(job.syncStatus) ||
+                        (job.payload.attempts ?? 0) >= 3
                     )
                         continue;
-                    signal?.throwIfAborted();
+                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                     assertCurrent(context);
                     if (job.payload.operation !== "CREATE")
                         throw new Error(
@@ -158,10 +159,20 @@ export function createCustomersApi(options: Options) {
                         );
                     } catch (error) {
                         assertCurrent(context);
+                        const attempts = (job.payload.attempts ?? 0) + 1;
+                        const errorMessage =
+                            error instanceof Error
+                                ? error.message
+                                : "Customer sync failed.";
                         await outbox.put({
                             ...job,
-                            syncStatus: "PENDING",
+                            syncStatus: attempts >= 3 ? "FAILED" : "PENDING",
                             updatedAt: Date.now(),
+                            payload: {
+                                ...job.payload,
+                                attempts,
+                                errorMessage,
+                            },
                         });
                         throw error;
                     }
@@ -174,7 +185,7 @@ export function createCustomersApi(options: Options) {
                 assertCurrent(context);
                 const remote: Customer[] = [];
                 for (let skip = 0; ; skip += 200) {
-                    signal?.throwIfAborted();
+                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                     const data = await options.request<{
                         parties: Record<string, unknown>[];
                     }>(
@@ -192,7 +203,7 @@ export function createCustomersApi(options: Options) {
                     remote.push(...data.parties.map(options.mapCustomer));
                     if (data.parties.length < 200) break;
                 }
-                signal?.throwIfAborted();
+                if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                 const repository =
                     context.database.collection<LocalRecord<LocalCustomer>>(
                         "customers",

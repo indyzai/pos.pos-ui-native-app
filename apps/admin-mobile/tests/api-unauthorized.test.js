@@ -40,3 +40,41 @@ test('GraphQL authentication failure expires session even with HTTP 200', async 
         dispose();
     }
 });
+test('authenticated 401 with Authorization header expires session', async () => {
+    const tokens = [];
+    const dispose = setUnauthorizedHandler(async (token) => {
+        tokens.push(token);
+    });
+    try {
+        globalThis.fetch = async () => new Response('{}', { status: 401 });
+        await expect(
+            requestJson('https://example.test', { headers: { Authorization: 'Bearer header-expired' } }),
+        ).rejects.toThrow();
+        expect(tokens).toEqual(['header-expired']);
+    } finally {
+        dispose();
+    }
+});
+test('GraphQL error variations (UNAUTHORIZED, statusCode, response.statusCode, message) expire session', async () => {
+    const errorVariations = [
+        { message: 'Unauthorized', extensions: { code: 'UNAUTHORIZED' } },
+        { message: 'Session invalid', extensions: { statusCode: 401 } },
+        { message: 'Not allowed', extensions: { response: { statusCode: 401 } } },
+        { message: 'jwt expired', extensions: {} },
+    ];
+    for (const error of errorVariations) {
+        const tokens = [];
+        const dispose = setUnauthorizedHandler(async (token) => {
+            tokens.push(token);
+        });
+        try {
+            globalThis.fetch = async () => Response.json({ errors: [error] });
+            await expect(
+                requestGraphQL('https://example.test', '{ me { id } }', {}, { token: 'expired-gql' }),
+            ).rejects.toThrow();
+            expect(tokens).toEqual(['expired-gql']);
+        } finally {
+            dispose();
+        }
+    }
+});

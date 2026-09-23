@@ -52,4 +52,5 @@ export type RefundRecord = {
     status: string;
     createdAt: string;
     syncError?: string;
+    attempts?: number;
 };

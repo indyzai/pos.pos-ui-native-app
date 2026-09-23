@@ -7,7 +7,7 @@ import { queryClient } from '@indyzai/pos-state';
 import { ThemeProvider, useAppTheme } from '@indyzai/pos-ui-native';
 import { AuthSessionProvider, useAuthSession } from '../auth/AuthSessionContext';
 import { DatabaseProvider } from '../providers/DatabaseProvider';
-import { useWindowDimensions, View } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../shared/components/layout/AppHeader';
 import { GlobalDataLoader } from '../shared/components/layout/GlobalDataLoader';
@@ -62,8 +62,13 @@ function RootNavigator() {
     const { flags } = useFeatureToggles();
     useEffect(() => {
         const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff', '/device-setup'];
-        if (!initializing && !authenticated && !publicRoutes.includes(pathname)) {
-            router.replace('/login');
+        const normalizedPath = pathname.replace(/\/$/, '') || '/';
+        if (!initializing && !authenticated && !publicRoutes.includes(normalizedPath)) {
+            if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                window.location.replace('/login');
+            } else {
+                router.replace('/login');
+            }
             return;
         }
         if (

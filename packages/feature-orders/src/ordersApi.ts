@@ -56,7 +56,7 @@ export function createOrdersApi(options: OrdersApiOptions) {
                 const context = options.getContext();
                 const bills: SalesOrder[] = [];
                 for (let skip = 0; ; skip += 200) {
-                    signal?.throwIfAborted();
+                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                     const page = await request<{ bills: SalesOrder[] }>(
                         context,
                         ordersQuery,
@@ -88,7 +88,7 @@ export function createOrdersApi(options: OrdersApiOptions) {
                         !remoteIds.has(refund.offlineId),
                 );
                 assertCurrent(context);
-                signal?.throwIfAborted();
+                if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                 await Promise.all([
                     repository.replaceOrders(context.scope, bills),
                     repository.replaceRefunds(context.scope, [
@@ -129,11 +129,11 @@ export function createOrdersApi(options: OrdersApiOptions) {
                 const context = options.getContext();
                 const refunds = await repository.readRefunds(context.scope);
                 for (const refund of refunds.filter((item) =>
-                    ["PENDING_SYNC", "FAILED"].includes(item.status),
+                    item.status === "PENDING_SYNC" && (item.attempts ?? 0) < 3,
                 )) {
-                    signal?.throwIfAborted();
+                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
                     try {
-                        const { id: _id, syncError: _error, ...input } = refund;
+                        const { id: _id, syncError: _error, attempts: _attempts, ...input } = refund;
                         const response = await request<{
                             createSaleRefund: RefundRecord;
                         }>(
@@ -148,10 +148,13 @@ export function createOrdersApi(options: OrdersApiOptions) {
                             );
                         Object.assign(refund, response.createSaleRefund, {
                             syncError: undefined,
+                            attempts: 0,
                         });
                     } catch (error) {
                         assertCurrent(context);
-                        refund.status = "FAILED";
+                        const attempts = (refund.attempts ?? 0) + 1;
+                        refund.attempts = attempts;
+                        refund.status = attempts >= 3 ? "FAILED" : "PENDING_SYNC";
                         refund.syncError =
                             error instanceof Error
                                 ? error.message

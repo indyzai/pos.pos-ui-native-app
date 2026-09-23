@@ -213,9 +213,8 @@ const s = StyleSheet.create({
     centerAction: {
         position: 'absolute',
         top: -20,
-        left: '50%',
-        marginLeft: -36,
-        width: 72,
+        alignSelf: 'center',
+        width: 75,
         height: 70,
         alignItems: 'center',
         gap: 2,
