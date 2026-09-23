@@ -21,6 +21,14 @@ The comprehensive platform specification is the target, not the current completi
 - Printer profiles, drivers, templates, organization/branch-isolated routing, copy handling, and validated multi-column label coordinates. These are platform-neutral primitives; hardware drivers are not yet implemented or connected to the receipt UI.
 - Strict package TypeScript checking plus both app checks.
 
+## Latest implementation work (2026-09-23)
+
+- Removed cross-app source imports. Purchases, inventory screens/hooks/dialogs, receipt presentation, product icons and scanner UI now live in shared feature/native packages, with compatibility exports in the apps.
+- Both inventory screens now receive their own app's API adapter and storage scope; Admin no longer accidentally uses the POS inventory API implementation.
+- Inventory categories, units and tax references are read through local collections. API refresh persists these collections before returning data, with cached fallback and protection against late workspace responses.
+- Added native multiple-image purchase uploads using the Expo SDK-matched image picker. AI import is an application service, validates extracted items, matches existing products and rejects results after a workspace switch. Screens no longer make purchase/AI HTTP requests directly.
+- Added focused AI import regression tests. Per the user's latest instruction, no builds or type checks were run for these latest changes; earlier verification results below do not cover this section.
+
 ## Existing APIs inspected and to reuse
 
 Source: sibling `pos.pos-api-svc/src/modules`. The user subsequently authorized changes in this repository too.
@@ -38,7 +46,7 @@ No duplicate endpoints or speculative `syncChanges` / `pushChanges` GraphQL call
 
 ## Required before production completion
 
-- Finish moving app-owned repositories, API mappings, and remaining business logic into shared packages; remove cross-app screen imports.
+- Finish moving the remaining app-owned repositories, API mappings, and business logic into shared packages. Cross-app screen imports have been removed.
 - Complete feature implementations for catalog, customers, suppliers, payments, returns, scrap, services, restaurant, pharmacy, shifts, expenses, and notifications. Existing extracted repositories or package scaffolds do not mean those workflows are complete.
 - Wire server-issued permission and global feature policies through local persistence, all application services, database data requirements, and backend authorization. The policy resolver currently consumes `organization.settings.permissionPolicy`; server delivery and enforcement need integration verification.
 - Implement or complete Admin dashboards, organization/branch/counter/user workflows, pricing, suppliers, approvals, finance screens, alerts, and multi-branch views.
@@ -60,22 +68,22 @@ Production readiness cannot be inferred from TypeScript and unit tests alone. Th
 
 ## Completion checklist and next implementation order
 
-| Area                      | Current status                                                            | Remaining work                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Native monorepo           | Shared feature layout implemented; no web app added                       | Remove remaining duplicated services and cross-app screen imports                                              |
-| Authentication and access | App role admission enforced; shared permission resolver implemented       | Verify refresh/device/PIN/biometric flows, manager authorization, and server-side enforcement                  |
-| Feature configuration     | Profiles, effective flags, date windows, navigation filtering implemented | Server-managed policy delivery, management UI, and complete feature-driven database provisioning               |
-| Billing                   | Local-first sale flow and offline customer dependencies implemented       | Full pricing/promotion/payment workflows |
-| Local-first mutations     | Generic hook, dependency chaining and newer-edit preservation implemented | Migrate remaining direct API writes and verify native transaction races |
-| Background sync           | Sale/customer/purchase processing with online gating and retry            | Remaining entity handlers, durable OS background execution, cursor/conflict coverage |
-| Orders and returns        | Shared paginated orders/refund service implemented                        | Exchange/store-credit/refund-provider and approval workflows                                                   |
-| Inventory and purchasing  | Existing shared screens and extracted domain/repositories                 | Purchase update sync, full receiving/returns/approval lifecycle, remaining transfer/stock workflows            |
-| Reports                   | Shared scoped and timezone-aware sales metrics implemented                | Full requested report catalogue, export, finance and multi-branch integration                                  |
-| Business-specific modes   | Shared profiles and existing domain logic extracted                       | Complete restaurant, pharmacy, wholesale, electronics, service and scrap workflows                             |
-| Admin management          | Existing screens retained; role separation enforced                       | Complete organization/branch/counter/users, suppliers, pricing, approvals, finance, alerts                     |
-| Printing                  | Shared routing/driver contracts and server job tracking implemented       | Native transports, discovery, templates/labels, management UI and hardware tests                               |
-| Required tooling          | Strict TypeScript and package checks implemented                          | Zustand, Zod and schema-backed GraphQL generation integration                                                  |
-| Release validation        | Unit/type checks and both Android bundle exports pass                     | iOS builds, device integration, offline recovery, migrations, tenant/API authorization and printer tests       |
+| Area                      | Current status                                                            | Remaining work                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Native monorepo           | Shared feature layout implemented; no web app added                       | Remove remaining duplicated services and cross-app screen imports                                        |
+| Authentication and access | App role admission enforced; shared permission resolver implemented       | Verify refresh/device/PIN/biometric flows, manager authorization, and server-side enforcement            |
+| Feature configuration     | Profiles, effective flags, date windows, navigation filtering implemented | Server-managed policy delivery, management UI, and complete feature-driven database provisioning         |
+| Billing                   | Local-first sale flow and offline customer dependencies implemented       | Full pricing/promotion/payment workflows                                                                 |
+| Local-first mutations     | Generic hook, dependency chaining and newer-edit preservation implemented | Migrate remaining direct API writes and verify native transaction races                                  |
+| Background sync           | Sale/customer/purchase processing with online gating and retry            | Remaining entity handlers, durable OS background execution, cursor/conflict coverage                     |
+| Orders and returns        | Shared paginated orders/refund service implemented                        | Exchange/store-credit/refund-provider and approval workflows                                             |
+| Inventory and purchasing  | Existing shared screens and extracted domain/repositories                 | Purchase update sync, full receiving/returns/approval lifecycle, remaining transfer/stock workflows      |
+| Reports                   | Shared scoped and timezone-aware sales metrics implemented                | Full requested report catalogue, export, finance and multi-branch integration                            |
+| Business-specific modes   | Shared profiles and existing domain logic extracted                       | Complete restaurant, pharmacy, wholesale, electronics, service and scrap workflows                       |
+| Admin management          | Existing screens retained; role separation enforced                       | Complete organization/branch/counter/users, suppliers, pricing, approvals, finance, alerts               |
+| Printing                  | Shared routing/driver contracts and server job tracking implemented       | Native transports, discovery, templates/labels, management UI and hardware tests                         |
+| Required tooling          | Strict TypeScript and package checks implemented                          | Zustand, Zod and schema-backed GraphQL generation integration                                            |
+| Release validation        | Unit/type checks and both Android bundle exports pass                     | iOS builds, device integration, offline recovery, migrations, tenant/API authorization and printer tests |
 
 ### Known sync contract gaps
 

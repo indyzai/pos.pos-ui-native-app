@@ -14,10 +14,10 @@ import {
     Wallet,
 } from 'lucide-react-native';
 import { type Entitlement, hasEntitlement } from '@indyzai/pos-permissions';
-import { type StoreAccessRole } from './access';
+import { resolveStoreAccessRole, type StoreAccessRole } from './access';
 import { isRouteFeatureEnabled, type FeatureToggles } from '@indyzai/feature-flags';
+export { resolveStoreAccessRole };
 
-export { resolveStoreAccessRole } from './access';
 export type AppNavigationItem = {
     label: string;
     icon: LucideIcon;

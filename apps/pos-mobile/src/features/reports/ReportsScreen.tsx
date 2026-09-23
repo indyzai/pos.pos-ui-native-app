@@ -38,7 +38,6 @@ export function ReportsScreen() {
     const [period, setPeriod] = useState<ReportPeriod>(1);
     const controller = useRef<AbortController | undefined>(undefined);
     const refreshRef = useRef<() => Promise<void>>(async () => undefined);
-    const initialRefresh = useRef<string | undefined>(undefined);
     const manager = canPerformManagerActions(session?.tenant.role, session?.user.role);
     const activeSession = session?.organization?.activeSession;
     const activeSessionId = activeSession?.id ? String(activeSession.id) : undefined;
@@ -81,12 +80,6 @@ export function ReportsScreen() {
         }
     };
     refreshRef.current = refresh;
-    useEffect(() => {
-        const key = session && data.ready ? `${session.tenant.id}:${session.user.id}` : undefined;
-        if (!key || initialRefresh.current === key) return;
-        initialRefresh.current = key;
-        void refreshRef.current();
-    }, [data.ready, session]);
     useEffect(() => {
         setFeatureRefresh(() => refreshRef.current());
         return () => setFeatureRefresh(undefined);

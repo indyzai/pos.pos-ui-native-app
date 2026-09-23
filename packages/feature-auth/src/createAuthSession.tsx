@@ -12,6 +12,7 @@ import type { AuthTenant, AuthUser } from "./types";
 import type { createAuthApi } from "./createAuthApi";
 import { createLogger } from "@indyzai/pos-utils";
 import { AuthBranding } from "./AuthBranding";
+import { useBackgroundRefresh } from "@indyzai/pos-ui-native";
 
 const sessionLogger = createLogger("Auth:session");
 
@@ -55,7 +56,17 @@ export type AuthSessionConfiguration = {
     loadOrganizationDetails: (
         token: string,
         tenantId: string,
+        signal?: AbortSignal,
     ) => Promise<AuthOrganizationDetails>;
+    loadCachedOrganizationDetails?: (
+        userId: string,
+        tenantId: string,
+    ) => Promise<AuthOrganizationDetails | null>;
+    saveCachedOrganizationDetails?: (
+        userId: string,
+        tenantId: string,
+        value: AuthOrganizationDetails,
+    ) => Promise<void>;
     canAccessApp: (tenantRole: string, userRole?: string) => boolean;
     accessDeniedMessage: string;
     loaderColors: {
@@ -132,17 +143,19 @@ export function AuthSessionProvider({
     }, []);
     const refreshSession = async () => {
         const current = ++generation.current;
-        setInitializing(true);
-        activeSession = null;
-        setSession(null);
-        setUser(null);
-        setAuthenticated(false);
+        setInitializing(!activeSession);
         try {
-            const [profile, token] = await Promise.all([
-                authApi.getSessionUser(),
+            let [profile, token] = await Promise.all([
+                authApi.getStoredUser(),
                 authApi.getAccessToken(),
             ]);
             if (current !== generation.current) return;
+            if (token && !profile?.tenants?.length) {
+                // First-time identity hydration needs connectivity, but never holds the splash.
+                setInitializing(false);
+                profile = await authApi.getSessionUser();
+                if (current !== generation.current) return;
+            }
             setUser(profile);
             // Resolve membership from the profile just returned by /users/me.
             // Storage supplies only the preferred ID, never a second user snapshot.
@@ -166,6 +179,8 @@ export function AuthSessionProvider({
                 profile,
             });
             if (tenant && !canAccessApp(tenant.role, profile?.role)) {
+                activeSession = null;
+                setSession(null);
                 setUser(null);
                 setAuthenticated(false);
                 setError(configuration.accessDeniedMessage);
@@ -176,25 +191,21 @@ export function AuthSessionProvider({
                     ? { user: profile, token, tenant, organization: null }
                     : null;
 
-            sessionLogger.info("Resolved authenticated identity", {
-                next,
-                profile,
-                token,
-                tenant,
-            });
+            if (next && configuration.loadCachedOrganizationDetails) {
+                next.organization = await configuration
+                    .loadCachedOrganizationDetails(
+                        String(next.user.id),
+                        String(next.tenant.id),
+                    )
+                    .catch(() => null);
+                if (current !== generation.current) return;
+            }
             activeSession = next;
             setSession(next);
             setAuthenticated(Boolean(next));
             setError("");
-            if (next) {
-                const organization = await loadOrganizationDetails(
-                    next.token,
-                    String(next.tenant.id),
-                );
-                if (current !== generation.current) return;
-                activeSession = { ...next, organization };
-                setSession(activeSession);
-            } else if (await authApi.getAccessToken()) {
+            setInitializing(false);
+            if (!next && (await authApi.getAccessToken())) {
                 setError(
                     "Signed in, but no business profile is available. Retry workspace initialization.",
                 );
@@ -213,7 +224,34 @@ export function AuthSessionProvider({
     };
     useEffect(() => {
         void refreshSession();
+        return () => {
+            generation.current++;
+        };
     }, []);
+    useBackgroundRefresh(
+        session
+            ? `organization:${session.user.id}:${session.tenant.id}:${generation.current}`
+            : undefined,
+        async (signal) => {
+            const next = activeSession;
+            const current = generation.current;
+            if (!next) return;
+            const organization = await loadOrganizationDetails(
+                next.token,
+                String(next.tenant.id),
+                signal,
+            );
+            if (current !== generation.current || signal.aborted) return;
+            await configuration.saveCachedOrganizationDetails?.(
+                String(next.user.id),
+                String(next.tenant.id),
+                organization,
+            );
+            if (current !== generation.current || signal.aborted) return;
+            activeSession = { ...next, organization };
+            setSession(activeSession);
+        },
+    );
     const value = useMemo(
         () => ({
             user,

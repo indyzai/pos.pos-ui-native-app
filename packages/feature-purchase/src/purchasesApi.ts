@@ -116,6 +116,19 @@ export function purchaseInput(
 export function createPurchasesApi(options: {
     getContext: () => Context;
     request: FeatureRequest;
+    analyzeImage?: (
+        context: FeatureContext,
+        image: string,
+        signal?: AbortSignal,
+    ) => Promise<{
+        items?: Array<{
+            name: string;
+            quantity: number;
+            rate: number;
+            tax?: number;
+            unit?: string;
+        }>;
+    }>;
 }) {
     const queue = new SerialQueue();
     const assertCurrent = (context: Context) => {
@@ -125,6 +138,66 @@ export function createPurchasesApi(options: {
             throw new Error("Your workspace changed. Please retry.");
     };
     return {
+        async analyzeImages(
+            images: string[],
+            products: Array<{ id: string; name: string }>,
+            signal?: AbortSignal,
+        ): Promise<PurchaseLine[]> {
+            if (!options.analyzeImage)
+                throw new Error("Purchase image analysis is not configured.");
+            if (!images.length)
+                throw new Error("Select at least one bill image.");
+            const context = options.getContext();
+            const lines: PurchaseLine[] = [];
+            for (const image of images) {
+                signal?.throwIfAborted();
+                assertCurrent(context);
+                const result = await options.analyzeImage(
+                    context,
+                    image,
+                    signal,
+                );
+                assertCurrent(context);
+                if (!Array.isArray(result.items))
+                    throw new Error(
+                        "The bill analysis response did not contain items.",
+                    );
+                for (const item of result.items) {
+                    if (
+                        typeof item.name !== "string" ||
+                        !item.name.trim() ||
+                        !Number.isFinite(Number(item.quantity)) ||
+                        Number(item.quantity) <= 0 ||
+                        !Number.isFinite(Number(item.rate)) ||
+                        Number(item.rate) < 0 ||
+                        !Number.isFinite(Number(item.tax ?? 0)) ||
+                        Number(item.tax ?? 0) < 0
+                    )
+                        throw new Error(
+                            "The bill image contains an unreadable item. Try a clearer image or enter it manually.",
+                        );
+                    const product = products.find(
+                        (candidate) =>
+                            candidate.name.trim().toLowerCase() ===
+                            item.name.trim().toLowerCase(),
+                    );
+                    lines.push({
+                        productId: product?.id,
+                        productName: product?.name ?? item.name.trim(),
+                        quantity: Number(item.quantity),
+                        purchasePrice: Number(item.rate),
+                        taxRate: Number(item.tax ?? 0),
+                        unit: item.unit,
+                    });
+                }
+            }
+            if (!lines.length)
+                throw new Error(
+                    "No purchase items were found in the selected images.",
+                );
+            signal?.throwIfAborted();
+            return lines;
+        },
         pushPending(signal?: AbortSignal) {
             return queue.run(async () => {
                 const context = options.getContext();
@@ -156,7 +229,10 @@ export function createPurchasesApi(options: {
                         )
                     )
                         continue;
-                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
+                    if (signal?.aborted)
+                        throw signal.reason instanceof Error
+                            ? signal.reason
+                            : new Error("AbortError");
                     assertCurrent(context);
                     await outbox.put({
                         ...job,
@@ -233,7 +309,10 @@ export function createPurchasesApi(options: {
                 const context = options.getContext();
                 const rows: ServerPurchase[] = [];
                 for (let skip = 0; ; skip += 100) {
-                    if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
+                    if (signal?.aborted)
+                        throw signal.reason instanceof Error
+                            ? signal.reason
+                            : new Error("AbortError");
                     const response = await options.request<{
                         purchases: ServerPurchase[];
                     }>(
@@ -255,7 +334,10 @@ export function createPurchasesApi(options: {
                     ["purchase_orders"],
                     async () => {
                         assertCurrent(context);
-                        if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('AbortError');
+                        if (signal?.aborted)
+                            throw signal.reason instanceof Error
+                                ? signal.reason
+                                : new Error("AbortError");
                         const repository =
                             context.database.collection<LocalRecord<Purchase>>(
                                 "purchase_orders",

@@ -146,9 +146,10 @@ export async function readBillingSnapshot(
 export async function writeBillingSnapshot(
     scope: string,
     snapshot: BillingSnapshot,
+    options: { preserveSales?: boolean } = {},
 ): Promise<void> {
     if (!hasNativeDatabase) {
-        await writeWebBillingSnapshot(scope, snapshot);
+        await writeWebBillingSnapshot(scope, snapshot, options);
         return;
     }
     initializeDatabase();
@@ -200,7 +201,7 @@ export async function writeBillingSnapshot(
                 })
                 .run();
         }
-        for (const sale of existingSales) {
+        for (const sale of options.preserveSales ? [] : existingSales) {
             if (!pendingIds.has(sale.offlineId) && sale.status !== "SYNCED") {
                 tx.update(sales)
                     .set({ status: "SYNCED", errorMessage: null })
@@ -208,7 +209,7 @@ export async function writeBillingSnapshot(
                     .run();
             }
         }
-        for (const sale of snapshot.queue) {
+        for (const sale of options.preserveSales ? [] : snapshot.queue) {
             tx.insert(sales)
                 .values({
                     id: saleId(scope, sale.id),

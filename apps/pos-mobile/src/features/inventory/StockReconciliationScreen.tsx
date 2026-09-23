@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Check, ClipboardList, Save, ScanLine, Search, X } from 'lucide-react-native';
-import { AppPressable, useAppTheme } from '@indyzai/pos-ui-native';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Check, ClipboardList, Save, ScanLine, Search, X } from 'lucide-react-native';
+import { AppPressable, useAppTheme, useBottomNavigationClearance } from '@indyzai/pos-ui-native';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import {
@@ -15,7 +15,7 @@ import { hasEntitlement } from '@indyzai/pos-permissions';
 import type { Product } from '@indyzai/feature-billing/types/billing';
 import type { StockReconciliationReport } from '@indyzai/feature-inventory/types';
 import { inventoryApi } from './inventoryApi';
-import { BarcodeScannerModal } from '../billing/components/BarcodeScannerModal';
+import { BarcodeScannerModal } from '@indyzai/pos-scanner-native/modal';
 
 const useProducts = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 const useReconciliations = createLocalFirstTableHook<StockReconciliationReport>({
@@ -27,7 +27,7 @@ const useReconciliations = createLocalFirstTableHook<StockReconciliationReport>(
 export function StockReconciliationScreen() {
   const { themeColors: c } = useAppTheme();
   const auth = useAuthSession();
-  const router = useRouter();
+  const bottomClearance = useBottomNavigationClearance();
   const params = useLocalSearchParams<{ productId?: string }>();
   const products = useProducts();
   const reconciliations = useReconciliations();
@@ -346,14 +346,11 @@ export function StockReconciliationScreen() {
 
   if (!allowed) return <Redirect href="/billing" />;
   return (
-    <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={s.content}>
+    <ScrollView
+      style={{ backgroundColor: c.background }}
+      contentContainerStyle={[s.content, { paddingBottom: bottomClearance + 24 }]}
+    >
       <View style={s.header}>
-        <AppPressable
-          onPress={() => router.back()}
-          style={[s.iconButton, { backgroundColor: c.surfaceMuted }]}
-        >
-          <ArrowLeft size={20} color={c.text} />
-        </AppPressable>
         <View style={s.headerCopy}>
           <Text style={[s.title, { color: c.text }]}>Stock reconciliation</Text>
           <Text style={[s.subtitle, { color: c.textSecondary }]}>
@@ -552,7 +549,6 @@ export function StockReconciliationScreen() {
 const s = StyleSheet.create({
   content: { width: '100%', maxWidth: 900, alignSelf: 'center', padding: 18, paddingBottom: 60 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
-  iconButton: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   headerCopy: { flex: 1 },
   title: { fontSize: 24, fontWeight: '900' },
   subtitle: { marginTop: 3, fontSize: 12 },

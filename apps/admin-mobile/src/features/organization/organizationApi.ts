@@ -1,4 +1,16 @@
 import { requestPos } from '../../core/api/posApi';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
+import { createOrganizationCache } from '@indyzai/feature-organization/organizationCache';
+const organizationCache = createOrganizationCache('admin');
+async function cacheCounter(token: string, tenantId: string, activeSession: CounterSession | null) {
+    const session = getActiveAuthSession();
+    if (!session || session.token !== token || String(session.tenant.id) !== tenantId) return;
+    const organization =
+        session.organization ?? (await organizationCache.read(String(session.user.id), tenantId));
+    if (organization)
+        await organizationCache.write(String(session.user.id), tenantId, { ...organization, activeSession });
+}
+
 import type { CounterSession } from '@indyzai/feature-billing/salesOutbox';
 
 export type OrganizationDetails = {
@@ -118,6 +130,7 @@ export async function closeCounterSession(
     if (!data.closeCounter?.id || data.closeCounter.status?.toUpperCase() !== 'CLOSED') {
         throw new Error('The counter session was not closed.');
     }
+    await cacheCounter(token, tenantId, null);
 }
 
 export async function openCounterSession(
@@ -126,7 +139,9 @@ export async function openCounterSession(
     counterId: string,
     openingBalance: number,
 ): Promise<void> {
-    const data = await requestPos<{ openCounter?: { id?: string } }>(
+    const data = await requestPos<{
+        openCounter?: { id?: string; status?: string; counterId?: string; branchId?: string };
+    }>(
         token,
         tenantId,
         `mutation OpenCounter($input: OpenCounterInput!) {
@@ -135,6 +150,19 @@ export async function openCounterSession(
         { input: { counterId: Number(counterId), openingBalance } },
     );
     if (!data.openCounter?.id) throw new Error('The counter session was not opened.');
+    const organization = getActiveAuthSession()?.organization;
+    const branch = organization?.branches.find((item) =>
+        item.counters.some((counter) => String(counter.id) === counterId),
+    );
+    await cacheCounter(token, tenantId, {
+        id: String(data.openCounter.id),
+        status: data.openCounter.status ?? 'OPEN',
+        counterId: String(data.openCounter.counterId ?? counterId),
+        branchId: data.openCounter.branchId ? String(data.openCounter.branchId) : branch?.id,
+        counterName: branch?.counters.find((counter) => String(counter.id) === counterId)?.name,
+        branchName: branch?.name,
+        openingBalance,
+    });
 }
 
 export function requiresOpenCounter(settings: Record<string, unknown> | undefined): boolean {

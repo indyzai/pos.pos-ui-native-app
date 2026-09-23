@@ -60,8 +60,10 @@ export {
 export { AdminLogo, PosLogo } from "./branding/PosLogo";
 export {
     useNetworkStatus,
+    getNetworkStatusSnapshot,
     setNetworkStatusAuthApi,
     getNetworkStatusAuthApi,
     type NetworkStatusAuthApi,
     type UseNetworkStatusOptions,
 } from "./useNetworkStatus";
+export { useBackgroundRefresh } from "./useBackgroundRefresh";

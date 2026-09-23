@@ -5,7 +5,11 @@ import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { ordersApi } from './ordersApi';
 import type { SalesOrder } from '@indyzai/feature-orders/types';
 import type { RefundSelection } from '@indyzai/feature-orders/refundPolicy';
-import { createLocalFirstTableHook, payloadsFromRecords, replaceLocalPayloads } from '@indyzai/pos-database';
+import {
+    createLocalFirstTableHook,
+    payloadsFromRecords,
+    applyBootstrapCollections,
+} from '@indyzai/pos-database';
 import type { RefundRecord } from '@indyzai/feature-orders/types';
 
 const useOrderTable = createLocalFirstTableHook<SalesOrder>({ table: 'orders', entityType: 'ORDER' });
@@ -32,8 +36,12 @@ export function useOrders() {
     useEffect(() => {
         if (!local.database || !query.data) return;
         void Promise.all([
-            replaceLocalPayloads(local.database, 'orders', query.data.orders),
-            replaceLocalPayloads(local.database, 'refunds', query.data.refunds),
+            query.data.orders.length
+                ? applyBootstrapCollections(local.database, { orders: query.data.orders })
+                : Promise.resolve(),
+            query.data.refunds.length
+                ? applyBootstrapCollections(local.database, { refunds: query.data.refunds })
+                : Promise.resolve(),
         ]).then(
             () => setProjectionError(''),
             (reason) =>

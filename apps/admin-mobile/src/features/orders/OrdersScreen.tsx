@@ -13,10 +13,7 @@ import { useOrders } from './useOrders';
 import type { SalesOrder } from '@indyzai/feature-orders/types';
 import { refundableQuantity } from '@indyzai/feature-orders/refundPolicy';
 import { createLogger } from '@indyzai/pos-utils';
-import {
-    ReceiptDialog,
-    type ReceiptData,
-} from '../../../../pos-mobile/src/features/billing/components/ReceiptDialog';
+import { ReceiptDialog, type ReceiptData } from '@indyzai/feature-billing/receipt-dialog';
 
 const logger = createLogger('Orders');
 

@@ -19,6 +19,9 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
 import { billingApi } from '../features/billing/billingApi';
+import { ordersApi } from '../features/orders/ordersApi';
+import { applyBootstrapCollections, createScopeKey, getActiveDatabase } from '@indyzai/pos-database';
+import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
 import { purchasesApi } from '../features/purchases/purchasesApi';
 import { startBillingOutboxWorker } from '@indyzai/pos-sync';
 import { useOfflineQueueCount } from '@indyzai/pos-database';
@@ -37,7 +40,18 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     });
     const generation = useRef(0);
 
+    const sessionRef = useRef(session);
+    sessionRef.current = session;
+    const workspaceKey = session
+        ? `${session.user.id}:${session.tenant.id}:${session.tenant.role}:${
+              session.organization?.branches
+                  .map((branch) => branch.id)
+                  .sort()
+                  .join(',') ?? ''
+          }:${session.organization?.activeSession?.counterId ?? ''}`
+        : '';
     const initialize = useCallback(async () => {
+        const session = sessionRef.current;
         const current = ++generation.current;
         if (authInitializing) return;
         if (!session) {
@@ -96,11 +110,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             // The API only refreshes the durable local projection. UI consumers
             // remain bound to local collections, and an offline failure does not
             // prevent the cached workspace from opening.
-            void billingApi.refresh(undefined, database, true).catch((reason) => {
-                logger.warn('Initial database pull deferred until connectivity returns', {
-                    error: reason instanceof Error ? reason.message : String(reason),
-                });
-            });
         } catch (reason) {
             if (current !== generation.current) return;
             const errorMessage = reason instanceof Error ? reason.message : 'Local storage unavailable';
@@ -111,7 +120,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
                 error: errorMessage,
             }));
         }
-    }, [authInitializing, session]);
+    }, [authInitializing, workspaceKey]);
 
     useEffect(() => {
         void initialize();
@@ -124,7 +133,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     return (
         <LocalDatabaseProvider value={value}>
             {state.database && state.status === 'ready' && session ? (
-                <AdminOutboxProcessor database={state.database} />
+                <>
+                    <AdminOutboxProcessor database={state.database} />
+                    <BackgroundDataRefresh database={state.database} />
+                </>
             ) : null}
             {children}
         </LocalDatabaseProvider>
@@ -151,3 +163,16 @@ function AdminOutboxProcessor({ database }: { database: LocalDatabase }) {
     return null;
 }
 export { useLocalDatabase, useRequiredLocalDatabase };
+
+function BackgroundDataRefresh({ database }: { database: LocalDatabase }) {
+    const scope = createScopeKey(database.scope);
+    useBackgroundRefresh(`billing:${scope}`, (signal) => billingApi.refresh(signal, database));
+    useBackgroundRefresh(`orders:${scope}`, async (signal) => {
+        await ordersApi.refresh(signal);
+        if (signal.aborted || getActiveDatabase() !== database) return;
+        const snapshot = await ordersApi.load();
+        if (signal.aborted || getActiveDatabase() !== database) return;
+        await applyBootstrapCollections(database, { orders: snapshot.orders, refunds: snapshot.refunds });
+    });
+    return null;
+}

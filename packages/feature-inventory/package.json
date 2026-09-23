@@ -6,10 +6,29 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
+    "./screen": "./src/native/InventoryScreen.tsx",
+    "./hook": "./src/native/useInventory.ts",
+    "./card": "./src/native/InventoryCard.tsx",
+    "./item-modal": "./src/native/AddInventoryItemModal.tsx",
     ".": "./src/index.ts",
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@indyzai/feature-billing": "workspace:*"
+    "@indyzai/feature-billing": "workspace:*",
+    "@indyzai/pos-application": "workspace:*",
+    "@indyzai/pos-auth": "workspace:*",
+    "@indyzai/pos-database": "workspace:*",
+    "@indyzai/pos-permissions": "workspace:*",
+    "@indyzai/pos-ui-native": "workspace:*",
+    "@indyzai/pos-utils": "workspace:*",
+    "@indyzai/pos-scanner-native": "workspace:*",
+    "@tanstack/react-query": "^5.102.8",
+    "expo-router": "~57.0.19",
+    "expo-linear-gradient": "~57.0.1",
+    "lucide-react-native": "^1.41.0"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
   }
 }

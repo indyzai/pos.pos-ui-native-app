@@ -20,7 +20,7 @@ import { AppPressable } from '@indyzai/pos-ui-native';
 import { colors, radii } from '@indyzai/pos-ui-native/tokens';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { SwipeableCartRow } from './SwipeableCartRow';
-import { ProductIcon } from './productIcons';
+import { ProductIcon } from '@indyzai/feature-billing/product-icons';
 import type {
   BillingPaymentMethod,
   BillingTaxRate,

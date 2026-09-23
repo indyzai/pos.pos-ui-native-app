@@ -40,12 +40,14 @@ export async function readWebBillingSnapshot<T = BillingSnapshot>(_scope: string
     if (!metadata && !products.length && !sales.length) return undefined;
     return { products: products.map((item) => item.payload), queue: sales.filter((item) => ["PENDING", "FAILED", "RUNNING"].includes(item.syncStatus)).map((item) => item.payload), session: (metadata?.payload as any)?.session ?? null, updated: (metadata?.payload as any)?.updated } as T;
 }
-export async function writeWebBillingSnapshot(_scope: string, snapshot: BillingSnapshot): Promise<void> {
+export async function writeWebBillingSnapshot(_scope: string, snapshot: BillingSnapshot, options: { preserveSales?: boolean } = {}): Promise<void> {
     const database = await db();
     if (!database) return;
+    if (!options.preserveSales) {
     const existing = await database.collection("sales").list({ includeDeleted: true });
     const serverSales = existing.filter((item) => item.syncStatus === "API" || item.syncStatus === "SYNCED");
     await database.collection("sales").replace([...serverSales, ...snapshot.queue.map((item) => record(database, "sales", item))]);
+    }
     await database.collection("app_settings").put(record(database, "app_settings", { id: "billing-metadata", session: snapshot.session, updated: snapshot.updated }));
 }
 export async function readWebHeldOrders<T>(_scope: string): Promise<T[]> {

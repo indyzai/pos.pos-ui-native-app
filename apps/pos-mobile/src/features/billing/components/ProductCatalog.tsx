@@ -9,7 +9,7 @@ import { useBottomNavigationClearance } from '@indyzai/pos-ui-native';
 import type { Product } from '@indyzai/feature-billing/types/billing';
 import { pharmacyProductStatus } from '@indyzai/feature-billing/domain/pharmacyProduct';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
-import { ProductIcon } from './productIcons';
+import { ProductIcon } from '@indyzai/feature-billing/product-icons';
 
 type Props = {
   category: string;

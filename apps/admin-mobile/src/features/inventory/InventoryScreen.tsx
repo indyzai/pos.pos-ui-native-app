@@ -1,5 +1,6 @@
-import { InventoryScreen as SharedInventoryScreen } from '../../../../pos-mobile/src/features/inventory/InventoryScreen';
+import { InventoryScreen as SharedInventoryScreen } from '@indyzai/feature-inventory/screen';
+import { inventoryApi } from './inventoryApi';
 
 export function InventoryScreen() {
-    return <SharedInventoryScreen surface="admin" />;
+    return <SharedInventoryScreen surface="admin" api={inventoryApi} />;
 }

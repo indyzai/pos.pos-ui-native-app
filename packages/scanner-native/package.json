@@ -1,1 +1,22 @@
-{"name":"@indyzai/pos-scanner-native","version":"1.0.0","private":true,"sideEffects":false,"main":"src/index.ts","types":"src/index.ts","exports":{".":"./src/index.ts"},"dependencies":{"@indyzai/pos-scanner":"workspace:*"}}
+{
+  "name": "@indyzai/pos-scanner-native",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./modal": "./src/BarcodeScannerModal.tsx"
+  },
+  "dependencies": {
+    "@indyzai/pos-scanner": "workspace:*",
+    "@indyzai/pos-ui-native": "workspace:*",
+    "expo-camera": "~57.0.4",
+    "lucide-react-native": "^1.41.0"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}

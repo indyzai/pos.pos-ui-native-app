@@ -38,7 +38,10 @@ import {
     type LocalRecord,
     type LocalDatabase,
 } from '@indyzai/pos-database';
-import { getBillingBootstrapCollections, resolveBillingMode } from '@indyzai/feature-billing/domain/billingMode';
+import {
+    getBillingBootstrapCollections,
+    resolveBillingMode,
+} from '@indyzai/feature-billing/domain/billingMode';
 import { customersApi } from '../customers/customersApi';
 import { purchasesApi } from '../purchases/purchasesApi';
 import type { TableOutboxPayload } from '@indyzai/pos-database';
@@ -89,6 +92,8 @@ const fallbackPaymentMethods: BillingPaymentMethod[] = [
     },
 ];
 const syncQueue = new SerialQueue();
+const pullQueue = new SerialQueue();
+const pushQueue = new SerialQueue();
 type SaleOutboxPayload = {
     offlineId: string;
     idempotencyKey: string;
@@ -249,7 +254,7 @@ export const billingApi = {
         return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
     },
     refresh: (signal?: AbortSignal, database?: LocalDatabase | null, forceBootstrap = false) =>
-        syncQueue.run(async () => {
+        pullQueue.run(async () => {
             const c = await context();
             const targetDb = database ?? getActiveDatabase();
             await customersApi.sync(signal, targetDb).catch(() => undefined);
@@ -269,6 +274,15 @@ export const billingApi = {
                 limit: 1000,
                 signal,
             });
+            const latest = await context();
+            if (
+                signal?.aborted ||
+                latest.key !== c.key ||
+                latest.token !== c.token ||
+                latest.tenant !== c.tenant ||
+                (targetDb && getActiveDatabase() !== targetDb)
+            )
+                return;
             const rows = bootstrap.collections ?? {};
             const normalized = targetDb
                 ? await applyPosBootstrap(targetDb, rows, bootstrap.generatedAt)
@@ -289,7 +303,7 @@ export const billingApi = {
                 cache.session = (rows.counterSessions?.[0] as CounterSession | undefined) ?? null;
             cache.updated = bootstrap.generatedAt;
 
-            const writes: Promise<unknown>[] = [write(c, cache)];
+            const writes: Promise<unknown>[] = [writeBillingSnapshot(c.key, cache, { preserveSales: true })];
             if ('customers' in rows)
                 writes.push(billingReferenceRepository.replaceCustomers(c.key, cache.customers));
             if ('paymentMethods' in rows)
@@ -373,7 +387,7 @@ export const billingApi = {
             }
             try {
                 if (enqueueSale) {
-                    await write(c, cache);
+                    await writeBillingSnapshot(c.key, cache, { preserveSales: true });
                     await enqueueSale(sale, dependencies);
                 } else {
                     cache.queue.push(sale);
@@ -400,7 +414,7 @@ export const billingApi = {
             return customersApi.create(input);
         }),
     sync: (signal?: AbortSignal) =>
-        syncQueue.run(async () => {
+        pushQueue.run(async () => {
             const c = await context();
             const database = getActiveDatabase();
             if (database) {

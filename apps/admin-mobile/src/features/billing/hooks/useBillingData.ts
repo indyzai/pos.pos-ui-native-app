@@ -1,13 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
+import { getNetworkStatusSnapshot } from '@indyzai/pos-ui-native';
 import { billingApi, type BillingCache } from '../billingApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
-import {
-    createLocalFirstTableHook,
-    payloadsFromRecords,
-} from '@indyzai/pos-database';
+import { createLocalFirstTableHook, payloadsFromRecords } from '@indyzai/pos-database';
 import type {
     BillingPaymentMethod,
     BillingTaxRate,
@@ -90,51 +88,31 @@ export function useBillingData() {
             running.current = false;
         }
     };
-    const refreshRef = useRef(refresh);
-    refreshRef.current = refresh;
     const settings = auth.session?.organization?.settings;
     const autoRefreshEnabled = settings?.autoRefresh === true || settings?.autoRefreshEnabled === true;
     const autoRefreshSeconds = Math.max(15, Number(settings?.autoRefreshIntervalSeconds ?? 60));
     useEffect(() => {
         if (!autoRefreshEnabled || !ready || !local.database) return;
+        let controller: AbortController | undefined;
         const timer = setInterval(() => {
-            if (running.current || !local.database) return;
-            void refreshRef.current().catch(() => undefined);
+            if (running.current || controller || !local.database || getNetworkStatusSnapshot() !== true)
+                return;
+            controller = new AbortController();
+            const active = controller;
+            const timeout = setTimeout(() => active.abort(), 12000);
+            void billingApi
+                .refresh(active.signal, local.database)
+                .catch(() => undefined)
+                .finally(() => {
+                    clearTimeout(timeout);
+                    controller = undefined;
+                });
         }, autoRefreshSeconds * 1000);
-        return () => clearInterval(timer);
+        return () => {
+            clearInterval(timer);
+            controller?.abort();
+        };
     }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready]);
-    const initialRefreshKey = useRef<string | undefined>(undefined);
-    const attemptedBootstrap = useRef(false);
-    useEffect(() => {
-        const key = query.data?.key;
-        if (!ready || !key || !local.database || initialRefreshKey.current === key) return;
-        initialRefreshKey.current = key;
-        if (attemptedBootstrap.current) return;
-        void local.database
-            .collection('sync_state')
-            .list({ includeDeleted: true })
-            .then((states) => {
-                const loaded = new Set(
-                    states.map((state) =>
-                        String((state.payload as { collection?: string }).collection ?? state.remoteId),
-                    ),
-                );
-                const hasBootstrap = ['products', 'customers', 'payment_methods', 'tax_rates'].every(
-                    (collection) => loaded.has(collection),
-                );
-                if (!hasBootstrap) {
-                    attemptedBootstrap.current = true;
-                    running.current = true;
-                    return billingApi
-                        .refresh(undefined, local.database, true)
-                        .then(() => queryClient.invalidateQueries({ queryKey: ['billing-cache'] }))
-                        .finally(() => {
-                            running.current = false;
-                        });
-                }
-            })
-            .catch(() => undefined);
-    }, [local.database, query.data?.key, queryClient, ready]);
     const error = syncMutation.error ?? query.error;
     const data = useMemo(() => {
         if (!ready || !query.data) return undefined;

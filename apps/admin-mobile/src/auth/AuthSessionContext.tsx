@@ -10,6 +10,8 @@ import { setUnauthorizedHandler } from '@indyzai/pos-api';
 import { loadOrganizationDetails } from '../features/organization/organizationApi';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { authApi } from './authApi';
+import { createOrganizationCache } from '@indyzai/feature-organization/organizationCache';
+const organizationCache = createOrganizationCache('admin');
 import './ui';
 
 export { getActiveAuthSession, useAuthSession };
@@ -22,6 +24,8 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
             authApi,
             setUnauthorizedHandler,
             loadOrganizationDetails,
+            loadCachedOrganizationDetails: organizationCache.read,
+            saveCachedOrganizationDetails: organizationCache.write,
             canAccessApp,
             accessDeniedMessage: 'Use the POS app for cashier and manager accounts.',
             loaderColors: {
