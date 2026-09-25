@@ -46,7 +46,7 @@ jobs:
         run: bun run format:check
 
       - name: Validate POS Mobile
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         run: |
           bunx tsc --noEmit
           bun test tests
