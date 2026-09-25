@@ -1,6 +1,7 @@
 import { expect, mock, test } from 'bun:test';
 
 globalThis.__DEV__ = true;
+mock.module('react-native', () => ({ Platform: { OS: 'web' } }));
 mock.module('expo-auth-session', () => ({}));
 mock.module('expo-application', () => ({}));
 mock.module('expo-constants', () => ({ default: {}, ExecutionEnvironment: { StoreClient: 'storeClient' } }));
