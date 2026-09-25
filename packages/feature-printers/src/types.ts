@@ -10,6 +10,11 @@ export type CounterPrinter = {
     isActive: boolean;
     copies: number;
     autoPrint: boolean;
+    connectionType?: string;
+    address?: string;
+    port?: string;
+    paperSize?: string;
+    config?: Record<string, unknown>;
 };
 
 export type PrintJob = {

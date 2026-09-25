@@ -1,4 +1,4 @@
-import { requestJson } from "@indyzai/pos-api";
+import { ApiError, requestJson } from "@indyzai/pos-api";
 import * as AuthSession from "expo-auth-session";
 import * as Application from "expo-application";
 import Constants, { ExecutionEnvironment } from "expo-constants";
@@ -32,6 +32,8 @@ export type AuthApiConfiguration = {
 export type AuthApi = ReturnType<typeof createAuthApi>;
 
 export function createAuthApi(configuration: AuthApiConfiguration) {
+    let locallyUnlocked = false;
+    let renewal: Promise<void> | undefined;
     const authAppId = configuration.appId;
     const webAuthChannel = `indyzai-auth:${authAppId}`;
     const webAuthEventKey = `${webAuthChannel}:event`;
@@ -172,7 +174,14 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
     async function authenticateDeviceIfAvailable(
         promptMessage: string,
     ): Promise<void> {
-        if (!(await canUseBiometricAuthentication())) return;
+        if (
+            Platform.OS === "web" ||
+            (await LocalAuthentication.getEnrolledLevelAsync()) ===
+                LocalAuthentication.SecurityLevel.NONE
+        )
+            throw new Error(
+                "Use your registered device PIN to unlock this device.",
+            );
         const verified = await LocalAuthentication.authenticateAsync({
             promptMessage,
             disableDeviceFallback: false,
@@ -300,6 +309,7 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
                 ? setSessionValue(selectedTenantKey, selectedTenant.id)
                 : deleteSessionValue(selectedTenantKey),
         ]);
+        locallyUnlocked = true;
     }
 
     async function hydrateSessionUser(): Promise<AuthUser | null> {
@@ -400,6 +410,42 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
     }
 
     const authApi = {
+        async unlockStoredSession(): Promise<void> {
+            if (locallyUnlocked || !(await this.hasRegisteredDevice())) return;
+            await authenticateDeviceIfAvailable("Unlock IndyzAI POS");
+            locallyUnlocked = true;
+        },
+        async renewSession(): Promise<void> {
+            if (renewal) return renewal;
+            renewal = (async () => {
+                const previous = await getSessionValue(accessTokenKey);
+                const refreshToken = await getSessionValue(refreshTokenKey);
+                if (!refreshToken)
+                    throw new ApiError(
+                        "Unlock your registered device or sign in again.",
+                        401,
+                    );
+                const result = await request<AuthResponse>("/auth/refresh", {
+                    refreshToken,
+                });
+                const tokens = result.tokens ?? result;
+                if (!tokens.accessToken || !tokens.refreshToken)
+                    throw new Error(
+                        "Session renewal returned incomplete tokens.",
+                    );
+                if ((await getSessionValue(accessTokenKey)) !== previous)
+                    return;
+                await Promise.all([
+                    setSessionValue(accessTokenKey, tokens.accessToken),
+                    setSessionValue(refreshTokenKey, tokens.refreshToken),
+                ]);
+            })();
+            try {
+                await renewal;
+            } finally {
+                renewal = undefined;
+            }
+        },
         getAccessToken: () => getSessionValue(accessTokenKey),
         completeAuthorizationCode,
         async createAppHandoff(
@@ -532,6 +578,7 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
             return tenant;
         },
         async logout(): Promise<void> {
+            locallyUnlocked = false;
             await Promise.all([
                 deleteSessionValue(accessTokenKey),
                 deleteSessionValue(refreshTokenKey),
@@ -577,28 +624,44 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
                 throw error;
             }
         },
-        async authenticateWithDevice(): Promise<void> {
+        async authenticateWithDevice(pin?: string): Promise<void> {
             if (Platform.OS === "web")
                 throw new Error(
                     "Device authentication is disabled on web. Sign in with your password or Google/Microsoft.",
                 );
-            const [deviceId, deviceToken] = await Promise.all([
-                getSessionValue(deviceIdKey),
-                getDeviceToken(),
-            ]);
-            if (!deviceId || !deviceToken)
+            const deviceId = await getSessionValue(deviceIdKey);
+            if (!deviceId)
                 throw new Error(
                     "Set up device access after signing in with your password.",
                 );
-            await authenticateDeviceIfAvailable("Unlock IndyzAI POS");
+            if (pin !== undefined && !/^\d{4,8}$/.test(pin))
+                throw new Error("Enter your 4 to 8 digit device PIN.");
+            if (pin === undefined) {
+                await authenticateDeviceIfAvailable("Unlock IndyzAI POS");
+                if (
+                    (await getSessionValue(accessTokenKey)) &&
+                    (await this.getStoredUser())
+                ) {
+                    locallyUnlocked = true;
+                    return;
+                }
+            }
+            const deviceToken =
+                pin === undefined ? await getDeviceToken() : null;
+            if (pin === undefined && !deviceToken)
+                throw new Error(
+                    "Device access has expired. Use your registered PIN.",
+                );
             const result = await request<{
                 user: AuthUser;
                 tokens: Tokens;
                 deviceToken: string;
-            }>("/device/token", {
-                deviceId,
-                deviceToken,
-            });
+            }>(
+                pin === undefined ? "/device/token" : "/device/login",
+                pin === undefined
+                    ? { deviceId, deviceToken: deviceToken! }
+                    : { deviceIdentifier: await getDeviceIdentifier(), pin },
+            );
             if (!result.tokens.accessToken)
                 throw new Error("The device did not return a valid session.");
             const selectedTenantId = await getSessionValue(selectedTenantKey);
@@ -608,12 +671,19 @@ export function createAuthApi(configuration: AuthApiConfiguration) {
                 ) ?? result.user.tenants?.[0];
             await Promise.all([
                 setSessionValue(accessTokenKey, result.tokens.accessToken),
+                result.tokens.refreshToken
+                    ? setSessionValue(
+                          refreshTokenKey,
+                          result.tokens.refreshToken,
+                      )
+                    : deleteSessionValue(refreshTokenKey),
                 setSessionValue(userKey, JSON.stringify(result.user)),
                 selectedTenant
                     ? setSessionValue(selectedTenantKey, selectedTenant.id)
                     : deleteSessionValue(selectedTenantKey),
                 setDeviceToken(result.deviceToken),
             ]);
+            locallyUnlocked = true;
         },
         async changeDevicePin(pin: string): Promise<void> {
             if (Platform.OS === "web")

@@ -5,6 +5,38 @@ import { indexedDB, IDBKeyRange } from 'fake-indexeddb';
 import { IndexedDbLocalDatabase } from '@indyzai/pos-database/indexeddb';
 import { createTableMutation, resolveTableMutation } from '@indyzai/pos-database/table-mutations';
 
+test('settings saves retain newer offline edits when an earlier save is acknowledged', async () => {
+    await withDatabase(async (database) => {
+        const config = { table: 'app_settings', entityType: 'SETTINGS' };
+        const first = await createTableMutation(database, config, {
+            localId: 'business-settings',
+            operation: 'UPDATE',
+            payload: { values: { businessName: 'Shop' }, patch: { businessName: 'Shop' } },
+        });
+        const second = await createTableMutation(database, config, {
+            localId: 'business-settings',
+            operation: 'UPDATE',
+            payload: { values: { businessName: 'Shop', currency: 'INR' }, patch: { currency: 'INR' } },
+        });
+        expect(second.job.payload.dependencyJobIds).toContain(first.job.payload.offlineId);
+        await resolveTableMutation(database, config, {
+            jobId: first.job.payload.offlineId,
+            serverId: 'business-settings',
+        });
+        const row = await database.collection('app_settings').get('business-settings');
+        expect(row.payload.values.currency).toBe('INR');
+        expect(row.syncStatus).toBe('PENDING');
+        expect((await database.collection('sync_outbox').get(second.job.id)).syncStatus).toBe('PENDING');
+        await resolveTableMutation(database, config, {
+            jobId: second.job.payload.offlineId,
+            serverId: 'business-settings',
+        });
+        expect((await database.collection('app_settings').get('business-settings')).syncStatus).toBe(
+            'SYNCED',
+        );
+    });
+});
+
 async function withDatabase(work) {
     Dexie.dependencies.indexedDB = indexedDB;
     Dexie.dependencies.IDBKeyRange = IDBKeyRange;

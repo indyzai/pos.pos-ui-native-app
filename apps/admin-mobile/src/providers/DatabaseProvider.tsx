@@ -1,3 +1,4 @@
+import { purchasesApi } from '../features/purchases/purchasesApi';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
     LocalDatabaseProvider,
@@ -19,10 +20,7 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
 import { billingApi } from '../features/billing/billingApi';
-import { ordersApi } from '../features/orders/ordersApi';
-import { applyBootstrapCollections, createScopeKey, getActiveDatabase } from '@indyzai/pos-database';
-import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
-import { purchasesApi } from '../features/purchases/purchasesApi';
+import { SettingsBridge } from '@indyzai/feature-organization/settings';
 import { startBillingOutboxWorker } from '@indyzai/pos-sync';
 import { useOfflineQueueCount } from '@indyzai/pos-database';
 import { useNetworkStatus } from '@indyzai/pos-ui-native';
@@ -135,7 +133,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             {state.database && state.status === 'ready' && session ? (
                 <>
                     <AdminOutboxProcessor database={state.database} />
-                    <BackgroundDataRefresh database={state.database} />
+                    <SettingsBridge />
                 </>
             ) : null}
             {children}
@@ -163,16 +161,3 @@ function AdminOutboxProcessor({ database }: { database: LocalDatabase }) {
     return null;
 }
 export { useLocalDatabase, useRequiredLocalDatabase };
-
-function BackgroundDataRefresh({ database }: { database: LocalDatabase }) {
-    const scope = createScopeKey(database.scope);
-    useBackgroundRefresh(`billing:${scope}`, (signal) => billingApi.refresh(signal, database));
-    useBackgroundRefresh(`orders:${scope}`, async (signal) => {
-        await ordersApi.refresh(signal);
-        if (signal.aborted || getActiveDatabase() !== database) return;
-        const snapshot = await ordersApi.load();
-        if (signal.aborted || getActiveDatabase() !== database) return;
-        await applyBootstrapCollections(database, { orders: snapshot.orders, refunds: snapshot.refunds });
-    });
-    return null;
-}

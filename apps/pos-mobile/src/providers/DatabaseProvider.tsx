@@ -22,9 +22,7 @@ import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
 import { useNetworkStatus } from '@indyzai/pos-ui-native';
 import { billingApi } from '../features/billing/billingApi';
-import { ordersApi } from '../features/orders/ordersApi';
-import { applyBootstrapCollections, createScopeKey, getActiveDatabase } from '@indyzai/pos-database';
-import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
+import { SettingsBridge } from '@indyzai/feature-organization/settings';
 import {
     startBillingOutboxWorker,
     stopBillingOutboxWorker,
@@ -135,7 +133,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             {state.database && state.status === 'ready' && session ? (
                 <>
                     <BillingOutboxProcessor database={state.database} />
-                    <BackgroundDataRefresh database={state.database} />
+                    <SettingsBridge />
                 </>
             ) : null}
             {children}
@@ -165,16 +163,3 @@ function BillingOutboxProcessor({ database }: { database: LocalDatabase }) {
     return null;
 }
 export { useLocalDatabase, useRequiredLocalDatabase };
-
-function BackgroundDataRefresh({ database }: { database: LocalDatabase }) {
-    const scope = createScopeKey(database.scope);
-    useBackgroundRefresh(`billing:${scope}`, (signal) => billingApi.refresh(signal, database));
-    useBackgroundRefresh(`orders:${scope}`, async (signal) => {
-        await ordersApi.refresh(signal);
-        if (signal.aborted || getActiveDatabase() !== database) return;
-        const snapshot = await ordersApi.load();
-        if (signal.aborted || getActiveDatabase() !== database) return;
-        await applyBootstrapCollections(database, { orders: snapshot.orders, refunds: snapshot.refunds });
-    });
-    return null;
-}

@@ -47,8 +47,9 @@ export default function LoginRoute() {
                         await finishLogin();
                     }
                 }}
-                onDeviceLogin={async () => {
-                    await authApi.authenticateWithDevice();
+                hasRegisteredDevice={authApi.hasRegisteredDevice}
+                onDeviceLogin={async (pin) => {
+                    await authApi.authenticateWithDevice(pin);
                     await refreshSession();
                     router.replace('/reports');
                 }}

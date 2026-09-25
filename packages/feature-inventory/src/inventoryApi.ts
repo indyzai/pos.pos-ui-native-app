@@ -72,7 +72,12 @@ export function createInventoryApi(options: {
     scopeKey: (userId: string, tenantId: string) => string;
     billing: {
         load: () => Promise<{ key: string; cache: { updated?: string } }>;
-        refresh: (signal?: AbortSignal) => Promise<unknown>;
+        refresh: (
+            signal?: AbortSignal,
+            database?: null,
+            forceBootstrap?: boolean,
+            collections?: string[],
+        ) => Promise<unknown>;
     };
 }) {
     const requestPos: FeatureRequest = async <T>(
@@ -146,8 +151,9 @@ export function createInventoryApi(options: {
     return {
         load: billingApi.load,
         listJobs: () => listOutboxJobs(scope()),
-        refresh: (signal?: AbortSignal) => billingApi.refresh(signal),
-        async loadReconciliationDrafts() {
+        refresh: (signal?: AbortSignal) =>
+            billingApi.refresh(signal, undefined, false, ["products"]),
+        async loadReconciliationDrafts(signal?: AbortSignal) {
             const session = context();
             const data = await requestPos<{
                 inventoryReconciliationDrafts: Array<{
@@ -170,11 +176,14 @@ export function createInventoryApi(options: {
                 session.token,
                 String(session.tenant.id),
                 reconciliationDraftsQuery,
+                {},
+                signal,
             );
             return data.inventoryReconciliationDrafts;
         },
         async loadProductReferences(
             forceRefresh = false,
+            signal?: AbortSignal,
         ): Promise<ProductReferenceData> {
             const session = context();
             const tenantId = String(session.tenant.id);
@@ -222,19 +231,7 @@ export function createInventoryApi(options: {
                 };
             };
             const cached = await readLocal();
-            const states = await database
-                .collection<LocalRecord<{ collection: string }>>("sync_state")
-                .list();
-            const loaded = new Set(
-                states.map((state) => state.payload.collection),
-            );
-            if (
-                !forceRefresh &&
-                ["categories", "product_uoms", "tax_rates"].every((table) =>
-                    loaded.has(table),
-                )
-            )
-                return cached;
+            if (!forceRefresh) return cached;
             const data = await requestPos<{
                 categories: Array<{
                     id: string | number;
@@ -252,21 +249,31 @@ export function createInventoryApi(options: {
                     percentage: number;
                     isActive?: boolean;
                 }>;
-            }>(session.token, tenantId, productReferencesQuery).catch(
-                (error) => {
-                    if (
-                        !forceRefresh &&
-                        getActiveDatabase() === database &&
-                        context().token === session.token &&
-                        (cached.categories.length ||
-                            cached.units.length ||
-                            cached.taxes.length)
-                    )
-                        return null;
-                    throw error;
-                },
-            );
+            }>(
+                session.token,
+                tenantId,
+                productReferencesQuery,
+                {},
+                signal,
+            ).catch((error) => {
+                if (
+                    !forceRefresh &&
+                    getActiveDatabase() === database &&
+                    context().token === session.token &&
+                    (cached.categories.length ||
+                        cached.units.length ||
+                        cached.taxes.length)
+                )
+                    return null;
+                throw error;
+            });
             if (!data) return cached;
+            if (
+                signal?.aborted ||
+                getActiveDatabase() !== database ||
+                context().token !== session.token
+            )
+                return cached;
             if (![data.categories, data.units, data.taxes].every(Array.isArray))
                 throw new Error("Product reference data is incomplete.");
             await database.transaction(

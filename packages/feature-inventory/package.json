@@ -11,7 +11,8 @@
     "./card": "./src/native/InventoryCard.tsx",
     "./item-modal": "./src/native/AddInventoryItemModal.tsx",
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./*": "./src/*.ts",
+    "./reconcile-modal": "./src/native/ReconcileStockModal.tsx"
   },
   "dependencies": {
     "@indyzai/feature-billing": "workspace:*",

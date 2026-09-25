@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SettingsToggle as Switch } from '@indyzai/pos-ui-native';
 import {
     ChevronDown,
     ChevronUp,

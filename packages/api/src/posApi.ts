@@ -1,4 +1,5 @@
-import { createGraphQLClient, requestJson } from './index';
+import { createGraphQLClient } from './graphql';
+import { requestJson } from './http';
 import { createLogger } from '@indyzai/pos-utils';
 
 export interface PosApiClientOptions {

@@ -5,6 +5,8 @@ import { readBillingSnapshot, writeBillingSnapshot } from '@indyzai/feature-bill
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { fetchCatalog } from '@indyzai/feature-catalog/catalogApi';
+import { settingsApi } from '../settings/settingsApi';
+import { printerConfigurationApi } from '../printing/printerConfigurationApi';
 import {
     createPendingSale,
     syncPendingSales,
@@ -93,7 +95,12 @@ const billingBootstrapCollections = [
     'taxRates',
     'counterSessions',
 ];
-async function updatedBootstrapCollections(c: Context, database: LocalDatabase, signal?: AbortSignal) {
+async function updatedBootstrapCollections(
+    c: Context,
+    database: LocalDatabase,
+    signal?: AbortSignal,
+    targetCollections = billingBootstrapCollections,
+) {
     const states = await database.collection('sync_state').list({ includeDeleted: true });
     const loadedMap = new Map(
         states.map((state) => [
@@ -101,19 +108,19 @@ async function updatedBootstrapCollections(c: Context, database: LocalDatabase, 
             Number((state.payload as { lastSyncedAt?: number }).lastSyncedAt),
         ]),
     );
-    const missing = billingBootstrapCollections.filter(
+    const missing = targetCollections.filter(
         (col) => !loadedMap.has(col) && !loadedMap.has(bootstrapCollectionMap[col] ?? col),
     );
     const loaded = Array.from(loadedMap.values()).filter(Number.isFinite);
-    if (!loaded.length) return billingBootstrapCollections;
+    if (!loaded.length) return targetCollections;
 
     const result = await requestPosHasUpdates<{ updates: Record<string, boolean> }>(c.token, c.tenant, {
         since: new Date(Math.max(...loaded)).toISOString(),
         route: '/',
-        collections: billingBootstrapCollections,
+        collections: targetCollections,
         signal,
     });
-    return billingBootstrapCollections.filter(
+    return targetCollections.filter(
         (collection) => result.updates[collection] || missing.includes(collection),
     );
 }
@@ -165,15 +172,25 @@ export const billingApi = {
         const c = await context();
         return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
     },
-    refresh: (signal?: AbortSignal, database?: LocalDatabase | null, forceBootstrap = false) =>
+    refresh: (
+        signal?: AbortSignal,
+        database?: LocalDatabase | null,
+        forceBootstrap = false,
+        requestedCollections?: string[],
+    ) =>
         pullQueue.run(async () => {
             const c = await context();
             const cache = await read(c);
             const targetDb = database ?? getActiveDatabase();
             const collections =
                 targetDb && !forceBootstrap
-                    ? await updatedBootstrapCollections(c, targetDb, signal)
-                    : billingBootstrapCollections;
+                    ? await updatedBootstrapCollections(
+                          c,
+                          targetDb,
+                          signal,
+                          requestedCollections ?? billingBootstrapCollections,
+                      )
+                    : (requestedCollections ?? billingBootstrapCollections);
             if (!collections.length) return;
             const bootstrap = await requestPosBootstrap<{
                 generatedAt: string;
@@ -309,6 +326,9 @@ export const billingApi = {
         }),
     sync: (signal?: AbortSignal) =>
         pushQueue.run(async () => {
+            // A settings failure must not prevent financial outbox jobs from progressing.
+            await settingsApi.pushPending(signal).catch(() => undefined);
+            await printerConfigurationApi.pushPending(signal).catch(() => undefined);
             if (getActiveDatabase()) await purchasesApi.pushPending(signal);
             const c = await context();
             const cache = await read(c);

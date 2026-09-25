@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
+import { usePathname } from 'expo-router';
+import { createScopeKey } from '@indyzai/pos-database';
+import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
+import { printerConfigurationApi } from '../../printing/printerConfigurationApi';
 import { getNetworkStatusSnapshot } from '@indyzai/pos-ui-native';
 import { billingApi, type BillingCache } from '../billingApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
@@ -37,6 +41,7 @@ const useTaxRateTable = createLocalFirstTableHook<BillingTaxRate>({
 });
 
 export function useBillingData(businessTypeOverride?: BillingMode) {
+    const pathname = usePathname();
     const queryClient = useQueryClient();
     const running = useRef(false);
     const auth = useAuthSession();
@@ -44,6 +49,16 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
         businessTypeOverride ?? resolveBillingMode(auth.session?.organization?.settings.businessType).mode;
     const local = useLocalDatabase();
     const ready = !auth.initializing && !!auth.session && local.status === 'ready';
+    const pageScope =
+        ready && local.database && pathname === '/billing' ? createScopeKey(local.database.scope) : undefined;
+    const counterId = auth.session?.organization?.activeSession?.counterId;
+    useBackgroundRefresh(pageScope ? `billing:${pageScope}` : undefined, (signal) =>
+        billingApi.refresh(signal, local.database),
+    );
+    useBackgroundRefresh(
+        pageScope && counterId ? `billing-printers:${pageScope}:${counterId}` : undefined,
+        (signal) => printerConfigurationApi.refresh(counterId, signal),
+    );
     const userId = auth.session?.user.id;
     const tenantId = auth.session?.tenant.id;
     const query = useQuery<{ key: string; cache: BillingCache }>({
@@ -97,7 +112,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
     const autoRefreshEnabled = settings?.autoRefresh === true || settings?.autoRefreshEnabled === true;
     const autoRefreshSeconds = Math.max(15, Number(settings?.autoRefreshIntervalSeconds ?? 60));
     useEffect(() => {
-        if (!autoRefreshEnabled || !ready || !local.database) return;
+        if (!autoRefreshEnabled || !ready || !local.database || pathname !== '/billing') return;
         let controller: AbortController | undefined;
         const timer = setInterval(() => {
             if (running.current || controller || !local.database || getNetworkStatusSnapshot() !== true)
@@ -117,7 +132,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
             clearInterval(timer);
             controller?.abort();
         };
-    }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready]);
+    }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready, pathname]);
     const error = syncMutation.error ?? query.error;
     const data = useMemo(() => {
         if (!ready || !query.data) return undefined;

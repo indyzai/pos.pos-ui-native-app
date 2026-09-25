@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { usePathname } from "expo-router";
+import { useBackgroundRefresh } from "@indyzai/pos-ui-native";
 import { useLocalDatabase } from "@indyzai/pos-database/react";
 import { useAuthSession } from "@indyzai/pos-auth/session";
 import type { InventoryApi } from "../inventoryApi";
@@ -28,11 +30,18 @@ const useStockCounts = createLocalFirstTableHook<StockReconciliationRecord>({
 });
 
 export function useInventory(inventoryApi: InventoryApi) {
+    const pathname = usePathname();
     const auth = useAuthSession();
     const local = useLocalDatabase();
     const queryClient = useQueryClient();
     const ready =
         !auth.initializing && !!auth.session && local.status === "ready";
+    useBackgroundRefresh(
+        ready && local.database && pathname === "/inventory"
+            ? `inventory:${createScopeKey(local.database.scope)}`
+            : undefined,
+        (signal) => inventoryApi.refresh(signal),
+    );
     const queryKey = [
         "billing-cache",
         auth.session?.user.id,

@@ -1,0 +1,5 @@
+{
+  "platforms": ["android", "ios"],
+  "android": { "modules": ["com.indyzai.printing.IndyzPrinterModule"] },
+  "ios": { "modules": ["IndyzPrinterModule"] }
+}

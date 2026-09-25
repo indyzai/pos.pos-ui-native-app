@@ -22,6 +22,7 @@
     "./branding": "./src/branding/PosLogo.tsx"
   },
   "dependencies": {
+    "@gluestack-ui/core": "5.0.15",
     "@indyzai/pos-utils": "workspace:*",
     "lucide-react-native": "^1.41.0",
     "react-native-paper": "^5.15.3"

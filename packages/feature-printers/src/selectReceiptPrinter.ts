@@ -5,9 +5,9 @@ export function receiptPrinters(printers: CounterPrinter[], counterId: string) {
         (printer) =>
             (!printer.counterId || printer.counterId === counterId) &&
             printer.isActive &&
-            (printer.type.toLowerCase() === "receipt" ||
-                printer.printerTypes?.some(
-                    (type) => type.toLowerCase() === "receipt",
+            (["receipt", "thermal"].includes(printer.type.toLowerCase()) ||
+                printer.printerTypes?.some((type) =>
+                    ["receipt", "thermal"].includes(type.toLowerCase()),
                 )),
     );
 }

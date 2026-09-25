@@ -8,7 +8,7 @@ import { useBottomNavigation, useBottomNavigationClearance } from '@indyzai/pos-
 import { useAppHeader } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
-import { RefundDialog } from './components/RefundDialog';
+import { RefundDialog } from '@indyzai/feature-orders/native/RefundDialog';
 import { useOrders } from './useOrders';
 import type { SalesOrder } from '@indyzai/feature-orders/types';
 import { refundableQuantity } from '@indyzai/feature-orders/refundPolicy';
@@ -35,7 +35,11 @@ export function OrdersScreen() {
         if (controller.current) return;
         const next = new AbortController();
         controller.current = next;
-        setRefreshJob({ id: `orders-${Date.now()}`, text: 'Refreshing orders', cancel: () => next.abort() });
+        setRefreshJob({
+            id: `orders-${Date.now()}`,
+            text: 'Refreshing orders',
+            cancel: () => next.abort(),
+        });
         logger.info('Refreshing orders');
         try {
             await data.refresh(next.signal);
@@ -104,7 +108,9 @@ export function OrdersScreen() {
                 total: order.totalAmount,
                 rounding: 0,
             },
-            payment: { method: (order.paymentType?.code || order.paymentMethod || 'CASH') as never },
+            payment: {
+                method: (order.paymentType?.code || order.paymentMethod || 'CASH') as never,
+            },
             customer: order.customerName ? { id: '', name: order.customerName, type: 'CUSTOMER' } : undefined,
             currencyCode,
         });
@@ -290,7 +296,9 @@ export function OrdersScreen() {
                     void data
                         .createRefund({ order: refundOrder!, selections, reason, method })
                         .then(() => {
-                            logger.info('Refund saved successfully', { billId: refundOrder?.billId });
+                            logger.info('Refund saved successfully', {
+                                billId: refundOrder?.billId,
+                            });
                             setRefundOrder(undefined);
                             setTab('refunds');
                             showSnackbar(
@@ -357,17 +365,34 @@ const s = StyleSheet.create({
     },
     searchInput: { flex: 1, fontSize: 13 },
     tabs: { flexDirection: 'row', gap: 7 },
-    tab: { flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+    tab: {
+        flex: 1,
+        minHeight: 40,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     tabText: { fontSize: 11, fontWeight: '900' },
     card: { borderWidth: 1, borderRadius: 15, padding: 13, gap: 10 },
     cardTop: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-    cardIcon: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+    cardIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     cardCopy: { flex: 1 },
     cardTitle: { fontSize: 13, fontWeight: '900' },
     meta: { fontSize: 9, marginTop: 3 },
     amount: { fontSize: 13, fontWeight: '900' },
     items: { fontSize: 10, lineHeight: 15 },
-    cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    cardBottom: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
     status: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     statusText: { fontSize: 9, fontWeight: '900', textTransform: 'uppercase' },
     refund: {

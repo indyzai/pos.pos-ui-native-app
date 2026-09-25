@@ -4,6 +4,8 @@ import { readBillingSnapshot, writeBillingSnapshot } from '@indyzai/feature-bill
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { fetchCatalog } from '@indyzai/feature-catalog/catalogApi';
+import { settingsApi } from '../settings/settingsApi';
+import { printerConfigurationApi } from '../printing/printerConfigurationApi';
 import {
     createPendingSale,
     syncPendingSales,
@@ -253,13 +255,18 @@ export const billingApi = {
         const c = await context();
         return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
     },
-    refresh: (signal?: AbortSignal, database?: LocalDatabase | null, forceBootstrap = false) =>
+    refresh: (
+        signal?: AbortSignal,
+        database?: LocalDatabase | null,
+        forceBootstrap = false,
+        requestedCollections?: string[],
+    ) =>
         pullQueue.run(async () => {
             const c = await context();
             const targetDb = database ?? getActiveDatabase();
-            await customersApi.sync(signal, targetDb).catch(() => undefined);
+            if (!requestedCollections) await customersApi.sync(signal, targetDb).catch(() => undefined);
             const cache = await read(c);
-            const targetCollections = getTargetBootstrapCollections();
+            const targetCollections = requestedCollections ?? getTargetBootstrapCollections();
             const collections =
                 targetDb && !forceBootstrap
                     ? await updatedBootstrapCollections(c, targetDb, signal, targetCollections)
@@ -415,6 +422,9 @@ export const billingApi = {
         }),
     sync: (signal?: AbortSignal) =>
         pushQueue.run(async () => {
+            // A settings failure must not prevent financial outbox jobs from progressing.
+            await settingsApi.pushPending(signal).catch(() => undefined);
+            await printerConfigurationApi.pushPending(signal).catch(() => undefined);
             const c = await context();
             const database = getActiveDatabase();
             if (database) {

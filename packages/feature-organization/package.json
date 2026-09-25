@@ -6,13 +6,22 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
+    "@indyzai/pos-application": "workspace:*",
+    "@indyzai/pos-permissions": "workspace:*",
+    "@indyzai/pos-ui-native": "workspace:*",
+    "@indyzai/feature-flags": "workspace:*",
     "@indyzai/pos-auth": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
     "@indyzai/pos-storage-native": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "exports": {
+    "./settings": "./src/SettingsSection.tsx",
     ".": "./src/index.ts",
     "./*": "./src/*.ts"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
   }
 }

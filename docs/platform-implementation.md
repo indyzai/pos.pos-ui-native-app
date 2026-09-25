@@ -52,7 +52,7 @@ No duplicate endpoints or speculative `syncChanges` / `pushChanges` GraphQL call
 - Implement or complete Admin dashboards, organization/branch/counter/user workflows, pricing, suppliers, approvals, finance screens, alerts, and multi-branch views.
 - Complete split/partial payments, provider adapters, store credit, service charging rules, scrap lifecycle/excess-value settlement, manager authorization, and shift workflows.
 - Complete incremental cursor synchronization, conflict resolution, OS background execution, and mutation handlers beyond the sale/customer/purchase workflows implemented here.
-- Implement native printer discovery/transports, receipt/barcode rendering, printer management screens, durable hardware print jobs, and physical-device validation. Server job acknowledgement is not proof that a receipt printed.
+- Validate the Android printer implementation on physical devices; add iOS/BLE, raster/Unicode and vendor-specific drivers where required. Server acknowledgement or a successful raw write is not proof that paper printed. See `docs/printers.md` for implemented scope and outstanding hardware checks.
 - Integrate Zustand, Zod, and GraphQL Code Generator with the verified schema and the completed shared services.
 - Run native iOS/Android integration tests, offline restart/recovery tests, tenant isolation tests, migration tests, API permission tests, and physical printer tests.
 
@@ -97,3 +97,24 @@ Production readiness cannot be inferred from TypeScript and unit tests alone. Th
 - Both POS and Admin Android Expo exports completed successfully. This validates bundling, not on-device behavior or a signed release build.
 - The local Expo runtime warned that Node 20.17.0 is below its supported minimum of 20.19.4; upgrade the build environment before release.
 - No backend deployment or physical printer validation was performed.
+
+### Offline reopening and background refresh (2026-09-24)
+
+- Both apps restore stored identity, organization settings, branches and the last acknowledged counter session locally. Network hydration no longer holds the startup screen.
+- Billing, orders/reports, purchase history and product reference data refresh silently after confirmed connectivity; manual refresh retains explicit progress. Unmounting cancels background work, and late responses are checked against the current workspace.
+- Reports merge durable local bills with downloaded orders using the offline ID to prevent double counting after sync. Refunds for local-only bills wait for a server order ID.
+- Opening reports no longer replaces existing projections with stale repository snapshots. Reconciliation draft refresh preserves pending local edits and runs in the background.
+- First login, uncached server data, server-side device PIN verification, AI image analysis and counter open/close acknowledgements still require connectivity. Cached data reflects the last successful download, not live server state. Bootstrap collections remain subject to the server's existing limits.
+- Seven focused orders/offline-projection tests passed. No build or TypeScript checks were run for these changes; previous validation results do not cover them.
+
+### Native settings (2026-09-24)
+
+- Background GraphQL refreshes are now activated by the visible page in both apps. Inventory requests the product collection only; Orders and Reports request order history; Purchases requests history and loads products when its form opens; Settings requests settings or printers for its selected section. The database provider no longer starts all feature refreshes together on network recovery. Cached data remains the initial UI source.
+- The General settings overview precedes editable fields, and setting labels share a row with their toggles on narrow and wide layouts.
+
+- Shared gluestack core Select and Switch controls use the existing native theme. Select options open above modal content and support outside-tap / Android Back dismissal.
+- All nine settings categories now expose typed, validated preference forms in place of placeholder panels. Existing device PIN and outbox activity tools remain available.
+- Admin organization edits persist in `app_settings` through `createLocalFirstTableHook` and enqueue `SETTINGS` mutations. The shared worker sends partial `updateAllSettings` updates, retains failed jobs for retry and preserves newer offline edits when older saves are acknowledged. Background downloads do not overwrite pending changes.
+- POS retains manager-capped organization permissions; appearance and device preferences can be saved locally. Saved themes, brand colors and business settings are applied to existing consumers through the session cache.
+- Access policy, notification, backup and integration fields are saved preferences, not newly implemented server enforcement, scheduled jobs or integration connections. No API secrets are accepted or persisted by these forms. User invitations/role assignment and native printer provisioning are separate workflows, not implemented by this settings form.
+- Ten focused validation, permission and outbox persistence tests passed. No build, type check or on-device UI validation was performed.

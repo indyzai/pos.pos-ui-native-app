@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@indyzai/pos-printing-native": "workspace:*",
     "@indyzai/feature-reports": "workspace:*",
     "@indyzai/pos-auth": "workspace:*",
     "@indyzai/pos-api": "workspace:*",

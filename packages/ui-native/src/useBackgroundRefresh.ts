@@ -33,7 +33,9 @@ export function useBackgroundRefresh(
             lastAttempt = Date.now();
             controller = new AbortController();
             const active = controller;
-            const timeout = setTimeout(() => active.abort(), 12_000);
+            // Paginated history can take longer on mobile networks; individual requests
+            // retain their own transport timeout and never hold up the local UI.
+            const timeout = setTimeout(() => active.abort(), 120_000);
             running.add(key);
             try {
                 await latest.current(active.signal);

@@ -1,22 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, Save, X } from 'lucide-react-native';
-import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { useLocalSearchParams, usePathname } from 'expo-router';
+import { Save } from 'lucide-react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SectionMenu } from '@indyzai/pos-ui-native';
+import { SectionMenu, useBackgroundRefresh } from '@indyzai/pos-ui-native';
+import { createScopeKey, useLocalDatabase } from '@indyzai/pos-database';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAppTheme } from '@indyzai/pos-ui-native';
-import { ComingSoonSettings } from '../features/settings/ComingSoonSettings';
-import { BillingSettingsSection } from '../features/settings/BillingSettingsSection';
+import { SettingsSection } from '@indyzai/feature-organization/settings';
+import { PrinterSettings } from '@indyzai/feature-printers/settings';
+import { printerConfigurationApi } from '../features/printing/printerConfigurationApi';
+import { settingsApi } from '../features/settings/settingsApi';
 import { DeviceSettingsSection } from '../features/settings/DeviceSettingsSection';
 import { GeneralSettingsSection } from '../features/settings/GeneralSettingsSection';
 import { DataSettingsSection } from '../features/settings/DataSettingsSection';
@@ -29,6 +23,7 @@ type SectionId =
     | 'appearance'
     | 'billing'
     | 'devices'
+    | 'printers'
     | 'users'
     | 'notifications'
     | 'integrations'
@@ -49,6 +44,7 @@ const tabSections: ReadonlyArray<{ label: string; tabs: readonly SettingsTab[] }
         tabs: [
             { id: 'billing', label: 'Billing & invoices' },
             { id: 'devices', label: 'Devices & printers' },
+            { id: 'printers', label: 'Printer configuration' },
             { id: 'notifications', label: 'Alerts & reminders' },
         ],
     },
@@ -80,6 +76,8 @@ export default function SettingsRoute() {
 
 function SettingsContent() {
     const params = useLocalSearchParams<{ section?: string }>();
+    const pathname = usePathname();
+    const local = useLocalDatabase();
     const { themeColors: c } = useAppTheme();
     const bottomClearance = useBottomNavigationClearance();
     const { setCenterItem } = useBottomNavigation();
@@ -87,20 +85,20 @@ function SettingsContent() {
         ? (params.section as SectionId)
         : 'general';
     const [section, setSection] = useState<SectionId>(initialSection);
-    const [tabsOpen, setTabsOpen] = useState(false);
-    const [tabsTop, setTabsTop] = useState(75);
-    const tabsButtonRef = useRef<View>(null);
+    const scope =
+        local.database && local.status === 'ready' && pathname === '/settings'
+            ? createScopeKey(local.database.scope)
+            : undefined;
+    useBackgroundRefresh(scope && section !== 'printers' ? `settings:${scope}` : undefined, (signal) =>
+        settingsApi.refresh(signal),
+    );
+    useBackgroundRefresh(scope && section === 'printers' ? `printers:${scope}` : undefined, (signal) =>
+        printerConfigurationApi.refresh(undefined, signal),
+    );
     const saveHandlerRef = useRef<(() => Promise<void>) | null>(null);
     const registerSave = useCallback((handler: (() => Promise<void>) | null) => {
         saveHandlerRef.current = handler;
     }, []);
-    const openTabs = () => {
-        tabsButtonRef.current?.measureInWindow((_x, y, _width, buttonHeight) => {
-            setTabsTop(y + buttonHeight + 4);
-            setTabsOpen(true);
-        });
-    };
-    const toggleTabs = () => (tabsOpen ? setTabsOpen(false) : openTabs());
 
     useEffect(() => {
         setCenterItem({
@@ -114,7 +112,6 @@ function SettingsContent() {
         return () => setCenterItem(null);
     }, [setCenterItem, section]);
 
-    const activeLabel = tabs.find((tab) => tab.id === section)?.label || 'Settings';
     return (
         <SafeAreaView
             style={[s.screen, { backgroundColor: c.background }]}
@@ -132,14 +129,21 @@ function SettingsContent() {
                             <Text style={[s.title, { color: c.text }]}>Settings</Text>
                         </View>
                         {section === 'general' ? <GeneralSettingsSection /> : null}
+                        {section !== 'printers' ? (
+                            <SettingsSection
+                                section={section}
+                                surface="admin"
+                                registerSave={section === 'devices' ? undefined : registerSave}
+                            />
+                        ) : (
+                            <PrinterSettings
+                                api={printerConfigurationApi}
+                                surface="admin"
+                                registerSave={registerSave}
+                            />
+                        )}
                         {section === 'devices' ? <DeviceSettingsSection registerSave={registerSave} /> : null}
-                        {section === 'features' ? (
-                            <BillingSettingsSection registerSave={registerSave} />
-                        ) : null}
                         {section === 'data' ? <DataSettingsSection /> : null}
-                        {!['general', 'devices', 'features', 'data'].includes(section) ? (
-                            <ComingSoonSettings title={activeLabel} />
-                        ) : null}
                     </View>
                 </ScrollView>
                 <SectionMenu

@@ -4,47 +4,47 @@ import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingM
 import type { Product } from '@indyzai/feature-billing/types/billing';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { useAuthSession } from '@indyzai/pos-auth/session';
-import { BulkQuantityDialog } from '../components/BulkQuantityDialog';
+import { BulkQuantityDialog } from '@indyzai/feature-billing/native/BulkQuantityDialog';
 import { canManageWaybills } from '@indyzai/feature-orders/logistics/permissions';
 
 export function WholesaleBillingScreen({ mode }: { mode: BillingModeConfig }) {
-  const { isEnabled } = useFeatureToggles();
-  const auth = useAuthSession();
-  const [bulkProduct, setBulkProduct] = useState<Product>();
+    const { isEnabled } = useFeatureToggles();
+    const auth = useAuthSession();
+    const [bulkProduct, setBulkProduct] = useState<Product>();
 
-  return (
-    <BaseBillingLayout
-      mode={mode}
-      onSelectProduct={(product, { cart, addStandardProduct }) => {
-        if (isEnabled('bulkPricing')) {
-          setBulkProduct(product);
-          return false;
-        }
-        addStandardProduct(product);
-        return true;
-      }}
-      buildOrderContext={({ customer }) => {
-        if (customer?.address && canManageWaybills(auth.session?.tenant.role)) {
-          return {
-            autoCreateWaybill: true,
-            waybillSeller: {
-              name: auth.session?.organization?.name || auth.session?.tenant.name,
-              gstin: String(auth.session?.organization?.settings.gstin || ''),
-              address: String(auth.session?.organization?.settings.address || ''),
-              state: String(auth.session?.organization?.settings.state || ''),
-            },
-          };
-        }
-        return undefined;
-      }}
-      dialogsSlot={({ cart, currencyCode }) => (
-        <BulkQuantityDialog
-          product={bulkProduct}
-          onClose={() => setBulkProduct(undefined)}
-          onAdd={cart.addItem}
-          currencyCode={currencyCode}
+    return (
+        <BaseBillingLayout
+            mode={mode}
+            onSelectProduct={(product, { cart, addStandardProduct }) => {
+                if (isEnabled('bulkPricing')) {
+                    setBulkProduct(product);
+                    return false;
+                }
+                addStandardProduct(product);
+                return true;
+            }}
+            buildOrderContext={({ customer }) => {
+                if (customer?.address && canManageWaybills(auth.session?.tenant.role)) {
+                    return {
+                        autoCreateWaybill: true,
+                        waybillSeller: {
+                            name: auth.session?.organization?.name || auth.session?.tenant.name,
+                            gstin: String(auth.session?.organization?.settings.gstin || ''),
+                            address: String(auth.session?.organization?.settings.address || ''),
+                            state: String(auth.session?.organization?.settings.state || ''),
+                        },
+                    };
+                }
+                return undefined;
+            }}
+            dialogsSlot={({ cart, currencyCode }) => (
+                <BulkQuantityDialog
+                    product={bulkProduct}
+                    onClose={() => setBulkProduct(undefined)}
+                    onAdd={cart.addItem}
+                    currencyCode={currencyCode}
+                />
+            )}
         />
-      )}
-    />
-  );
+    );
 }

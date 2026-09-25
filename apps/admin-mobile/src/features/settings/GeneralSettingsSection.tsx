@@ -9,8 +9,16 @@ export function GeneralSettingsSection() {
     const { session, user } = useAuthSession();
     const organization = session?.organization;
     const settings = organization?.settings ?? {};
-    const branch = organization?.branches.find((item) => item.counters.length) ?? organization?.branches[0];
-    const counter = branch?.counters[0];
+    const active = organization?.activeSession;
+    const branch =
+        organization?.branches.find(
+            (item) =>
+                item.id === active?.branchId ||
+                item.counters.some((counter) => counter.id === active?.counterId),
+        ) ??
+        organization?.branches.find((item) => item.counters.length) ??
+        organization?.branches[0];
+    const counter = branch?.counters.find((item) => item.id === active?.counterId) ?? branch?.counters[0];
     const role = session?.tenant.role || user?.role || 'Team member';
 
     return (

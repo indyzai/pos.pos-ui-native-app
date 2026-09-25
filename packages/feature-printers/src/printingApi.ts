@@ -4,6 +4,7 @@ import {
     type FeatureRequest,
 } from "@indyzai/pos-application";
 import { SerialQueue } from "@indyzai/pos-sync";
+import type { NativePrintDocument } from "@indyzai/pos-printing";
 import type { CounterPrinter, LocalPrintJob, PrintJob } from "./types";
 import {
     receiptPrinters,
@@ -12,6 +13,11 @@ import {
 } from "./selectReceiptPrinter";
 
 export interface PrintingApiOptions {
+    refreshCachedPrinters?: (counterId: string) => Promise<void>;
+    deliverNative?: (
+        printer: CounterPrinter,
+        document: NativePrintDocument,
+    ) => Promise<unknown>;
     getContext: () => FeatureContext;
     request: FeatureRequest;
     createId: () => string;
@@ -77,15 +83,22 @@ export function createPrintingApi(options: PrintingApiOptions) {
     ) {
         const cached = await options.readPrinters(context.scope);
         assertCurrent(context);
-        if (!refresh && receiptPrinters(cached, counterId).length)
-            return receiptPrinters(cached, counterId);
+        if (!refresh) return receiptPrinters(cached, counterId);
+        if (options.refreshCachedPrinters) {
+            await options.refreshCachedPrinters(counterId);
+            assertCurrent(context);
+            return receiptPrinters(
+                await options.readPrinters(context.scope),
+                counterId,
+            );
+        }
         try {
             const data = await options.request<{
                 counterPrinters: CounterPrinter[];
             }>(
                 context.token,
                 context.tenant,
-                `query ReceiptPrinters($counterId: ID) { counterPrinters(counterId: $counterId) { id name counterId branchId type printerTypes status isDefault isActive copies autoPrint } }`,
+                `query ReceiptPrinters($counterId: ID) { counterPrinters(counterId: $counterId) { id name counterId branchId type printerTypes connectionType address port paperSize config status isDefault isActive copies autoPrint } }`,
                 { counterId },
             );
             assertCurrent(context);
@@ -123,6 +136,7 @@ export function createPrintingApi(options: PrintingApiOptions) {
         invoiceNumber: string,
         counterId: string,
         branchId?: string,
+        document?: NativePrintDocument,
     ) {
         assertCurrent(context);
         const job: LocalPrintJob = {
@@ -136,6 +150,25 @@ export function createPrintingApi(options: PrintingApiOptions) {
             status: "QUEUED",
             createdAt: new Date().toISOString(),
         };
+        if (printer.config?.native) {
+            if (!document || !options.deliverNative)
+                throw new Error(
+                    "Receipt content is required for native printing.",
+                );
+            // The native delivery service persists its own audit before touching hardware.
+            // Never enqueue this job with the server's remote printing agent.
+            const delivered = await options.deliverNative(printer, document);
+            return {
+                ...job,
+                id:
+                    delivered &&
+                    typeof delivered === "object" &&
+                    "id" in delivered
+                        ? String(delivered.id)
+                        : job.id,
+                status: "SENT" as const,
+            };
+        }
         await options.savePrintJob(context.scope, job);
         return submit(context, job);
     }
@@ -148,6 +181,7 @@ export function createPrintingApi(options: PrintingApiOptions) {
             invoiceNumber: string,
             counterId: string,
             branchId?: string,
+            document?: NativePrintDocument,
         ) =>
             queue.run(async () => {
                 const context = options.getContext();
@@ -165,12 +199,14 @@ export function createPrintingApi(options: PrintingApiOptions) {
                     invoiceNumber,
                     counterId,
                     branchId,
+                    document,
                 );
             }),
         autoQueueReceipt: (
             invoiceNumber: string,
             counterId: string,
             branchId?: string,
+            document?: NativePrintDocument,
         ) =>
             queue.run(async () => {
                 const context = options.getContext();
@@ -185,6 +221,7 @@ export function createPrintingApi(options: PrintingApiOptions) {
                           invoiceNumber,
                           counterId,
                           branchId,
+                          document,
                       )
                     : undefined;
             }),

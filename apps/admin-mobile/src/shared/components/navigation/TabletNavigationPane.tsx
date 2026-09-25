@@ -1,63 +1,22 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { TabletNavigationPane as SharedNavigation } from '@indyzai/pos-ui-native';
 import { usePathname, useRouter } from 'expo-router';
-import { useAppTheme } from '@indyzai/pos-ui-native';
-import { AppPressable } from '@indyzai/pos-ui-native';
+import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import {
-    isNavigationItemActive,
     tabletNavigationItems,
     visibleNavigationItems,
+    isNavigationItemActive,
 } from '../../navigation/routes';
-import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 export function TabletNavigationPane({ collapsed }: { collapsed: boolean }) {
-    const { themeColors: c } = useAppTheme();
+    const { flags } = useFeatureToggles();
     const pathname = usePathname();
     const router = useRouter();
-    const { flags } = useFeatureToggles();
     return (
-        <View
-            style={[
-                s.pane,
-                collapsed && s.collapsed,
-                { backgroundColor: c.surface, borderRightColor: c.outline },
-            ]}
-        >
-            {visibleNavigationItems(tabletNavigationItems, flags).map(({ icon: Icon, label, href }) => {
-                const active = isNavigationItemActive(pathname, href);
-                return (
-                    <AppPressable
-                        key={label}
-                        onPress={() => router.replace(href)}
-                        style={[
-                            s.item,
-                            collapsed && s.collapsedItem,
-                            active && { backgroundColor: c.primarySoft },
-                        ]}
-                    >
-                        <Icon size={18} color={active ? c.primary : c.textSecondary} strokeWidth={2.2} />
-                        {!collapsed && (
-                            <Text style={[s.label, { color: active ? c.primary : c.textSecondary }]}>
-                                {label}
-                            </Text>
-                        )}
-                    </AppPressable>
-                );
-            })}
-        </View>
+        <SharedNavigation
+            collapsed={collapsed}
+            items={visibleNavigationItems(tabletNavigationItems, flags)}
+            isActive={(href) => isNavigationItemActive(pathname, href)}
+            onNavigate={(href) => router.replace(href)}
+        />
     );
 }
-const s = StyleSheet.create({
-    pane: { width: 184, borderRightWidth: StyleSheet.hairlineWidth, padding: 18, paddingTop: 16 },
-    collapsed: { width: 72, paddingHorizontal: 10 },
-    item: {
-        height: 44,
-        borderRadius: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        paddingHorizontal: 12,
-        marginBottom: 6,
-    },
-    collapsedItem: { paddingHorizontal: 0, justifyContent: 'center' },
-    label: { fontSize: 13, fontWeight: '800' },
-});

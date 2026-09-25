@@ -17,7 +17,8 @@
     "lucide-react-native": "^1.41.0",
     "@indyzai/pos-application": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
-    "@indyzai/pos-sync": "workspace:*"
+    "@indyzai/pos-sync": "workspace:*",
+    "expo-router": "~57.0.19"
   },
   "exports": {
     "./screen": "./src/native/PurchasesScreen.tsx",

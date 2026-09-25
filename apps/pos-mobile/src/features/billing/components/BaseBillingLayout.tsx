@@ -15,11 +15,11 @@ import { useBottomNavigation } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { AppPressable } from '@indyzai/pos-ui-native';
 import { AppBottomSheetShell } from '@indyzai/pos-ui-native';
-import { CatalogToolbar } from './CatalogToolbar';
-import { OrderCart } from './OrderCart';
-import { ProductCatalog } from './ProductCatalog';
+import { CatalogToolbar } from '@indyzai/feature-billing/native/CatalogToolbar';
+import { OrderCart } from '@indyzai/feature-billing/native/OrderCart';
+import { ProductCatalog } from '@indyzai/feature-billing/native/ProductCatalog';
 import { BarcodeScannerModal } from '@indyzai/pos-scanner-native/modal';
-import { CheckoutDialog } from './CheckoutDialog';
+import { CheckoutDialog } from '@indyzai/feature-billing/native/CheckoutDialog';
 import { ReceiptDialog, type ReceiptData } from '@indyzai/feature-billing/receipt-dialog';
 import { billingApi } from '../billingApi';
 import { triggerBillingOutboxWorker } from '../billingOutboxWorker';
@@ -39,16 +39,17 @@ import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { billingPolicy } from '@indyzai/feature-billing/domain/billingTotals';
 import { useHeldOrders } from '../hooks/useHeldOrders';
-import { HeldOrdersDialog } from './HeldOrdersDialog';
-import { CustomerPickerDialog } from './CustomerPickerDialog';
+import { HeldOrdersDialog } from '@indyzai/feature-billing/native/HeldOrdersDialog';
+import { CustomerPickerDialog } from '@indyzai/feature-billing/native/CustomerPickerDialog';
 import { AddInventoryItemModal } from '../../inventory/components/AddInventoryItemModal';
 import { inventoryApi } from '../../inventory/inventoryApi';
-import { PettyCashDialog } from '../../counter-session/components/PettyCashDialog';
+import { PettyCashDialog } from '@indyzai/feature-billing/native/PettyCashDialog';
 import { counterSessionApi } from '../../counter-session/counterSessionApi';
 import { printingApi } from '../../printing/printingApi';
-import { BillingSessionStats } from './BillingSessionStats';
-import { BillingModeBadge } from './BillingModeBadge';
-import { ScrapExchangeDialog } from './ScrapExchangeDialog';
+import { receiptDocument } from '@indyzai/feature-printers/receiptDocument';
+import { BillingSessionStats } from '@indyzai/feature-billing/native/BillingSessionStats';
+import { BillingModeBadge } from '@indyzai/feature-billing/native/BillingModeBadge';
+import { ScrapExchangeDialog } from '@indyzai/feature-billing/native/ScrapExchangeDialog';
 import { canManageScrap } from '@indyzai/feature-scrap/permissions';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { usePermissions } from '@indyzai/pos-auth/permissions';
@@ -370,7 +371,10 @@ export function BaseBillingLayout({
 
     const holdCurrentOrder = async () => {
         if (!cart.items.length) return;
-        logger.info('Holding current order', { itemCount: cart.items.length, customerId: customer?.id });
+        logger.info('Holding current order', {
+            itemCount: cart.items.length,
+            customerId: customer?.id,
+        });
         try {
             await heldOrders.hold(cart.items, cart.orderDiscount, customer, getOrderContext(), scrapExchange);
             cart.clearCart();
@@ -437,7 +441,7 @@ export function BaseBillingLayout({
             onOrderCleared?.();
             const organization = auth.session?.organization;
             const activeSession = organization?.activeSession;
-            setReceipt({
+            const completedReceipt: ReceiptData = {
                 id: sale.receiptNumber,
                 businessName: organization?.name || auth.session?.tenant.name || 'IndyzAI POS',
                 branchName: activeSession?.branchName || 'Branch',
@@ -449,15 +453,28 @@ export function BaseBillingLayout({
                 currencyCode,
                 customer,
                 orderContext,
-            });
+            };
+            setReceipt(completedReceipt);
             if (activeSession) {
                 void printingApi
-                    .autoQueueReceipt(sale.receiptNumber, activeSession.counterId, activeSession.branchId)
-                    .catch(() => undefined);
+                    .autoQueueReceipt(
+                        sale.receiptNumber,
+                        activeSession.counterId,
+                        activeSession.branchId,
+                        receiptDocument(completedReceipt),
+                    )
+                    .catch((error) =>
+                        showSnackbar(
+                            'Sale saved; printing needs attention',
+                            error instanceof Error ? error.message : 'Check the printer.',
+                        ),
+                    );
             }
             await billing.reload();
         } catch (e) {
-            logger.error('Checkout failed', { error: e instanceof Error ? e.message : String(e) });
+            logger.error('Checkout failed', {
+                error: e instanceof Error ? e.message : String(e),
+            });
             showSnackbar('Sale not saved', e instanceof Error ? e.message : 'Please try again.');
         } finally {
             setSubmitting(false);
@@ -515,7 +532,10 @@ export function BaseBillingLayout({
             return;
         }
         setRecordingPettyCash(true);
-        logger.info('Recording petty cash', { type: input.type, amount: input.amount });
+        logger.info('Recording petty cash', {
+            type: input.type,
+            amount: input.amount,
+        });
         try {
             await counterSessionApi.recordPettyCash(session.token, String(session.tenant.id), {
                 ...input,
@@ -930,13 +950,16 @@ export function BaseBillingLayout({
                                       receipt.id,
                                       session.counterId,
                                       session.branchId,
+                                      receiptDocument(receipt),
                                   );
                                   showSnackbar(
-                                      job.status === 'COMPLETED'
-                                          ? 'Printed'
-                                          : job.status === 'SUBMITTED'
-                                            ? 'Print queued'
-                                            : 'Print saved for retry',
+                                      job.status === 'SENT'
+                                          ? 'Sent to printer'
+                                          : job.status === 'COMPLETED'
+                                            ? 'Printed'
+                                            : job.status === 'SUBMITTED'
+                                              ? 'Print queued'
+                                              : 'Print saved for retry',
                                       `${job.printerName} · job ${job.serverId || job.id}${job.error ? `\n${job.error}` : ''}`,
                                   );
                               } catch (error) {
@@ -975,7 +998,11 @@ export function BaseBillingLayout({
 const s = StyleSheet.create({
     root: { flex: 1 },
     workspace: { flex: 1, flexDirection: 'row' },
-    rightCart: { width: 390, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: '#C3C6CF' },
+    rightCart: {
+        width: 390,
+        borderLeftWidth: StyleSheet.hairlineWidth,
+        borderLeftColor: '#C3C6CF',
+    },
     content: { flexGrow: 1 },
     wideCart: {
         position: 'absolute',
@@ -994,8 +1021,16 @@ const s = StyleSheet.create({
     wideCartIcon: { fontSize: 20 },
     wideCartText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
     modal: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(24, 29, 55, 0.34)' },
-    sheet: { height: '75%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+    backdrop: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: 'rgba(24, 29, 55, 0.34)',
+    },
+    sheet: {
+        height: '75%',
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+    },
     tabletSheet: {
         width: '86%',
         maxWidth: 720,

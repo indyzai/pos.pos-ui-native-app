@@ -10,7 +10,25 @@
     "./product-icons": "./src/native/productIcons.tsx",
     ".": "./src/index.ts",
     "./*": "./src/*.ts",
-    "./*/*": "./src/*/*.ts"
+    "./*/*": "./src/*/*.ts",
+    "./native/RestaurantItemDialog": "./src/native/RestaurantItemDialog.tsx",
+    "./native/RestaurantOrderMode": "./src/native/RestaurantOrderMode.tsx",
+    "./native/CatalogToolbar": "./src/native/CatalogToolbar.tsx",
+    "./native/BillingModeBadge": "./src/native/BillingModeBadge.tsx",
+    "./native/CustomerPickerDialog": "./src/native/CustomerPickerDialog.tsx",
+    "./native/HeldOrdersDialog": "./src/native/HeldOrdersDialog.tsx",
+    "./native/CheckoutDialog": "./src/native/CheckoutDialog.tsx",
+    "./native/ScrapExchangeDialog": "./src/native/ScrapExchangeDialog.tsx",
+    "./native/ElectronicsItemDialog": "./src/native/ElectronicsItemDialog.tsx",
+    "./native/ServiceConfigurationDialog": "./src/native/ServiceConfigurationDialog.tsx",
+    "./native/OrderCart": "./src/native/OrderCart.tsx",
+    "./native/PharmacyBatchDialog": "./src/native/PharmacyBatchDialog.tsx",
+    "./native/SwipeableCartRow": "./src/native/SwipeableCartRow.tsx",
+    "./native/BillingSessionStats": "./src/native/BillingSessionStats.tsx",
+    "./native/BulkQuantityDialog": "./src/native/BulkQuantityDialog.tsx",
+    "./native/ProductCatalog": "./src/native/ProductCatalog.tsx",
+    "./native/PharmacyPrescriptionContext": "./src/native/PharmacyPrescriptionContext.tsx",
+    "./native/PettyCashDialog": "./src/native/PettyCashDialog.tsx"
   },
   "dependencies": {
     "@indyzai/pos-ui-native": "workspace:*",
@@ -18,7 +36,9 @@
     "@indyzai/feature-flags": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "expo-crypto": "~57.0.2"
+    "expo-crypto": "~57.0.2",
+    "expo-linear-gradient": "~57.0.1",
+    "react-native-qrcode-svg": "^6.3.24"
   },
   "peerDependencies": {
     "react": "19.2.3",

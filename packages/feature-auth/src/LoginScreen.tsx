@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     Platform,
     ScrollView,
     StyleSheet,
@@ -30,11 +31,13 @@ export function LoginScreen({
     onSignUp,
     onSocialLogin,
     onDeviceLogin,
+    hasRegisteredDevice,
 }: {
     onLogin: (credentials: LoginCredentials) => Promise<void>;
     onSignUp: () => void;
     onSocialLogin: (provider: "google" | "microsoft") => Promise<void>;
-    onDeviceLogin: () => Promise<void>;
+    onDeviceLogin: (pin?: string) => Promise<void>;
+    hasRegisteredDevice?: () => Promise<boolean>;
 }) {
     const ui = getAuthUi();
     const { themeColors: c } = ui.useTheme();
@@ -52,6 +55,28 @@ export function LoginScreen({
     const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [registered, setRegistered] = useState<boolean | null>(
+        Platform.OS === "web" ? false : null,
+    );
+    const [showAccountLogin, setShowAccountLogin] = useState(false);
+    const [devicePin, setDevicePin] = useState("");
+    useEffect(() => {
+        let active = true;
+        if (!hasRegisteredDevice) {
+            setRegistered(false);
+            return;
+        }
+        void hasRegisteredDevice()
+            .then((value) => {
+                if (active) setRegistered(value);
+            })
+            .catch(() => {
+                if (active) setRegistered(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, [hasRegisteredDevice]);
     const submit = async () => {
         if (!email.trim() || !password)
             return ui.showSnackbar(
@@ -79,17 +104,199 @@ export function LoginScreen({
             setLoading(false);
         }
     };
-    const deviceLogin = async () => {
+    const deviceLogin = async (pin?: string) => {
         setAuthError(null);
         setLoading(true);
         try {
-            await onDeviceLogin();
+            await onDeviceLogin(pin);
+            setDevicePin("");
         } catch (error) {
             setAuthError(getLoginErrorMessage(error));
         } finally {
             setLoading(false);
         }
     };
+    if (registered === null || (registered && !showAccountLogin)) {
+        return (
+            <View
+                style={[
+                    s.screen,
+                    !wideLayout && s.singleColumn,
+                    { backgroundColor: c.background },
+                ]}
+            >
+                <AuthBranding
+                    title={ui.loginTitle}
+                    subtitle={ui.loginSubtitle}
+                    fullScreen={brandedMobileLayout}
+                />
+                <ScrollView
+                    automaticallyAdjustKeyboardInsets
+                    keyboardDismissMode="interactive"
+                    keyboardShouldPersistTaps="handled"
+                    style={s.formScroll}
+                    contentContainerStyle={[
+                        s.formArea,
+                        { paddingHorizontal: sidePadding },
+                        compactLayout && s.compactFormArea,
+                        brandedMobileLayout && s.brandedFormArea,
+                        compactBrandedLayout && s.landscapeBrandedFormArea,
+                    ]}
+                >
+                    <View
+                        style={[
+                            s.card,
+                            {
+                                maxWidth: cardWidth,
+                                padding: compactLayout ? 20 : cardPadding,
+                                backgroundColor: c.surface,
+                                borderColor: c.outlineMuted,
+                                gap: 14,
+                            },
+                        ]}
+                    >
+                        {registered === null ? (
+                            <>
+                                <ActivityIndicator color={c.text} />
+                                <Text
+                                    style={[
+                                        s.subtitle,
+                                        {
+                                            color: c.textSecondary,
+                                            marginBottom: 0,
+                                        },
+                                    ]}
+                                >
+                                    Checking this device…
+                                </Text>
+                            </>
+                        ) : (
+                            <>
+                                <ShieldCheck
+                                    size={36}
+                                    color="#6677E8"
+                                    strokeWidth={2}
+                                    style={{ alignSelf: "center" }}
+                                />
+                                <Text style={[s.title, { color: c.text }]}>
+                                    Unlock this device
+                                </Text>
+                                <Text
+                                    style={[
+                                        s.subtitle,
+                                        {
+                                            color: c.textSecondary,
+                                            marginBottom: 4,
+                                        },
+                                    ]}
+                                >
+                                    Enter your registered PIN or use your
+                                    phone’s screen lock.
+                                </Text>
+                                {authError ? (
+                                    <View
+                                        accessibilityRole="alert"
+                                        style={[
+                                            s.errorMessage,
+                                            {
+                                                backgroundColor: c.errorSoft,
+                                                borderColor: c.error,
+                                                marginBottom: 0,
+                                            },
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                s.errorText,
+                                                { color: c.error },
+                                            ]}
+                                        >
+                                            {authError}
+                                        </Text>
+                                    </View>
+                                ) : null}
+                                <TextInput
+                                    value={devicePin}
+                                    onChangeText={(value) => {
+                                        setDevicePin(value.replace(/\D/g, ""));
+                                        setAuthError(null);
+                                    }}
+                                    secureTextEntry
+                                    keyboardType="number-pad"
+                                    maxLength={8}
+                                    editable={!loading}
+                                    placeholder="Device PIN"
+                                    placeholderTextColor={c.textSecondary}
+                                    accessibilityLabel="Registered device PIN"
+                                    style={[
+                                        s.input,
+                                        {
+                                            color: c.text,
+                                            borderColor: c.outline,
+                                            marginBottom: 0,
+                                        },
+                                    ]}
+                                />
+                                <AppPressable
+                                    disabled={loading || devicePin.length < 4}
+                                    onPress={() => void deviceLogin(devicePin)}
+                                    style={[
+                                        s.primary,
+                                        (loading || devicePin.length < 4) &&
+                                            s.disabled,
+                                    ]}
+                                >
+                                    <Text style={s.primaryText}>
+                                        {loading
+                                            ? "Unlocking…"
+                                            : "Unlock with PIN"}
+                                    </Text>
+                                </AppPressable>
+                                <AppPressable
+                                    disabled={loading}
+                                    onPress={() => void deviceLogin()}
+                                    style={[
+                                        s.deviceLogin,
+                                        {
+                                            borderColor: c.outline,
+                                            backgroundColor: c.surfaceMuted,
+                                            marginTop: 0,
+                                        },
+                                        loading && s.disabled,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            s.deviceLoginText,
+                                            { color: c.text },
+                                        ]}
+                                    >
+                                        Use Face ID, fingerprint, or phone lock
+                                    </Text>
+                                </AppPressable>
+                                <AppPressable
+                                    disabled={loading}
+                                    onPress={() => {
+                                        setShowAccountLogin(true);
+                                        setAuthError(null);
+                                    }}
+                                    accessibilityRole="button"
+                                    style={{
+                                        alignItems: "center",
+                                        padding: 10,
+                                    }}
+                                >
+                                    <Text style={s.link}>
+                                        Sign in with another account
+                                    </Text>
+                                </AppPressable>
+                            </>
+                        )}
+                    </View>
+                </ScrollView>
+            </View>
+        );
+    }
     return (
         <View
             style={[
@@ -148,6 +355,23 @@ export function LoginScreen({
                     <Text style={[s.subtitle, { color: c.textSecondary }]}>
                         Please sign in to continue
                     </Text>
+                    {registered && showAccountLogin ? (
+                        <AppPressable
+                            accessibilityRole="button"
+                            disabled={loading}
+                            onPress={() => {
+                                setShowAccountLogin(false);
+                                setAuthError(null);
+                            }}
+                            style={{
+                                alignSelf: "center",
+                                padding: 10,
+                                marginBottom: 10,
+                            }}
+                        >
+                            <Text style={s.link}>Back to device PIN</Text>
+                        </AppPressable>
+                    ) : null}
                     {authError && (
                         <View
                             accessibilityRole="alert"
@@ -291,27 +515,6 @@ export function LoginScreen({
                             </Text>
                         </AppPressable>
                     </View>
-                    {Platform.OS !== "web" && (
-                        <AppPressable
-                            disabled={loading}
-                            onPress={() => void deviceLogin()}
-                            style={[
-                                s.deviceLogin,
-                                {
-                                    borderColor: c.outline,
-                                    backgroundColor: c.surfaceMuted,
-                                },
-                                loading && s.disabled,
-                            ]}
-                        >
-                            <Text
-                                style={[s.deviceLoginText, { color: c.text }]}
-                            >
-                                Unlock with Face ID, fingerprint, or device
-                                passcode
-                            </Text>
-                        </AppPressable>
-                    )}
                     <Text style={[s.footer, { color: c.textSecondary }]}>
                         Don’t have an account?{" "}
                         <Text style={s.link} onPress={onSignUp}>

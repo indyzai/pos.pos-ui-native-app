@@ -26,6 +26,8 @@ export function buildPendingRefund(
     offlineId: string,
     createdAt: string,
 ): RefundRecord {
+    if (order.localOnly)
+        throw new Error("Sync this bill before creating a refund.");
     if (
         new Set(selections.map((selection) => selection.productId)).size !==
         selections.length

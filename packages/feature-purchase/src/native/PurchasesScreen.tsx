@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "expo-router";
 import {
     Modal,
     ScrollView,
@@ -35,6 +36,7 @@ import { type AppSurface } from "@indyzai/pos-permissions";
 import { usePermissions } from "@indyzai/pos-auth/permissions";
 import {
     createLocalFirstTableHook,
+    createScopeKey,
     useLocalDatabase,
 } from "@indyzai/pos-database";
 import type { Product } from "@indyzai/feature-billing/types/billing";
@@ -57,10 +59,13 @@ const usePurchases = createLocalFirstTableHook<Purchase>({
 export function PurchasesScreen({
     surface = "pos",
     api,
+    refreshProducts,
 }: {
     surface?: AppSurface;
     api: ReturnType<typeof createPurchasesApi>;
+    refreshProducts?: (signal?: AbortSignal) => Promise<unknown>;
 }) {
+    const pathname = usePathname();
     const { themeColors: c } = useAppTheme();
     const { width, height } = useWindowDimensions();
     const { setCenterItem } = useBottomNavigation();
@@ -124,10 +129,23 @@ export function PurchasesScreen({
         return () => setFeatureLoading(undefined);
     }, [purchases.loading, refreshing, setFeatureLoading]);
     useBackgroundRefresh(
-        auth.session && local.status === "ready"
-            ? `purchases:${surface}:${auth.session.user.id}:${auth.session.tenant.id}`
+        pathname === "/purchases" &&
+            auth.session &&
+            local.status === "ready" &&
+            local.database
+            ? `purchases:${createScopeKey(local.database.scope)}`
             : undefined,
         (signal) => api.refresh(signal),
+    );
+    useBackgroundRefresh(
+        pathname === "/purchases" &&
+            open &&
+            refreshProducts &&
+            local.database &&
+            local.status === "ready"
+            ? `purchase-products:${createScopeKey(local.database.scope)}`
+            : undefined,
+        (signal) => refreshProducts ? refreshProducts(signal) : Promise.resolve(),
     );
     useEffect(() => {
         if (!bottomNavigationHidden)
@@ -641,8 +659,7 @@ function BillCamera({
     };
     const uploadImages = async () => {
         try {
-            const ImagePicker: typeof ImagePickerType =
-                require("expo-image-picker");
+            const ImagePicker: typeof ImagePickerType = require("expo-image-picker");
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ["images"],
                 allowsMultipleSelection: true,

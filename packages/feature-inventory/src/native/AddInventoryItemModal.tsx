@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocalDatabase } from "@indyzai/pos-database";
 import {
     Modal,
     ScrollView,
@@ -66,6 +67,26 @@ export function AddInventoryItemModal({
         taxes: [],
     });
     const [loading, setLoading] = useState(false);
+    const local = useLocalDatabase();
+    useEffect(() => {
+        if (!visible || !local.database) return;
+        let active = true;
+        const update = () => {
+            void inventoryApi
+                .loadProductReferences()
+                .then((value) => {
+                    if (active) setReferences(value);
+                })
+                .catch(() => undefined);
+        };
+        const unsubscribe = (
+            ["categories", "product_uoms", "tax_rates"] as const
+        ).map((table) => local.database!.collection(table).subscribe(update));
+        return () => {
+            active = false;
+            unsubscribe.forEach((stop) => stop());
+        };
+    }, [visible, local.database, inventoryApi]);
 
     useEffect(() => {
         if (!visible) return;

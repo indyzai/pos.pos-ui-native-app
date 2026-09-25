@@ -8,13 +8,21 @@
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.ts",
-    "./*/*": "./src/*/*.ts"
+    "./*/*": "./src/*/*.ts",
+    "./native/RefundDialog": "./src/native/RefundDialog.tsx"
   },
   "dependencies": {
     "@indyzai/pos-application": "workspace:*",
     "@indyzai/pos-sync": "workspace:*",
     "@indyzai/pos-database": "workspace:*",
     "@indyzai/feature-billing": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "@indyzai/pos-ui-native": "workspace:*",
+    "lucide-react-native": "^1.41.0"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0"
   }
 }

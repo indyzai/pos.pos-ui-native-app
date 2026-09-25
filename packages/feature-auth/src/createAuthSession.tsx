@@ -13,6 +13,7 @@ import type { createAuthApi } from "./createAuthApi";
 import { createLogger } from "@indyzai/pos-utils";
 import { AuthBranding } from "./AuthBranding";
 import { useBackgroundRefresh } from "@indyzai/pos-ui-native";
+import { ApiError } from "@indyzai/pos-api";
 
 const sessionLogger = createLogger("Auth:session");
 
@@ -89,6 +90,10 @@ type AuthSessionValue = {
     initializing: boolean;
     error: string;
     refreshSession: () => Promise<void>;
+    applyOrganizationSettings: (
+        values: Record<string, unknown>,
+        features?: Record<string, boolean>,
+    ) => Promise<void>;
 };
 const AuthSessionContext = createContext<AuthSessionValue | null>(null);
 let activeSession: AuthSession | null = null;
@@ -121,6 +126,16 @@ export function AuthSessionProvider({
             const currentToken = await authApi.getAccessToken();
             if (token && currentToken && currentToken !== token) return;
             pending = (async () => {
+                try {
+                    await authApi.renewSession();
+                    await refreshSession();
+                    return;
+                } catch (reason) {
+                    // Connectivity failures must not erase a usable offline workspace.
+                    if (!(reason instanceof ApiError) || reason.status !== 401)
+                        return;
+                }
+                if ((await authApi.getAccessToken()) !== currentToken) return;
                 generation.current++;
                 activeSession = null;
                 setSession(null);
@@ -150,6 +165,11 @@ export function AuthSessionProvider({
                 authApi.getAccessToken(),
             ]);
             if (current !== generation.current) return;
+            if (token && profile) {
+                setInitializing(false);
+                await authApi.unlockStoredSession();
+                if (current !== generation.current) return;
+            }
             if (token && !profile?.tenants?.length) {
                 // First-time identity hydration needs connectivity, but never holds the splash.
                 setInitializing(false);
@@ -252,6 +272,42 @@ export function AuthSessionProvider({
             setSession(activeSession);
         },
     );
+    const applyOrganizationSettings = async (
+        values: Record<string, unknown>,
+        features?: Record<string, boolean>,
+    ) => {
+        const current = activeSession;
+        if (!current?.organization) return;
+        const organization = {
+            ...current.organization,
+            name:
+                typeof values.businessName === "string" &&
+                values.businessName.trim()
+                    ? values.businessName
+                    : current.organization.name,
+            settings: {
+                ...current.organization.settings,
+                ...values,
+                ...(features
+                    ? {
+                          features: {
+                              ...((current.organization.settings
+                                  .features as object) ?? {}),
+                              ...features,
+                          },
+                      }
+                    : {}),
+            },
+        };
+        await configuration.saveCachedOrganizationDetails?.(
+            String(current.user.id),
+            String(current.tenant.id),
+            organization,
+        );
+        if (activeSession !== current) return;
+        activeSession = { ...current, organization };
+        setSession(activeSession);
+    };
     const value = useMemo(
         () => ({
             user,
@@ -260,6 +316,7 @@ export function AuthSessionProvider({
             initializing,
             error,
             refreshSession,
+            applyOrganizationSettings,
         }),
         [user, authenticated, session, initializing, error],
     );

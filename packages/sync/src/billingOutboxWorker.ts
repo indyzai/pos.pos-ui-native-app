@@ -20,7 +20,13 @@ export function startBillingOutboxWorker(
     database: LocalDatabase,
     sync: () => Promise<void>,
     isOnline: () => Promise<boolean>,
-    entityTypes: readonly string[] = ["SALE", "CUSTOMER", "PURCHASE"],
+    entityTypes: readonly string[] = [
+        "SALE",
+        "CUSTOMER",
+        "PURCHASE",
+        "SETTINGS",
+        "PRINTER",
+    ],
 ) {
     if (activeWorker?.database === database) return activeWorker;
     activeWorker?.stop();

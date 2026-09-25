@@ -9,6 +9,8 @@ export type SalesOrderItem = {
 };
 
 export type SalesOrder = {
+    /** Local bill awaiting its authoritative order projection. */
+    localOnly?: boolean;
     id: string;
     billId: string;
     offlineId?: string;
