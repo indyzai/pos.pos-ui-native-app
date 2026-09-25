@@ -1,5 +1,8 @@
 import { beforeEach, expect, mock, test } from 'bun:test';
-mock.module('react-native', () => ({ Platform: { OS: 'web' } }));
+import { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';
+mock.module('../../../src/features/organization/organizationApi', () => ({
+  requiresOpenCounter,
+}));
 const storage = new Map();
 let tenant = '1';
 let failWrite = false;

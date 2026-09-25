@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test';
-import { requiresOpenCounter } from '../../../src/features/organization/organizationApi';
+import { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';
 
 test('billing requires an open counter by default', () => {
-    expect(requiresOpenCounter(undefined)).toBe(true);
+  expect(requiresOpenCounter(undefined)).toBe(true);
 });
 
 test('organization feature flag can allow billing without a counter session', () => {
-    expect(requiresOpenCounter({ features: { requireOpenCounterForBilling: false } })).toBe(false);
+  expect(requiresOpenCounter({ features: { requireOpenCounterForBilling: false } })).toBe(false);
 });
