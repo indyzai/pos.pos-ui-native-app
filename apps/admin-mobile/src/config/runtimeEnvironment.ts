@@ -4,7 +4,7 @@ import { createRuntimeEnvironmentManager, type ApiEnvironment } from '@indyzai/p
 export type { ApiEnvironment };
 
 const manager = createRuntimeEnvironmentManager({
-    storageKey: appStorageKeys.admin.apiEnvironment,
+  storageKey: appStorageKeys.admin.apiEnvironment,
 });
 
 export const getApiEnvironment = manager.getApiEnvironment;

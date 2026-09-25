@@ -3,10 +3,10 @@ import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
 import { InventoryScreen } from '../features/inventory/InventoryScreen';
 
 export default function InventoryRoute() {
-    return (
-        <BottomNavigationProvider>
-            <InventoryScreen />
-            <BottomNavigation />
-        </BottomNavigationProvider>
-    );
+  return (
+    <BottomNavigationProvider>
+      <InventoryScreen />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

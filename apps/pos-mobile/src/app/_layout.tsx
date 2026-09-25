@@ -18,128 +18,123 @@ import { AppPaperProvider } from '@indyzai/pos-ui-native';
 import { hasEntitlement } from '@indyzai/pos-permissions';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import {
-    moreNavigationItems,
-    navigationItemsForRole,
-    primaryNavigationItems,
-    reportNavigationItem,
-    resolveStoreAccessRole,
+  moreNavigationItems,
+  navigationItemsForRole,
+  primaryNavigationItems,
+  reportNavigationItem,
+  resolveStoreAccessRole,
 } from '../shared/navigation/routes';
 
 export default function RootLayout() {
-    return (
-        <SafeAreaProvider>
-            <QueryClientProvider client={queryClient}>
-                <ThemeProvider>
-                    <AppPaperProvider>
-                        <ThemedSnackbarProvider>
-                            <AuthSessionProvider>
-                                <DatabaseProvider>
-                                    <AppHeaderProvider>
-                                        <RootNavigator />
-                                    </AppHeaderProvider>
-                                </DatabaseProvider>
-                            </AuthSessionProvider>
-                        </ThemedSnackbarProvider>
-                    </AppPaperProvider>
-                </ThemeProvider>
-            </QueryClientProvider>
-        </SafeAreaProvider>
-    );
+  return (
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AppPaperProvider>
+            <ThemedSnackbarProvider>
+              <AuthSessionProvider>
+                <DatabaseProvider>
+                  <AppHeaderProvider>
+                    <RootNavigator />
+                  </AppHeaderProvider>
+                </DatabaseProvider>
+              </AuthSessionProvider>
+            </ThemedSnackbarProvider>
+          </AppPaperProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
+  );
 }
 
 function ThemedSnackbarProvider({ children }: { children: ReactNode }) {
-    const { themeColors } = useAppTheme();
-    return <SnackbarProvider colors={themeColors}>{children}</SnackbarProvider>;
+  const { themeColors } = useAppTheme();
+  return <SnackbarProvider colors={themeColors}>{children}</SnackbarProvider>;
 }
 
 function RootNavigator() {
-    const { isDark, themeColors } = useAppTheme();
-    const { width, height } = useWindowDimensions();
-    const [navigationCollapsed, setNavigationCollapsed] = useState(false);
-    const pathname = usePathname();
-    const router = useRouter();
-    const { authenticated, initializing, session } = useAuthSession();
-    const { flags } = useFeatureToggles();
-    useEffect(() => {
-        const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff', '/device-setup'];
-        const normalizedPath = pathname.replace(/\/$/, '') || '/';
-        if (!initializing && !authenticated && !publicRoutes.includes(normalizedPath)) {
-            if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                window.location.replace('/login');
-            } else {
-                router.replace('/login');
-            }
-            return;
-        }
-        if (
-            !initializing &&
-            authenticated &&
-            session &&
-            !publicRoutes.includes(pathname) &&
-            pathname !== '/profile'
-        ) {
-            const role = resolveStoreAccessRole(session.tenant.role, session.user.role);
-            if (
-                pathname === '/inventory-reconciliation' &&
-                flags.inventory &&
-                hasEntitlement('inventory.reconcile', role, role, 'pos')
-            )
-                return;
-            const allowed = navigationItemsForRole(
-                [...primaryNavigationItems, ...moreNavigationItems, reportNavigationItem],
-                role,
-                flags,
-            ).some((item) => {
-                const href = typeof item.href === 'string' ? item.href : item.href.pathname;
-                return pathname === href || pathname.startsWith(`${href}/`);
-            });
-            if (!allowed) router.replace('/billing');
-        }
-    }, [authenticated, initializing, pathname, router, session, flags]);
-    const headerHidden = [
-        '/',
-        '/login',
-        '/signup',
-        '/auth/callback',
-        '/auth/handoff',
-        '/device-setup',
-    ].includes(pathname);
-    const showLeftNavigation = !headerHidden && width >= 700 && width > height;
-    return (
-        <View style={{ flex: 1, backgroundColor: themeColors.background }}>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
-            {!headerHidden && (
-                <SafeAreaView
-                    edges={['top', 'left', 'right']}
-                    style={{ backgroundColor: themeColors.surface }}
-                >
-                    <AppHeader
-                        onMenuToggle={
-                            showLeftNavigation ? () => setNavigationCollapsed((value) => !value) : undefined
-                        }
-                        navigationCollapsed={navigationCollapsed}
-                    />
-                </SafeAreaView>
-            )}
-            <View style={{ flex: 1, position: 'relative' }}>
-                {!headerHidden && <GlobalDataLoader />}
-                <View style={{ flex: 1, flexDirection: 'row' }}>
-                    {showLeftNavigation && <TabletNavigationPane collapsed={navigationCollapsed} />}
-                    <View style={{ flex: 1 }}>
-                        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-                            <Stack.Screen name="index" />
-                            <Stack.Screen name="login" />
-                            <Stack.Screen name="signup" />
-                            <Stack.Screen name="billing" />
-                            <Stack.Screen name="profile" />
-                            <Stack.Screen name="device-setup" />
-                            <Stack.Screen name="settings" />
-                            <Stack.Screen name="inventory-reconciliation" />
-                            <Stack.Screen name="purchases" />
-                        </Stack>
-                    </View>
-                </View>
-            </View>
+  const { isDark, themeColors } = useAppTheme();
+  const { width, height } = useWindowDimensions();
+  const [navigationCollapsed, setNavigationCollapsed] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { authenticated, initializing, session } = useAuthSession();
+  const { flags } = useFeatureToggles();
+  useEffect(() => {
+    const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/auth/handoff', '/device-setup'];
+    const normalizedPath = pathname.replace(/\/$/, '') || '/';
+    if (!initializing && !authenticated && !publicRoutes.includes(normalizedPath)) {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.replace('/login');
+      } else {
+        router.replace('/login');
+      }
+      return;
+    }
+    if (
+      !initializing &&
+      authenticated &&
+      session &&
+      !publicRoutes.includes(pathname) &&
+      pathname !== '/profile'
+    ) {
+      const role = resolveStoreAccessRole(session.tenant.role, session.user.role);
+      if (
+        pathname === '/inventory-reconciliation' &&
+        flags.inventory &&
+        hasEntitlement('inventory.reconcile', role, role, 'pos')
+      )
+        return;
+      const allowed = navigationItemsForRole(
+        [...primaryNavigationItems, ...moreNavigationItems, reportNavigationItem],
+        role,
+        flags,
+      ).some((item) => {
+        const href = typeof item.href === 'string' ? item.href : item.href.pathname;
+        return pathname === href || pathname.startsWith(`${href}/`);
+      });
+      if (!allowed) router.replace('/billing');
+    }
+  }, [authenticated, initializing, pathname, router, session, flags]);
+  const headerHidden = [
+    '/',
+    '/login',
+    '/signup',
+    '/auth/callback',
+    '/auth/handoff',
+    '/device-setup',
+  ].includes(pathname);
+  const showLeftNavigation = !headerHidden && width >= 700 && width > height;
+  return (
+    <View style={{ flex: 1, backgroundColor: themeColors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      {!headerHidden && (
+        <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: themeColors.surface }}>
+          <AppHeader
+            onMenuToggle={showLeftNavigation ? () => setNavigationCollapsed((value) => !value) : undefined}
+            navigationCollapsed={navigationCollapsed}
+          />
+        </SafeAreaView>
+      )}
+      <View style={{ flex: 1, position: 'relative' }}>
+        {!headerHidden && <GlobalDataLoader />}
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          {showLeftNavigation && <TabletNavigationPane collapsed={navigationCollapsed} />}
+          <View style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="signup" />
+              <Stack.Screen name="billing" />
+              <Stack.Screen name="profile" />
+              <Stack.Screen name="device-setup" />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="inventory-reconciliation" />
+              <Stack.Screen name="purchases" />
+            </Stack>
+          </View>
         </View>
-    );
+      </View>
+    </View>
+  );
 }

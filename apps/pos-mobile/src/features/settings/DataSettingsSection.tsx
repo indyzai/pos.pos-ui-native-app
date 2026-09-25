@@ -164,7 +164,12 @@ export function DataSettingsSection() {
 
   const retryOutbox = async (record: LocalRecord<OutboxPayload>) => {
     if (!local.database) return;
-    const { errorMessage: _error, attempts: _attempts, attemptCount: _attemptCount, ...payload } = record.payload;
+    const {
+      errorMessage: _error,
+      attempts: _attempts,
+      attemptCount: _attemptCount,
+      ...payload
+    } = record.payload;
     await local.database.collection<LocalRecord<OutboxPayload>>('sync_outbox').put({
       ...record,
       payload: {
@@ -181,7 +186,7 @@ export function DataSettingsSection() {
   const clearAllOutbox = () => {
     if (!local.database) return;
     const pendingOrFailed = outbox.data.filter((record) =>
-      ['PENDING', 'RUNNING', 'FAILED', 'CONFLICT'].includes(record.syncStatus)
+      ['PENDING', 'RUNNING', 'FAILED', 'CONFLICT'].includes(record.syncStatus),
     );
     if (!pendingOrFailed.length) return;
     const message = `Are you sure you want to clear ${pendingOrFailed.length} unsynced outbox item(s)?`;

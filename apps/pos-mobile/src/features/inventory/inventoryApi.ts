@@ -4,7 +4,7 @@ import { requestPos } from '../../core/api/posApi';
 import { billingApi } from '../billing/billingApi';
 
 export const inventoryApi = createInventoryApi({
-    request: requestPos,
-    scopeKey: appStorageKeys.pos.billing,
-    billing: billingApi,
+  request: requestPos,
+  scopeKey: appStorageKeys.pos.billing,
+  billing: billingApi,
 });

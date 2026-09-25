@@ -10,35 +10,35 @@ import { useAuthSession } from '../auth/AuthSessionContext';
 const logger = createLogger('Auth:signup');
 
 export default function SignupRoute() {
-    const router = useRouter();
-    const { refreshSession } = useAuthSession();
-    const { themeColors } = useAppTheme();
-    return (
-        <SafeAreaView
-            style={[styles.screen, { backgroundColor: themeColors.background }]}
-            edges={['top', 'left', 'right']}
-        >
-            <SignupScreen
-                onSignUp={async (payload) => {
-                    logger.info('Registering admin user account', {
-                        email: payload.email,
-                        companyName: payload.companyName,
-                    });
-                    try {
-                        await authApi.register(payload);
-                        await refreshSession();
-                        logger.info('Registration completed, redirecting to reports');
-                        router.replace('/reports');
-                    } catch (error) {
-                        logger.error('Registration failed', {
-                            error: error instanceof Error ? error.message : String(error),
-                        });
-                        throw error;
-                    }
-                }}
-                onLogin={() => router.replace('/login')}
-            />
-        </SafeAreaView>
-    );
+  const router = useRouter();
+  const { refreshSession } = useAuthSession();
+  const { themeColors } = useAppTheme();
+  return (
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: themeColors.background }]}
+      edges={['top', 'left', 'right']}
+    >
+      <SignupScreen
+        onSignUp={async (payload) => {
+          logger.info('Registering admin user account', {
+            email: payload.email,
+            companyName: payload.companyName,
+          });
+          try {
+            await authApi.register(payload);
+            await refreshSession();
+            logger.info('Registration completed, redirecting to reports');
+            router.replace('/reports');
+          } catch (error) {
+            logger.error('Registration failed', {
+              error: error instanceof Error ? error.message : String(error),
+            });
+            throw error;
+          }
+        }}
+        onLogin={() => router.replace('/login')}
+      />
+    </SafeAreaView>
+  );
 }
 const styles = StyleSheet.create({ screen: { flex: 1 } });

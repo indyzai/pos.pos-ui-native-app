@@ -4,10 +4,10 @@ import { canAccessStoreApp, canPerformManagerActions as checkManagerActions } fr
 export const allowedAppRoles: readonly PosRole[] = ['cashier', 'manager'];
 
 export function canAccessApp(tenantRole: unknown, accountRole?: unknown): boolean {
-    console.log('Checking app access', tenantRole, accountRole);
-    return canAccessStoreApp(tenantRole, accountRole);
+  console.log('Checking app access', tenantRole, accountRole);
+  return canAccessStoreApp(tenantRole, accountRole);
 }
 
 export function canPerformManagerActions(tenantRole: unknown, accountRole?: unknown): boolean {
-    return checkManagerActions(tenantRole, accountRole);
+  return checkManagerActions(tenantRole, accountRole);
 }

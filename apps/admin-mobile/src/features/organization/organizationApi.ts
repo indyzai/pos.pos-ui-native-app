@@ -166,17 +166,17 @@ export async function openCounterSession(
 export { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';
 
 export async function updateOrganizationFeatures(
-    token: string,
-    tenantId: string,
-    features: Record<string, boolean>,
+  token: string,
+  tenantId: string,
+  features: Record<string, boolean>,
 ): Promise<void> {
-    const data = await requestPos<{ updateAllSettings: boolean }>(
-        token,
-        tenantId,
-        `mutation UpdateOrganizationFeatures($input: UpdateAllSettingsInput!) {
+  const data = await requestPos<{ updateAllSettings: boolean }>(
+    token,
+    tenantId,
+    `mutation UpdateOrganizationFeatures($input: UpdateAllSettingsInput!) {
       updateAllSettings(input: $input)
     }`,
-        { input: { organization: { config: { features } } } },
-    );
-    if (!data.updateAllSettings) throw new Error('Feature settings were not updated.');
+    { input: { organization: { config: { features } } } },
+  );
+  if (!data.updateAllSettings) throw new Error('Feature settings were not updated.');
 }

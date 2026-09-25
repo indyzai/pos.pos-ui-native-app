@@ -2,8 +2,8 @@ import { createPosApiClient } from '@indyzai/pos-api/pos-api';
 import { getRuntimeApiUrls } from '../../config/runtimeEnvironment';
 
 const client = createPosApiClient({
-    getRuntimeApiUrls,
-    loggerScope: 'POS API',
+  getRuntimeApiUrls,
+  loggerScope: 'POS API',
 });
 
 export const requestPos = client.requestPos;

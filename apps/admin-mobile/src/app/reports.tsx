@@ -3,10 +3,10 @@ import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
 import { ReportsScreen } from '../features/reports/ReportsScreen';
 
 export default function ReportsRoute() {
-    return (
-        <BottomNavigationProvider>
-            <ReportsScreen />
-            <BottomNavigation />
-        </BottomNavigationProvider>
-    );
+  return (
+    <BottomNavigationProvider>
+      <ReportsScreen />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

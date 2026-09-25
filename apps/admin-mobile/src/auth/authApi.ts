@@ -3,16 +3,16 @@ import { env } from '@indyzai/pos-config';
 import { getRuntimeApiUrls } from '../config/runtimeEnvironment';
 
 export const authApi = createAuthApi({
-    application: 'admin',
-    appId: env.authAppId ?? 'pos-admin-app',
-    callbackScheme: 'indyzai-pos-admin',
-    getRuntimeApiUrls,
+  application: 'admin',
+  appId: env.authAppId ?? 'pos-admin-app',
+  callbackScheme: 'indyzai-pos-admin',
+  getRuntimeApiUrls,
 });
 
 export type {
-    AuthTenant,
-    AuthUser,
-    DeviceRegistrationDetails,
-    LoginCredentials,
-    RegistrationPayload,
+  AuthTenant,
+  AuthUser,
+  DeviceRegistrationDetails,
+  LoginCredentials,
+  RegistrationPayload,
 } from '@indyzai/pos-auth';

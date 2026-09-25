@@ -6,22 +6,22 @@ import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 
 export default function DeviceSetup() {
-    const router = useRouter();
-    const { themeColors } = useAppTheme();
-    const { refreshSession } = useAuthSession();
+  const router = useRouter();
+  const { themeColors } = useAppTheme();
+  const { refreshSession } = useAuthSession();
 
-    if (Platform.OS === 'web') return <Redirect href="/login" />;
+  if (Platform.OS === 'web') return <Redirect href="/login" />;
 
-    return (
-        <DeviceSetupScreen
-            colors={themeColors}
-            onRegister={async (pin) => {
-                await authApi.registerDevice(pin);
-                await refreshSession();
-            }}
-            onSuccess={() => {
-                router.replace('/reports');
-            }}
-        />
-    );
+  return (
+    <DeviceSetupScreen
+      colors={themeColors}
+      onRegister={async (pin) => {
+        await authApi.registerDevice(pin);
+        await refreshSession();
+      }}
+      onSuccess={() => {
+        router.replace('/reports');
+      }}
+    />
+  );
 }

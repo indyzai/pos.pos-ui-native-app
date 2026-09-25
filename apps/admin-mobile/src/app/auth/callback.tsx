@@ -5,27 +5,27 @@ import { authApi } from '../../auth/authApi';
 import { useAuthSession } from '../../auth/AuthSessionContext';
 
 export default function AuthCallbackRoute() {
-    const params = useLocalSearchParams<{
-        code?: string | string[];
-        state?: string | string[];
-        error?: string;
-    }>();
-    const router = useRouter();
-    const { refreshSession } = useAuthSession();
+  const params = useLocalSearchParams<{
+    code?: string | string[];
+    state?: string | string[];
+    error?: string;
+  }>();
+  const router = useRouter();
+  const { refreshSession } = useAuthSession();
 
-    return (
-        <AuthCallbackScreen
-            code={params.code}
-            state={params.state}
-            error={params.error}
-            loggerScope="Auth:admin-app"
-            onComplete={async (code, state) => {
-                await authApi.completeAuthorizationCode(code, state);
-                const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
-                await refreshSession();
-                router.replace(needsDeviceSetup ? '/device-setup' : '/reports');
-            }}
-            onSuccess={() => {}}
-        />
-    );
+  return (
+    <AuthCallbackScreen
+      code={params.code}
+      state={params.state}
+      error={params.error}
+      loggerScope="Auth:admin-app"
+      onComplete={async (code, state) => {
+        await authApi.completeAuthorizationCode(code, state);
+        const needsDeviceSetup = Platform.OS !== 'web' && !(await authApi.hasRegisteredDevice());
+        await refreshSession();
+        router.replace(needsDeviceSetup ? '/device-setup' : '/reports');
+      }}
+      onSuccess={() => {}}
+    />
+  );
 }

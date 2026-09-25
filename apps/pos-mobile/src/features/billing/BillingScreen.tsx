@@ -9,24 +9,24 @@ import { ElectronicsBillingScreen } from './modes/ElectronicsBillingScreen';
 import { ServiceBillingScreen } from './modes/ServiceBillingScreen';
 
 export function BillingScreen() {
-    const auth = useAuthSession();
-    const businessType = auth.session?.organization?.settings?.businessType;
-    const settings = auth.session?.organization?.settings;
-    const mode = useMemo(() => resolveBillingMode(businessType, settings), [businessType, settings]);
+  const auth = useAuthSession();
+  const businessType = auth.session?.organization?.settings?.businessType;
+  const settings = auth.session?.organization?.settings;
+  const mode = useMemo(() => resolveBillingMode(businessType, settings), [businessType, settings]);
 
-    switch (mode.mode) {
-        case 'restaurant':
-            return <RestaurantBillingScreen mode={mode} />;
-        case 'pharmacy':
-            return <PharmacyBillingScreen mode={mode} />;
-        case 'wholesale':
-            return <WholesaleBillingScreen mode={mode} />;
-        case 'electronics':
-            return <ElectronicsBillingScreen mode={mode} />;
-        case 'service':
-            return <ServiceBillingScreen mode={mode} />;
-        case 'retail':
-        default:
-            return <RetailBillingScreen mode={mode} />;
-    }
+  switch (mode.mode) {
+    case 'restaurant':
+      return <RestaurantBillingScreen mode={mode} />;
+    case 'pharmacy':
+      return <PharmacyBillingScreen mode={mode} />;
+    case 'wholesale':
+      return <WholesaleBillingScreen mode={mode} />;
+    case 'electronics':
+      return <ElectronicsBillingScreen mode={mode} />;
+    case 'service':
+      return <ServiceBillingScreen mode={mode} />;
+    case 'retail':
+    default:
+      return <RetailBillingScreen mode={mode} />;
+  }
 }

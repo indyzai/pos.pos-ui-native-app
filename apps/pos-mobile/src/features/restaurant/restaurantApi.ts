@@ -1,7 +1,10 @@
 import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { readRestaurantTables, replaceRestaurantTables } from '@indyzai/feature-restaurant/restaurantTableRepository';
+import {
+  readRestaurantTables,
+  replaceRestaurantTables,
+} from '@indyzai/feature-restaurant/restaurantTableRepository';
 import type { RestaurantTable } from '@indyzai/feature-restaurant/types';
 const context = () => {
   const session = getActiveAuthSession();

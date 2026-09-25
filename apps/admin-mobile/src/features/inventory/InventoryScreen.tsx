@@ -2,5 +2,5 @@ import { InventoryScreen as SharedInventoryScreen } from '@indyzai/feature-inven
 import { inventoryApi } from './inventoryApi';
 
 export function InventoryScreen() {
-    return <SharedInventoryScreen surface="admin" api={inventoryApi} />;
+  return <SharedInventoryScreen surface="admin" api={inventoryApi} />;
 }
