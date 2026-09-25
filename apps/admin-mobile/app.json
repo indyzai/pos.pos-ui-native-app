@@ -35,6 +35,10 @@
     ],
     "userInterfaceStyle": "automatic",
     "ios": {
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Allow IndyzAI to discover and print to nearby Bluetooth label and receipt printers.",
+        "NSLocalNetworkUsageDescription": "Allow IndyzAI to send receipts and labels to printers on your local network."
+      },
       "bundleIdentifier": "com.indyzai.pos.admin.app",
       "supportsTablet": true
     },

@@ -94,29 +94,29 @@ The final contract should expose domain repositories, lifecycle operations, and 
 export type PosRole = 'cashier' | 'manager' | 'admin' | 'owner' | 'superadmin';
 
 export interface DatabaseScope {
-    tenantId: string;
-    userId: string;
-    role: PosRole;
-    storeIds: readonly string[];
-    deviceId: string;
-    counterId?: string;
+  tenantId: string;
+  userId: string;
+  role: PosRole;
+  storeIds: readonly string[];
+  deviceId: string;
+  counterId?: string;
 }
 
 export interface LocalDatabase {
-    catalog: CatalogRepository;
-    customers: CustomerRepository;
-    inventory: InventoryRepository;
-    sales: SaleRepository;
-    payments: PaymentRepository;
-    shifts: ShiftRepository;
-    orders: OrderRepository;
-    settings: SettingsRepository;
-    sync: SyncRepository;
+  catalog: CatalogRepository;
+  customers: CustomerRepository;
+  inventory: InventoryRepository;
+  sales: SaleRepository;
+  payments: PaymentRepository;
+  shifts: ShiftRepository;
+  orders: OrderRepository;
+  settings: SettingsRepository;
+  sync: SyncRepository;
 
-    initialize(scope: DatabaseScope): Promise<void>;
-    reconcileRole(previous: DatabaseScope | undefined, next: DatabaseScope): Promise<void>;
-    transaction<T>(work: (tx: LocalDatabaseTransaction) => Promise<T>): Promise<T>;
-    close(): Promise<void>;
+  initialize(scope: DatabaseScope): Promise<void>;
+  reconcileRole(previous: DatabaseScope | undefined, next: DatabaseScope): Promise<void>;
+  transaction<T>(work: (tx: LocalDatabaseTransaction) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
 }
 ```
 

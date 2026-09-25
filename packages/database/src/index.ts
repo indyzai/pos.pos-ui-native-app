@@ -6,17 +6,7 @@ export {
 } from "./roleManifest";
 export type { RoleDataManifest } from "./roleManifest";
 export { schemaSqlForProfile } from "./schemaProfile";
-export {
-    useLocalCollection,
-    useLocalCustomers,
-    useLocalPayments,
-    useLocalProducts,
-    useLocalRecord,
-    useLocalSales,
-    useLocalStockBalances,
-    useOfflineQueueCount,
-    usePendingSync,
-} from "./hooks";
+export { useOfflineQueueCount } from "./offlineQueueHook";
 export { useLocalDatabase, useRequiredLocalDatabase } from "./react";
 export { createLocalFirstTableHook } from "./tableSyncHook";
 export type {

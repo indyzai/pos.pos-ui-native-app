@@ -46,23 +46,23 @@ coverage/
 test-results/
 
 # Mobile (Expo)
-apps/mobile/.expo/
-apps/mobile/.expo-shared/
+apps/pos-mobile/.expo/
+apps/pos-mobile/.expo-shared/
 .expo/
-apps/mobile/android/
-apps/mobile/ios/
-apps/mobile-admin/.expo/
-apps/mobile-admin/.expo-shared/
-apps/mobile-admin/android/
-apps/mobile-admin/ios/
-apps/mobile-admin/build
-apps/mobile/build
+apps/pos-mobile/android/
+apps/pos-mobile/ios/
+apps/pos-mobile-admin/.expo/
+apps/pos-mobile-admin/.expo-shared/
+apps/pos-mobile-admin/android/
+apps/pos-mobile-admin/ios/
+apps/pos-mobile-admin/build
+apps/pos-mobile/build
 *.apk
 *.aab
 *.ipa
 
 # EAS build artifacts
-apps/mobile/eas-build-*
+apps/pos-mobile/eas-build-*
 .eas/
 
 # Desktop (Electron)
@@ -76,7 +76,7 @@ apps/desktop/src-tauri/embedded.provisionprofile
 
 # Lock files (using bun)
 package-lock.json
-!apps/mobile/package-lock.json
+!apps/pos-mobile/package-lock.json
 !apps/desktop/package-lock.json
 !packages/core/package-lock.json
 !tools/eas-cli/package-lock.json
@@ -120,6 +120,6 @@ pnpm-workspace.yaml
 docs/superpowers/
 
 # CMake build caches from native module builds; Metro's watcher crashes on their transient dirs
-apps/mobile/modules/*/android/.cxx/
+apps/pos-mobile/modules/*/android/.cxx/
 .pnpm-store
 latest_version.txt

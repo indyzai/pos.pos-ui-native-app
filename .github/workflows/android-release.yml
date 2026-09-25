@@ -32,7 +32,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/android-release.yml"
-      - "apps/mobile/**"
+      - "apps/pos-mobile/**"
       - "apps/admin-mobile/**"
       - "packages/**"
       - "package.json"
@@ -44,7 +44,7 @@ on:
       - "v*"
     paths:
       - ".github/workflows/android-release.yml"
-      - "apps/mobile/**"
+      - "apps/pos-mobile/**"
       - "apps/admin-mobile/**"
       - "packages/**"
       - "package.json"
@@ -85,7 +85,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Validate POS Mobile
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         run: |
           bunx tsc --noEmit
           bun test tests
@@ -134,7 +134,7 @@ jobs:
             if [[ -n "$LATEST_TAG" ]]; then
               BASE_POS="${LATEST_TAG#v}"
             else
-              BASE_POS="$(jq -r '.expo.version' apps/mobile/app.json)"
+              BASE_POS="$(jq -r '.expo.version' apps/pos-mobile/app.json)"
             fi
             BASE_POS="$(echo "$BASE_POS" | sed 's/-alpha\..*//; s/-alpha$//')"
             BASE_ADMIN="$(jq -r '.expo.version' apps/admin-mobile/app.json | sed 's/-alpha\..*//; s/-alpha$//')"
@@ -209,7 +209,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Set app version
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         env:
           VERSION: ${{ needs.metadata.outputs.pos_version }}
         run: |
@@ -222,7 +222,7 @@ jobs:
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Generate Android project
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         run: |
           bunx expo prebuild --clean --platform android --non-interactive --no-install
           python3 -c "
@@ -248,7 +248,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          KEYSTORE_PATH="$GITHUB_WORKSPACE/apps/mobile/android/app/upload-keystore.jks"
+          KEYSTORE_PATH="$GITHUB_WORKSPACE/apps/pos-mobile/android/app/upload-keystore.jks"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           {
             echo "SIGNING_FLAGS=-Pandroid.injected.signing.store.file=$KEYSTORE_PATH"
@@ -259,7 +259,7 @@ jobs:
           echo "" >> "$GITHUB_ENV"
 
       - name: Build release APK and AAB
-        working-directory: apps/mobile/android
+        working-directory: apps/pos-mobile/android
         env:
           ARCHS: ${{ inputs.archs || 'arm64-v8a,armeabi-v7a' }}
           CCACHE_DIR: ${{ runner.temp }}/.ccache
@@ -278,7 +278,7 @@ jobs:
             $SIGNING_FLAGS
 
       - name: Collect Android artifacts
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         env:
           APP_VERSION: ${{ needs.metadata.outputs.pos_version }}
         run: |
@@ -295,7 +295,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-pos-artifacts
-          path: apps/mobile/release/*
+          path: apps/pos-mobile/release/*
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days || 14 }}
 
@@ -337,7 +337,7 @@ jobs:
         with:
           serviceAccountJson: /tmp/google-play-service-account.json
           packageName: com.indyzai.pos.app
-          releaseFiles: apps/mobile/release/indyz-pos-${{ needs.metadata.outputs.pos_version }}.aab
+          releaseFiles: apps/pos-mobile/release/indyz-pos-${{ needs.metadata.outputs.pos_version }}.aab
           track: ${{ steps.play-target.outputs.track }}
           status: completed
           releaseName: ${{ github.run_number }} (${{ needs.metadata.outputs.pos_version }})

@@ -1,0 +1,28 @@
+{
+  "name": "@indyzai/feature-printers",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    "./settings": "./src/PrinterSettings.tsx",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@indyzai/pos-auth": "workspace:*",
+    "@indyzai/pos-permissions": "workspace:*",
+    "@indyzai/pos-ui-native": "workspace:*",
+    "@indyzai/pos-printing": "workspace:*",
+    "@indyzai/pos-printing-native": "workspace:*",
+    "@indyzai/pos-application": "workspace:*",
+    "@indyzai/pos-sync": "workspace:*",
+    "@indyzai/pos-database": "workspace:*",
+    "drizzle-orm": "^0.45.2"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}

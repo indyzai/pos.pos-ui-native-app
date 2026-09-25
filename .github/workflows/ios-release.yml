@@ -12,7 +12,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/ios-release.yml"
-      - "apps/mobile/**"
+      - "apps/pos-mobile/**"
       - "apps/admin-mobile/**"
       - "packages/**"
       - "package.json"
@@ -24,7 +24,7 @@ on:
       - "v*"
     paths:
       - ".github/workflows/ios-release.yml"
-      - "apps/mobile/**"
+      - "apps/pos-mobile/**"
       - "apps/admin-mobile/**"
       - "packages/**"
       - "package.json"
@@ -65,7 +65,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Validate POS Mobile
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         run: |
           bunx tsc --noEmit
           bun test tests
@@ -113,7 +113,7 @@ jobs:
             if [[ -n "$LATEST_TAG" ]]; then
               BASE_POS="${LATEST_TAG#v}"
             else
-              BASE_POS="$(jq -r '.expo.version' apps/mobile/app.json)"
+              BASE_POS="$(jq -r '.expo.version' apps/pos-mobile/app.json)"
             fi
             BASE_POS="$(echo "$BASE_POS" | sed 's/-alpha\..*//; s/-alpha$//')"
             BASE_ADMIN="$(jq -r '.expo.version' apps/admin-mobile/app.json | sed 's/-alpha\..*//; s/-alpha$//')"
@@ -171,7 +171,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Set app version
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         env:
           VERSION: ${{ needs.metadata.outputs.pos_version }}
         run: |
@@ -184,16 +184,16 @@ jobs:
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Generate iOS project
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         run: bunx expo prebuild --clean --platform ios --non-interactive --no-install
 
       - name: Install CocoaPods dependencies
-        working-directory: apps/mobile/ios
+        working-directory: apps/pos-mobile/ios
         run: pod install
 
       - name: Detect workspace and scheme
         id: xcode
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         run: |
           set -euo pipefail
 
@@ -253,7 +253,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build iOS Simulator app
-        working-directory: apps/mobile
+        working-directory: apps/pos-mobile
         env:
           WORKSPACE: ${{ steps.xcode.outputs.workspace }}
           SCHEME: ${{ steps.xcode.outputs.scheme }}
@@ -300,15 +300,15 @@ jobs:
           app_name="$(basename "$app" .app)"
           versioned_app="${RUNNER_TEMP}/${app_name}-${APP_VERSION}.app"
           cp -R "$app" "$versioned_app"
-          mkdir -p apps/mobile/release
-          ditto -c -k --sequesterRsrc --keepParent "$versioned_app" "apps/mobile/release/indyz-pos-${APP_VERSION}-ios-simulator.zip"
-          echo "Archive size: $(du -sh "apps/mobile/release/indyz-pos-${APP_VERSION}-ios-simulator.zip" | cut -f1)"
+          mkdir -p apps/pos-mobile/release
+          ditto -c -k --sequesterRsrc --keepParent "$versioned_app" "apps/pos-mobile/release/indyz-pos-${APP_VERSION}-ios-simulator.zip"
+          echo "Archive size: $(du -sh "apps/pos-mobile/release/indyz-pos-${APP_VERSION}-ios-simulator.zip" | cut -f1)"
 
       - name: Upload iOS POS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ios-pos-artifacts
-          path: apps/mobile/release/*
+          path: apps/pos-mobile/release/*
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days || 14 }}
 

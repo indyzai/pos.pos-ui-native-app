@@ -1,32 +1,35 @@
 import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { readRestaurantTables, replaceRestaurantTables } from './restaurantTableRepository';
-import type { RestaurantTable } from './types';
+import {
+  readRestaurantTables,
+  replaceRestaurantTables,
+} from '@indyzai/feature-restaurant/restaurantTableRepository';
+import type { RestaurantTable } from '@indyzai/feature-restaurant/types';
 const context = () => {
-    const session = getActiveAuthSession();
-    if (!session) throw new Error('Workspace is not ready.');
-    return session;
+  const session = getActiveAuthSession();
+  if (!session) throw new Error('Workspace is not ready.');
+  return session;
 };
 const scope = () => {
-    const session = context();
-    return appStorageKeys.admin.billing(session.user.id, session.tenant.id);
+  const session = context();
+  return appStorageKeys.admin.billing(session.user.id, session.tenant.id);
 };
 export const restaurantApi = {
-    load: () => readRestaurantTables(scope()),
-    async refresh(branchId?: string) {
-        const session = context();
-        try {
-            const data = await requestPos<{ restaurantTables: RestaurantTable[] }>(
-                session.token,
-                String(session.tenant.id),
-                `query BillingRestaurantTables($branchId: ID) { restaurantTables(branchId: $branchId) { id branchId name capacity status } }`,
-                { branchId },
-            );
-            await replaceRestaurantTables(scope(), data.restaurantTables ?? []);
-        } catch (error) {
-            if (!(await readRestaurantTables(scope())).length) throw error;
-        }
-        return readRestaurantTables(scope());
-    },
+  load: () => readRestaurantTables(scope()),
+  async refresh(branchId?: string) {
+    const session = context();
+    try {
+      const data = await requestPos<{ restaurantTables: RestaurantTable[] }>(
+        session.token,
+        String(session.tenant.id),
+        `query BillingRestaurantTables($branchId: ID) { restaurantTables(branchId: $branchId) { id branchId name capacity status } }`,
+        { branchId },
+      );
+      await replaceRestaurantTables(scope(), data.restaurantTables ?? []);
+    } catch (error) {
+      if (!(await readRestaurantTables(scope())).length) throw error;
+    }
+    return readRestaurantTables(scope());
+  },
 };

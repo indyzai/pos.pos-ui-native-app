@@ -1,11 +1,13 @@
-import { BottomNavigationProvider } from '@indyzai/pos-ui';
+import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
-import { PurchasesScreen } from '../../../mobile/src/features/purchases/PurchasesScreen';
+import { PurchasesScreen } from '@indyzai/feature-purchase/screen';
+import { purchasesApi } from '../features/purchases/purchasesApi';
+import { inventoryApi } from '../features/inventory/inventoryApi';
 export default function PurchasesRoute() {
-    return (
-        <BottomNavigationProvider>
-            <PurchasesScreen surface="admin" />
-            <BottomNavigation />
-        </BottomNavigationProvider>
-    );
+  return (
+    <BottomNavigationProvider>
+      <PurchasesScreen surface="admin" api={purchasesApi} refreshProducts={inventoryApi.refresh} />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

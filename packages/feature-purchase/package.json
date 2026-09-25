@@ -1,0 +1,32 @@
+{
+  "name": "@indyzai/feature-purchase",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@indyzai/feature-billing": "workspace:*",
+    "@indyzai/pos-auth": "workspace:*",
+    "@indyzai/pos-api": "workspace:*",
+    "@indyzai/pos-permissions": "workspace:*",
+    "@indyzai/pos-ui-native": "workspace:*",
+    "expo-camera": "~57.0.4",
+    "expo-image-picker": "~57.0.16",
+    "expo-crypto": "~57.0.2",
+    "lucide-react-native": "^1.41.0",
+    "@indyzai/pos-application": "workspace:*",
+    "@indyzai/pos-database": "workspace:*",
+    "@indyzai/pos-sync": "workspace:*",
+    "expo-router": "~57.0.19"
+  },
+  "exports": {
+    "./screen": "./src/native/PurchasesScreen.tsx",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}

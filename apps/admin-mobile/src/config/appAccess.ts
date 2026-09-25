@@ -1,5 +1,6 @@
-import { canAccessAdminApp } from '@indyzai/pos-auth/access';
+import { canAccessAdminApp } from '@indyzai/pos-permissions';
 
 export function canAccessApp(tenantRole: unknown, accountRole?: unknown): boolean {
-    return canAccessAdminApp(tenantRole, accountRole);
+  console.log('Checking app access', tenantRole, accountRole);
+  return canAccessAdminApp(tenantRole, accountRole);
 }

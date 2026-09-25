@@ -1,0 +1,13 @@
+{
+  "name": "@indyzai/feature-customers",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@indyzai/pos-application": "workspace:*",
+    "@indyzai/pos-database": "workspace:*",
+    "@indyzai/pos-sync": "workspace:*",
+    "@indyzai/feature-billing": "workspace:*"
+  }
+}
