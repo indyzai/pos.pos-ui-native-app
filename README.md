@@ -18,15 +18,10 @@ packages/
 ├── sync/                       # Sync queue primitives and events
 ├── state/                      # Shared query state
 ├── database/                   # Local-first schema, repositories, and outbox
-├── database-sqlite/            # Native SQLite adapter entry point
 ├── ui-core/                    # Platform-neutral UI models
-├── ui-native/                  # Shared React Native components and theme
 ├── printing/                   # Printing contracts
-├── printing-native/            # Native printing entry point
 ├── scanner/                    # Scanner contracts
-├── scanner-native/             # Native scanner entry point
 ├── storage/                    # Storage contracts
-├── storage-native/             # Secure native key-value storage
 ├── config/                     # Environment and endpoint configuration
 ├── utils/                      # Logging and general utilities
 ├── feature-auth/               # Shared session, device setup, and permission hooks
@@ -41,6 +36,13 @@ packages/
 ├── feature-users/
 ├── feature-finance/
 └── feature-reports/
+
+native-packages/
+├── database-sqlite/            # Native SQLite adapter entry point
+├── ui-native/                  # Shared React Native components and theme
+├── printing-native/           # Native printing entry point
+├── scanner-native/            # Native scanner entry point
+└── storage-native/            # Secure native key-value storage
 ```
 
 There is intentionally no web application or web-specific UI, printing, scanner, or storage package in this phase.

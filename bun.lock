@@ -9,6 +9,7 @@
         "@types/bun": "^1.4.2",
         "@types/react": "~19.2.2",
         "expo": "~57.0.20",
+        "react": "19.2.3",
         "typescript": "~6.0.3",
       },
     },
@@ -179,7 +180,7 @@
         "react-native": "0.86.3",
       },
     },
-    "packages/database-sqlite": {
+    "native-packages/database-sqlite": {
       "name": "@indyzai/pos-database-sqlite",
       "version": "1.0.0",
       "dependencies": {
@@ -396,6 +397,13 @@
       "name": "@indyzai/feature-users",
       "version": "1.0.0",
     },
+    "packages/offline-entity": {
+      "name": "@indyzai/offline-entity",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+    },
     "packages/permissions": {
       "name": "@indyzai/pos-permissions",
       "version": "1.0.0",
@@ -404,7 +412,7 @@
       "name": "@indyzai/pos-printing",
       "version": "1.0.0",
     },
-    "packages/printing-native": {
+    "native-packages/printing-native": {
       "name": "@indyzai/pos-printing-native",
       "version": "1.0.0",
       "dependencies": {
@@ -420,7 +428,7 @@
       "name": "@indyzai/pos-scanner",
       "version": "1.0.0",
     },
-    "packages/scanner-native": {
+    "native-packages/scanner-native": {
       "name": "@indyzai/pos-scanner-native",
       "version": "1.0.0",
       "dependencies": {
@@ -445,7 +453,7 @@
       "name": "@indyzai/pos-storage",
       "version": "1.0.0",
     },
-    "packages/storage-native": {
+    "native-packages/storage-native": {
       "name": "@indyzai/pos-storage-native",
       "version": "1.0.0",
       "dependencies": {
@@ -465,7 +473,7 @@
       "name": "@indyzai/pos-ui-core",
       "version": "1.0.0",
     },
-    "packages/ui-native": {
+    "native-packages/ui-native": {
       "name": "@indyzai/pos-ui-native",
       "version": "1.0.0",
       "dependencies": {
@@ -820,7 +828,7 @@
 
     "@indyzai/pos-database": ["@indyzai/pos-database@workspace:packages/database"],
 
-    "@indyzai/pos-database-sqlite": ["@indyzai/pos-database-sqlite@workspace:packages/database-sqlite"],
+    "@indyzai/pos-database-sqlite": ["@indyzai/pos-database-sqlite@workspace:native-packages/database-sqlite"],
 
     "@indyzai/pos-domain": ["@indyzai/pos-domain@workspace:packages/domain"],
 
@@ -830,23 +838,23 @@
 
     "@indyzai/pos-printing": ["@indyzai/pos-printing@workspace:packages/printing"],
 
-    "@indyzai/pos-printing-native": ["@indyzai/pos-printing-native@workspace:packages/printing-native"],
+    "@indyzai/pos-printing-native": ["@indyzai/pos-printing-native@workspace:native-packages/printing-native"],
 
     "@indyzai/pos-scanner": ["@indyzai/pos-scanner@workspace:packages/scanner"],
 
-    "@indyzai/pos-scanner-native": ["@indyzai/pos-scanner-native@workspace:packages/scanner-native"],
+    "@indyzai/pos-scanner-native": ["@indyzai/pos-scanner-native@workspace:native-packages/scanner-native"],
 
     "@indyzai/pos-state": ["@indyzai/pos-state@workspace:packages/state"],
 
     "@indyzai/pos-storage": ["@indyzai/pos-storage@workspace:packages/storage"],
 
-    "@indyzai/pos-storage-native": ["@indyzai/pos-storage-native@workspace:packages/storage-native"],
+    "@indyzai/pos-storage-native": ["@indyzai/pos-storage-native@workspace:native-packages/storage-native"],
 
     "@indyzai/pos-sync": ["@indyzai/pos-sync@workspace:packages/sync"],
 
     "@indyzai/pos-ui-core": ["@indyzai/pos-ui-core@workspace:packages/ui-core"],
 
-    "@indyzai/pos-ui-native": ["@indyzai/pos-ui-native@workspace:packages/ui-native"],
+    "@indyzai/pos-ui-native": ["@indyzai/pos-ui-native@workspace:native-packages/ui-native"],
 
     "@indyzai/pos-utils": ["@indyzai/pos-utils@workspace:packages/utils"],
 
