@@ -15,6 +15,7 @@ export function CustomersScreen() {
   const { setCenterItem } = useBottomNavigation();
   const { data: records, loading, error } = useCustomerTable();
   const [search, setSearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(25);
   const [modal, setModal] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -32,6 +33,7 @@ export function CustomersScreen() {
         [item.name, item.phone, item.email, item.gstin].some((value) => value?.toLowerCase().includes(term)),
     );
   }, [records, search]);
+  useEffect(() => setVisibleCount(25), [search, records]);
 
   const sync = async () => {
     setBusy(true);
@@ -89,8 +91,12 @@ export function CustomersScreen() {
         />
       </View>
       <FlatList
-        data={customers}
+        data={customers.slice(0, visibleCount)}
         keyExtractor={(item) => item.id}
+        onEndReached={() => {
+          if (visibleCount < customers.length) setVisibleCount((count) => count + 25);
+        }}
+        onEndReachedThreshold={0.5}
         contentContainerStyle={s.list}
         renderItem={({ item }) => (
           <View style={[s.card, { backgroundColor: c.surface, borderColor: c.outline }]}>
