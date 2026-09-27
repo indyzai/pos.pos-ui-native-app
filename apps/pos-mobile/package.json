@@ -69,8 +69,8 @@
     "android": "expo start --android --port 3511",
     "ios": "expo start --ios --port 3511",
     "ios-build": "RCT_METRO_PORT=3511 npx expo prebuild --clean --platform ios",
-    "db:generate": "bun run --cwd ../../packages/database db:generate",
-    "db:bundle": "bun run --cwd ../../packages/database db:bundle",
+    "db:generate": "bun run --cwd ../../vendor/pos-ui-shared/packages-native/database db:generate",
+    "db:bundle": "bun run --cwd ../../vendor/pos-ui-shared/packages-native/database db:bundle",
     "test": "bun test tests",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
