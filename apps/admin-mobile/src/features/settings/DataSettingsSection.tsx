@@ -1,3 +1,4 @@
+import { LOCAL_DATABASE_NAMES } from '@indyzai/pos-database';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -293,7 +294,9 @@ export function DataSettingsSection() {
         />
         <Detail
           label="Database"
-          value={Platform.OS === 'web' ? 'indyz-pos-admin-local-v1' : 'indyz-pos-admin.db'}
+          value={
+            Platform.OS === 'web' ? LOCAL_DATABASE_NAMES.indexedDb.admin : LOCAL_DATABASE_NAMES.sqlite.admin
+          }
         />
         <Detail
           label="Adapter"

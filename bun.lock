@@ -165,6 +165,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@indyzai/offline-entity": "workspace:*",
+        "@indyzai/pos-offline-store": "workspace:*",
         "dexie": "^4.4.6",
         "drizzle-orm": "^0.45.2",
         "expo-sqlite": "~57.0.2",
@@ -460,9 +461,16 @@
     "vendor/pos-ui-shared/packages/offline-entity": {
       "name": "@indyzai/offline-entity",
       "version": "0.1.0",
+      "dependencies": {
+        "@indyzai/pos-offline-store": "0.1.0",
+      },
       "peerDependencies": {
         "react": "^19.0.0",
       },
+    },
+    "vendor/pos-ui-shared/packages/offline-store": {
+      "name": "@indyzai/pos-offline-store",
+      "version": "0.1.0",
     },
     "vendor/pos-ui-shared/packages/permissions": {
       "name": "@indyzai/pos-permissions",
@@ -836,6 +844,8 @@
     "@indyzai/pos-domain": ["@indyzai/pos-domain@workspace:vendor/pos-ui-shared/packages/domain"],
 
     "@indyzai/pos-mobile": ["@indyzai/pos-mobile@workspace:apps/pos-mobile"],
+
+    "@indyzai/pos-offline-store": ["@indyzai/pos-offline-store@workspace:vendor/pos-ui-shared/packages/offline-store"],
 
     "@indyzai/pos-permissions": ["@indyzai/pos-permissions@workspace:vendor/pos-ui-shared/packages/permissions"],
 
