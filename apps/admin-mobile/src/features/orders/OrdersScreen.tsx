@@ -26,6 +26,7 @@ export function OrdersScreen() {
   const { setFeatureLoading, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const [tab, setTab] = useState<'orders' | 'refunds'>('orders');
   const [search, setSearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(25);
   const [refundOrder, setRefundOrder] = useState<SalesOrder>();
   const [bill, setBill] = useState<ReceiptData>();
   const controller = useRef<AbortController | undefined>(undefined);
@@ -136,6 +137,7 @@ export function OrdersScreen() {
       ),
     [data.refunds, query],
   );
+  useEffect(() => setVisibleCount(25), [search, tab, data.orders, data.refunds]);
   return (
     <View style={[s.screen, { backgroundColor: c.background }]}>
       <ScrollView
@@ -189,7 +191,7 @@ export function OrdersScreen() {
           />
         </View>
         {tab === 'orders'
-          ? orders.map((order) => (
+          ? orders.slice(0, visibleCount).map((order) => (
               <AppPressable
                 key={order.id}
                 onPress={() => viewBill(order)}
@@ -233,7 +235,7 @@ export function OrdersScreen() {
                 </View>
               </AppPressable>
             ))
-          : refunds.map((refund) => (
+          : refunds.slice(0, visibleCount).map((refund) => (
               <View
                 key={refund.id}
                 style={[s.card, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}
@@ -269,6 +271,11 @@ export function OrdersScreen() {
             title={`No ${tab} found`}
             message={search ? 'Try changing the search text.' : `No ${tab} have been saved yet.`}
           />
+        )}
+        {visibleCount < (tab === 'orders' ? orders.length : refunds.length) && (
+          <AppPressable onPress={() => setVisibleCount((count) => count + 25)}>
+            <Text style={{ color: c.primary, textAlign: 'center', padding: 16 }}>Load more ${tab}</Text>
+          </AppPressable>
         )}
       </ScrollView>
       <RefundDialog

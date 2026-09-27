@@ -20,8 +20,8 @@ import type {
 } from '@indyzai/feature-billing/types/billing';
 import { resolveBillingMode, type BillingMode } from '@indyzai/feature-billing/domain/billingMode';
 import { useBillingSales } from './useBillingSales';
+import { OfflineTableName, useAppOfflineEntity } from '../../../hooks/useAppOfflineEntity';
 
-const useProductTable = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 const useCustomerTable = createLocalFirstTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });
 const usePaymentMethodTable = createLocalFirstTableHook<BillingPaymentMethod>({
   table: 'payment_methods',
@@ -70,13 +70,23 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
     refetchOnReconnect: false,
     retry: false,
   });
-  const localProducts = useProductTable();
+  const localProducts = useAppOfflineEntity<Product>({
+    tableName: OfflineTableName.Products,
+    storeId: local.scope?.storeIds[0] ?? null,
+    listSelector: (record) => record.payload,
+    pageSize: 100,
+  });
   const localCustomers = useCustomerTable();
   const localPaymentMethods = usePaymentMethodTable();
   const localServiceUsers = useServiceUserTable();
   const localProductBatches = useProductBatchTable();
   const localTaxRates = useTaxRateTable();
   const sales = useBillingSales();
+
+  useEffect(() => {
+    if (localProducts.loading || localProducts.loadingMore || !localProducts.localHasMore) return;
+    void localProducts.loadMore();
+  }, [localProducts.loadMore, localProducts.loading, localProducts.loadingMore, localProducts.localHasMore]);
 
   const syncMutation = useMutation({
     networkMode: 'always',
@@ -139,7 +149,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
       ...query.data,
       cache: {
         ...query.data.cache,
-        products: payloadsFromRecords(localProducts.data),
+        products: localProducts.items,
         customers: payloadsFromRecords(localCustomers.data),
         paymentMethods: payloadsFromRecords(localPaymentMethods.data),
         serviceUsers: currentMode === 'service' ? payloadsFromRecords(localServiceUsers.data) : [],
@@ -152,7 +162,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
     localCustomers.data,
     localPaymentMethods.data,
     localProductBatches.data,
-    localProducts.data,
+    localProducts.items,
     localServiceUsers.data,
     localTaxRates.data,
     query.data,
@@ -160,8 +170,12 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
   ]);
   return {
     data,
-    error: local.error || auth.error || (error instanceof Error ? error.message : ''),
-    busy: query.isFetching || syncMutation.isPending || sales.loading,
+    error:
+      local.error ||
+      auth.error ||
+      localProducts.error?.message ||
+      (error instanceof Error ? error.message : ''),
+    busy: query.isFetching || syncMutation.isPending || localProducts.loading || sales.loading,
     sales,
     refresh,
     reload,

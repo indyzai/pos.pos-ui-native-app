@@ -278,12 +278,15 @@ export const billingApi = {
         collections,
         limit: 1000,
         signal,
+        getRefreshedToken: async () => {
+          const latest = await context();
+          return latest.key === c.key && latest.tenant === c.tenant ? latest.token : undefined;
+        },
       });
       const latest = await context();
       if (
         signal?.aborted ||
         latest.key !== c.key ||
-        latest.token !== c.token ||
         latest.tenant !== c.tenant ||
         (targetDb && getActiveDatabase() !== targetDb)
       )

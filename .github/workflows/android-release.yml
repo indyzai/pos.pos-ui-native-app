@@ -35,6 +35,8 @@ on:
       - "apps/pos-mobile/**"
       - "apps/admin-mobile/**"
       - "packages/**"
+      - "vendor/pos-ui-shared"
+      - ".gitmodules"
       - "package.json"
       - "bun.lock"
       - ".bun-version"
@@ -47,6 +49,8 @@ on:
       - "apps/pos-mobile/**"
       - "apps/admin-mobile/**"
       - "packages/**"
+      - "vendor/pos-ui-shared"
+      - ".gitmodules"
       - "package.json"
       - "bun.lock"
       - ".bun-version"
@@ -69,6 +73,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.INDYZAI_PAT }}
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -175,6 +183,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.INDYZAI_PAT }}
+          persist-credentials: false
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -361,6 +373,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.INDYZAI_PAT }}
+          persist-credentials: false
 
       - name: Setup Java
         uses: actions/setup-java@v5

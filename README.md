@@ -4,46 +4,12 @@ Offline-first iOS and Android POS applications built with React Native, Expo Rou
 
 ## Workspace
 
-```text
-apps/
-├── pos-mobile/                 # Cashier and manager POS app
-└── admin-mobile/               # Admin, owner, and super-admin app
+`apps/pos-mobile` and `apps/admin-mobile` consume `@indyzai` workspaces from the `vendor/pos-ui-shared` Git submodule. Its `packages/` folder contains code shared with web React, and `packages-native/` contains Expo and native-only packages. Initialize the submodule before installing dependencies:
 
-packages/
-├── domain/                     # Shared domain primitives
-├── application/                # Use-case contracts
-├── validation/                 # Validation contracts
-├── permissions/                # Roles and entitlement map
-├── api/                        # GraphQL/REST clients
-├── sync/                       # Sync queue primitives and events
-├── state/                      # Shared query state
-├── database/                   # Local-first schema, repositories, and outbox
-├── database-sqlite/            # Native SQLite adapter entry point
-├── ui-core/                    # Platform-neutral UI models
-├── ui-native/                  # Shared React Native components and theme
-├── printing/                   # Printing contracts
-├── printing-native/            # Native printing entry point
-├── scanner/                    # Scanner contracts
-├── scanner-native/             # Native scanner entry point
-├── storage/                    # Storage contracts
-├── storage-native/             # Secure native key-value storage
-├── config/                     # Environment and endpoint configuration
-├── utils/                      # Logging and general utilities
-├── feature-auth/               # Shared session, device setup, and permission hooks
-├── feature-flags/              # Profiles, global/org flags, scheduling, route visibility
-├── feature-billing/            # Shared billing types and calculations
-├── feature-orders/             # Shared order types and refund rules
-├── feature-inventory/          # Shared stock-count contracts and mapping
-├── feature-purchase/           # Shared purchase allocation rules
-├── feature-printers/           # Shared printer selection
-├── feature-organization/       # Shared organization rules
-├── feature-dashboard/
-├── feature-users/
-├── feature-finance/
-└── feature-reports/
+```bash
+git submodule update --init --recursive
+bun install
 ```
-
-There is intentionally no web application or web-specific UI, printing, scanner, or storage package in this phase.
 
 ## Applications
 

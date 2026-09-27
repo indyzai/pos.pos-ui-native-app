@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { hasEntitlement } from '../../../../packages/permissions/src';
+import { hasEntitlement } from '../../../../vendor/pos-ui-shared/packages/permissions/src';
 
 test('cashiers can access stock counts without manager edit permissions', () => {
   expect(hasEntitlement('inventory.reconcile', 'cashier', 'cashier', 'pos')).toBe(true);

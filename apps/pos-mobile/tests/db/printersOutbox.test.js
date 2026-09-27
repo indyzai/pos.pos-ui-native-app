@@ -4,7 +4,7 @@ import Dexie from 'dexie';
 import { expect, test } from 'bun:test';
 import { IndexedDbLocalDatabase } from '@indyzai/pos-database/indexeddb';
 import { createTableMutation } from '@indyzai/pos-database/table-mutations';
-import { createScopeKey } from '../../../../packages/database/src/types';
+import { createScopeKey } from '../../../../vendor/pos-ui-shared/packages-native/database/src/types';
 import { createPrinterConfigurationApi } from '@indyzai/feature-printers/configuration';
 
 const printer = {

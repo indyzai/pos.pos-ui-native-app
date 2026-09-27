@@ -1,3 +1,4 @@
+import { LOCAL_DATABASE_NAMES } from '@indyzai/pos-database';
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { createScopeKey } from '@indyzai/pos-database';
@@ -13,7 +14,7 @@ const scope = {
 
 afterEach(async () => {
   const { default: Dexie } = await import('dexie');
-  await Dexie.delete('indyz-pos-local-v1');
+  await Dexie.delete(LOCAL_DATABASE_NAMES.indexedDb.admin);
 });
 
 describe('IndexedDB local database adapter', () => {

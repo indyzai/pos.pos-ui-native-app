@@ -1,3 +1,4 @@
+import { LOCAL_DATABASE_NAMES } from '@indyzai/pos-database';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -300,7 +301,12 @@ export function DataSettingsSection() {
           value={local.status}
           valueColor={local.status === 'ready' ? c.success : c.error}
         />
-        <Detail label="Database" value={Platform.OS === 'web' ? 'indyz-pos-local-v1' : 'indyz-pos.db'} />
+        <Detail
+          label="Database"
+          value={
+            Platform.OS === 'web' ? LOCAL_DATABASE_NAMES.indexedDb.store : LOCAL_DATABASE_NAMES.sqlite.store
+          }
+        />
         <Detail
           label="Adapter"
           value={local.database?.kind === 'indexeddb' ? 'IndexedDB / Dexie' : 'SQLite / Drizzle'}

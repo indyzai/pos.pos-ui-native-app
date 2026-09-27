@@ -33,7 +33,8 @@ describe('role-scoped local database manifest', () => {
     const manifest = getRoleDataManifest(scope('admin'));
     expect(manifest.detailMode).toBe('assigned-stores');
     expect(manifest.collections.has('purchase_orders')).toBe(true);
-    expect(manifest.collections.has('goods_receipts')).toBe(true);
+    expect(manifest.collections.has('suppliers')).toBe(true);
+    expect(manifest.collections.has('goods_receipts')).toBe(false);
   });
 
   test('owner and superadmin default to on-demand details', () => {

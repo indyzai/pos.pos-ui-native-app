@@ -198,6 +198,10 @@ export const billingApi = {
         collections,
         limit: 1000,
         signal,
+        getRefreshedToken: async () => {
+          const latest = await context();
+          return latest.key === c.key && latest.tenant === c.tenant ? latest.token : undefined;
+        },
       });
       const latest = await context();
       if (
