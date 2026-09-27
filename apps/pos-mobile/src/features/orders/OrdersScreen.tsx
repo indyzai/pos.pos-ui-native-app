@@ -285,9 +285,7 @@ export function OrdersScreen() {
         )}
         {visibleCount < (tab === 'orders' ? orders.length : refunds.length) && (
           <AppPressable onPress={() => setVisibleCount((count) => count + 25)}>
-            <Text style={{ color: c.primary, textAlign: 'center', padding: 16 }}>
-              Load more ${tab}
-            </Text>
+            <Text style={{ color: c.primary, textAlign: 'center', padding: 16 }}>Load more ${tab}</Text>
           </AppPressable>
         )}
       </ScrollView>
