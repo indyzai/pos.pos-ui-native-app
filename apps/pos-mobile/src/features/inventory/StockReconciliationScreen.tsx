@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, useLocalSearchParams, usePathname } from 'expo-router';
-import { Check, ClipboardList, Save, ScanLine, Search, X } from 'lucide-react-native';
+import { Check, ClipboardList, Plus, Save, ScanLine, Search, X } from 'lucide-react-native';
 import {
   AppPressable,
   useAppTheme,
+  useBottomNavigation,
   useBottomNavigationClearance,
   useBackgroundRefresh,
 } from '@indyzai/pos-ui-native';
@@ -35,6 +36,7 @@ export function StockReconciliationScreen() {
   const { themeColors: c } = useAppTheme();
   const auth = useAuthSession();
   const bottomClearance = useBottomNavigationClearance();
+  const { setCenterItem } = useBottomNavigation();
   const params = useLocalSearchParams<{ productId?: string }>();
   const products = useProducts();
   const reconciliations = useReconciliations();
@@ -43,6 +45,8 @@ export function StockReconciliationScreen() {
   const [reference, setReference] = useState('');
   const [remarks, setRemarks] = useState('');
   const [editingId, setEditingId] = useState<string>();
+  const [formOpen, setFormOpen] = useState(false);
+  const openedProductId = useRef<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -61,10 +65,28 @@ export function StockReconciliationScreen() {
   );
 
   useEffect(() => {
-    if (!params.productId || counts[params.productId] !== undefined) return;
+    if (!params.productId || openedProductId.current === params.productId) return;
     const product = products.data.find((record) => record.payload.id === params.productId)?.payload;
-    if (product) setCounts((current) => ({ ...current, [product.id]: String(product.stock) }));
-  }, [counts, params.productId, products.data]);
+    if (product) {
+      openedProductId.current = params.productId;
+      setCounts((current) => ({ ...current, [product.id]: String(product.stock) }));
+      setFormOpen(true);
+    }
+  }, [params.productId, products.data]);
+
+  const clearForm = () => {
+    setCounts({});
+    setEditingId(undefined);
+    setReference('');
+    setRemarks('');
+    setSearch('');
+    setSharedWithCashiers(false);
+    setFormOpen(false);
+  };
+  const create = () => {
+    clearForm();
+    setFormOpen(true);
+  };
 
   const selected = useMemo(
     () =>
@@ -258,13 +280,13 @@ export function StockReconciliationScreen() {
   };
 
   const saveDraft = async () => {
-    if (!selected.length) return;
+    if (saving) return;
+    if (!selected.length) return showSnackbar('Select products', 'Enter a count for at least one product.');
     if (hasInvalidCounts)
       return showSnackbar('Invalid count', 'Enter a valid count for every added product.');
     setSaving(true);
     try {
       const report = buildReport('DRAFT');
-      // Drafts are local records only; submitting later creates the outbox mutation.
       const db = local.database;
       if (!db) throw new Error('Local database is not ready.');
       const current = editingId
@@ -294,7 +316,7 @@ export function StockReconciliationScreen() {
         deletedAt: null,
       });
       await reconciliations.reload();
-      setEditingId(report.id);
+      clearForm();
       showSnackbar('Draft saved', `${report.lines.length} product counts saved locally.`);
     } catch (error) {
       showSnackbar('Could not save draft', error instanceof Error ? error.message : 'Try again.');
@@ -302,8 +324,17 @@ export function StockReconciliationScreen() {
       setSaving(false);
     }
   };
+  const saveDraftRef = useRef(saveDraft);
+  saveDraftRef.current = saveDraft;
+  useEffect(() => {
+    if (pathname !== '/inventory-reconciliation' || !allowed || !formOpen) return;
+    setCenterItem({ label: 'Save draft', icon: Save, onPress: () => void saveDraftRef.current() });
+    return () => setCenterItem(null);
+  }, [allowed, formOpen, pathname, setCenterItem]);
 
   const submit = async () => {
+    if (saving) return;
+    if (!editingId) return showSnackbar('Open a draft', 'Save and open a draft before submitting.');
     if (!selected.length) return showSnackbar('Select products', 'Enter a count for at least one product.');
     if (hasInvalidCounts)
       return showSnackbar('Invalid count', 'Enter a valid count for every added product.');
@@ -315,6 +346,8 @@ export function StockReconciliationScreen() {
             ?.collection<LocalRecord<StockReconciliationReport>>('stock_counts')
             .get(editingId)
         : undefined;
+      if (current?.payload.status !== 'DRAFT' || !current.remoteId)
+        throw new Error('Open a saved draft before submitting.');
       const queued = await reconciliations.createMutation({
         payload: report,
         operation: editingId ? 'UPDATE' : 'CREATE',
@@ -346,11 +379,7 @@ export function StockReconciliationScreen() {
         })),
       );
       await products.reload();
-      setCounts({});
-      setEditingId(undefined);
-      setReference('');
-      setRemarks('');
-      setSharedWithCashiers(false);
+      clearForm();
       showSnackbar('Reconciliation submitted', `${report.lines.length} product stocks were updated.`);
     } catch (error) {
       showSnackbar('Submission failed', error instanceof Error ? error.message : 'Try again.');
@@ -366,6 +395,7 @@ export function StockReconciliationScreen() {
     setReference(report.reference ?? '');
     setRemarks(report.remarks ?? '');
     setSharedWithCashiers(report.sharedWithCashiers === true);
+    setFormOpen(true);
   };
 
   if (!allowed) return <Redirect href="/billing" />;
@@ -378,122 +408,8 @@ export function StockReconciliationScreen() {
         <View style={s.headerCopy}>
           <Text style={[s.title, { color: c.text }]}>Stock reconciliation</Text>
           <Text style={[s.subtitle, { color: c.textSecondary }]}>
-            Count multiple products and submit one report
+            Save counts as a draft, then open a draft to submit it.
           </Text>
-        </View>
-      </View>
-      <View style={[s.panel, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
-        <TextInput
-          value={reference}
-          onChangeText={setReference}
-          placeholder="Reference (optional)"
-          placeholderTextColor={c.textSecondary}
-          style={[s.field, { color: c.text, borderColor: c.outline }]}
-        />
-        {canManage ? (
-          <AppPressable
-            onPress={() => setSharedWithCashiers((value) => !value)}
-            style={[s.shareControl, { borderColor: c.outline }]}
-          >
-            <View
-              style={[s.shareIndicator, { backgroundColor: sharedWithCashiers ? c.primary : c.outlineMuted }]}
-            />
-            <Text style={{ color: c.text, fontWeight: '800' }}>
-              {sharedWithCashiers ? 'Shared with cashiers' : 'Only managers can see this draft'}
-            </Text>
-          </AppPressable>
-        ) : null}
-        <TextInput
-          value={remarks}
-          onChangeText={setRemarks}
-          placeholder="Remarks (optional)"
-          placeholderTextColor={c.textSecondary}
-          style={[s.field, { color: c.text, borderColor: c.outline }]}
-        />
-        <View style={s.searchRow}>
-          <View style={[s.searchBox, { borderColor: c.outline, backgroundColor: c.background }]}>
-            <Search size={18} color={c.textSecondary} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search name, SKU, or barcode"
-              placeholderTextColor={c.textSecondary}
-              style={[s.searchInput, { color: c.text }]}
-            />
-            {search ? (
-              <AppPressable accessibilityLabel="Clear product search" onPress={() => setSearch('')}>
-                <X size={17} color={c.textSecondary} />
-              </AppPressable>
-            ) : null}
-          </View>
-          <AppPressable
-            accessibilityLabel="Scan product barcode"
-            onPress={() => setScannerOpen(true)}
-            style={[s.scanButton, { backgroundColor: c.primary }]}
-          >
-            <ScanLine size={20} color="#fff" />
-          </AppPressable>
-        </View>
-        {suggestions.map(({ payload: product }) => (
-          <AppPressable
-            key={product.id}
-            onPress={() => addProduct(product)}
-            style={[s.suggestion, { borderColor: c.outlineMuted }]}
-          >
-            <View style={s.productCopy}>
-              <Text style={[s.productName, { color: c.text }]}>{product.name}</Text>
-              <Text style={[s.productStock, { color: c.textSecondary }]}>System stock {product.stock}</Text>
-            </View>
-            <Text style={{ color: c.primary, fontWeight: '800' }}>Add</Text>
-          </AppPressable>
-        ))}
-        {products.loading ? (
-          <Text style={[s.loading, { color: c.textSecondary }]}>Loading local inventory…</Text>
-        ) : null}
-        {!products.loading && !addedProducts.length ? (
-          <Text style={[s.emptySelection, { color: c.textSecondary }]}>
-            Search or scan to add products to this count.
-          </Text>
-        ) : null}
-        {addedProducts.map((product) => (
-          <View key={product.id} style={[s.productRow, { borderBottomColor: c.outlineMuted }]}>
-            <View style={s.productCopy}>
-              <Text style={[s.productName, { color: c.text }]}>{product.name}</Text>
-              <Text style={[s.productStock, { color: c.textSecondary }]}>System stock {product.stock}</Text>
-            </View>
-            <TextInput
-              value={counts[product.id] ?? ''}
-              onChangeText={(value) => setCounts((current) => ({ ...current, [product.id]: value }))}
-              placeholder="Count"
-              placeholderTextColor={c.textSecondary}
-              keyboardType="decimal-pad"
-              style={[s.count, { color: c.text, borderColor: c.outline, backgroundColor: c.background }]}
-            />
-            <AppPressable
-              accessibilityLabel={`Remove ${product.name}`}
-              onPress={() => removeProduct(product.id)}
-            >
-              <X size={18} color={c.textSecondary} />
-            </AppPressable>
-          </View>
-        ))}
-        <View style={s.actions}>
-          <AppPressable
-            disabled={saving || !selected.length || hasInvalidCounts}
-            onPress={() => void saveDraft()}
-            style={[s.secondary, { borderColor: c.primary, opacity: selected.length ? 1 : 0.5 }]}
-          >
-            <Save size={17} color={c.primary} />
-            <Text style={[s.actionText, { color: c.primary }]}>Save draft</Text>
-          </AppPressable>
-          <AppPressable
-            disabled={saving || !selected.length || hasInvalidCounts}
-            onPress={() => void submit()}
-            style={[s.primary, { backgroundColor: c.primary, opacity: selected.length ? 1 : 0.5 }]}
-          >
-            <Check size={17} color="#fff" />
-            <Text style={[s.actionText, { color: '#fff' }]}>{saving ? 'Saving…' : 'Submit report'}</Text>
-          </AppPressable>
         </View>
       </View>
       <View style={s.history}>
@@ -526,6 +442,136 @@ export function StockReconciliationScreen() {
           );
         })}
       </View>
+      {!formOpen ? (
+        <AppPressable onPress={create} style={[s.create, { backgroundColor: c.primary }]}>
+          <Plus size={18} color="#fff" />
+          <Text style={s.createText}>Create reconciliation</Text>
+        </AppPressable>
+      ) : (
+        <View style={[s.panel, { backgroundColor: c.surface, borderColor: c.outlineMuted }]}>
+          <View style={s.formHeading}>
+            <Text style={[s.historyTitle, { color: c.text }]}>
+              {editingId ? 'Edit draft' : 'New reconciliation'}
+            </Text>
+            <AppPressable
+              accessibilityLabel="Close reconciliation form"
+              onPress={clearForm}
+              disabled={saving}
+            >
+              <X size={20} color={c.textSecondary} />
+            </AppPressable>
+          </View>
+          <TextInput
+            value={reference}
+            onChangeText={setReference}
+            placeholder="Reference (optional)"
+            placeholderTextColor={c.textSecondary}
+            style={[s.field, { color: c.text, borderColor: c.outline }]}
+          />
+          {canManage ? (
+            <AppPressable
+              onPress={() => setSharedWithCashiers((value) => !value)}
+              style={[s.shareControl, { borderColor: c.outline }]}
+            >
+              <View
+                style={[
+                  s.shareIndicator,
+                  { backgroundColor: sharedWithCashiers ? c.primary : c.outlineMuted },
+                ]}
+              />
+              <Text style={{ color: c.text, fontWeight: '800' }}>
+                {sharedWithCashiers ? 'Shared with cashiers' : 'Only managers can see this draft'}
+              </Text>
+            </AppPressable>
+          ) : null}
+          <TextInput
+            value={remarks}
+            onChangeText={setRemarks}
+            placeholder="Remarks (optional)"
+            placeholderTextColor={c.textSecondary}
+            style={[s.field, { color: c.text, borderColor: c.outline }]}
+          />
+          <View style={s.searchRow}>
+            <View style={[s.searchBox, { borderColor: c.outline, backgroundColor: c.background }]}>
+              <Search size={18} color={c.textSecondary} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search name, SKU, or barcode"
+                placeholderTextColor={c.textSecondary}
+                style={[s.searchInput, { color: c.text }]}
+              />
+              {search ? (
+                <AppPressable accessibilityLabel="Clear product search" onPress={() => setSearch('')}>
+                  <X size={17} color={c.textSecondary} />
+                </AppPressable>
+              ) : null}
+            </View>
+            <AppPressable
+              accessibilityLabel="Scan product barcode"
+              onPress={() => setScannerOpen(true)}
+              style={[s.scanButton, { backgroundColor: c.primary }]}
+            >
+              <ScanLine size={20} color="#fff" />
+            </AppPressable>
+          </View>
+          {suggestions.map(({ payload: product }) => (
+            <AppPressable
+              key={product.id}
+              onPress={() => addProduct(product)}
+              style={[s.suggestion, { borderColor: c.outlineMuted }]}
+            >
+              <View style={s.productCopy}>
+                <Text style={[s.productName, { color: c.text }]}>{product.name}</Text>
+                <Text style={[s.productStock, { color: c.textSecondary }]}>System stock {product.stock}</Text>
+              </View>
+              <Text style={{ color: c.primary, fontWeight: '800' }}>Add</Text>
+            </AppPressable>
+          ))}
+          {products.loading ? (
+            <Text style={[s.loading, { color: c.textSecondary }]}>Loading local inventory…</Text>
+          ) : null}
+          {!products.loading && !addedProducts.length ? (
+            <Text style={[s.emptySelection, { color: c.textSecondary }]}>
+              Search or scan to add products to this count.
+            </Text>
+          ) : null}
+          {addedProducts.map((product) => (
+            <View key={product.id} style={[s.productRow, { borderBottomColor: c.outlineMuted }]}>
+              <View style={s.productCopy}>
+                <Text style={[s.productName, { color: c.text }]}>{product.name}</Text>
+                <Text style={[s.productStock, { color: c.textSecondary }]}>System stock {product.stock}</Text>
+              </View>
+              <TextInput
+                value={counts[product.id] ?? ''}
+                onChangeText={(value) => setCounts((current) => ({ ...current, [product.id]: value }))}
+                placeholder="Count"
+                placeholderTextColor={c.textSecondary}
+                keyboardType="decimal-pad"
+                style={[s.count, { color: c.text, borderColor: c.outline, backgroundColor: c.background }]}
+              />
+              <AppPressable
+                accessibilityLabel={`Remove ${product.name}`}
+                onPress={() => removeProduct(product.id)}
+              >
+                <X size={18} color={c.textSecondary} />
+              </AppPressable>
+            </View>
+          ))}
+          {editingId ? (
+            <View style={s.actions}>
+              <AppPressable
+                disabled={saving || !selected.length || hasInvalidCounts}
+                onPress={() => void submit()}
+                style={[s.primary, { backgroundColor: c.primary, opacity: selected.length ? 1 : 0.5 }]}
+              >
+                <Check size={17} color="#fff" />
+                <Text style={[s.actionText, { color: '#fff' }]}>{saving ? 'Saving…' : 'Submit report'}</Text>
+              </AppPressable>
+            </View>
+          ) : null}
+        </View>
+      )}
       {completedReports.length ? (
         <View style={s.history}>
           <View style={s.historyHeading}>
@@ -576,7 +622,23 @@ const s = StyleSheet.create({
   headerCopy: { flex: 1 },
   title: { fontSize: 24, fontWeight: '900' },
   subtitle: { marginTop: 3, fontSize: 12 },
-  panel: { borderWidth: 1, borderRadius: 18, padding: 14 },
+  panel: { borderWidth: 1, borderRadius: 18, padding: 14, marginTop: 16 },
+  formHeading: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  create: {
+    minHeight: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  createText: { color: '#fff', fontSize: 13, fontWeight: '900' },
   field: { height: 44, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, marginBottom: 10 },
   shareControl: {
     minHeight: 42,
@@ -626,16 +688,6 @@ const s = StyleSheet.create({
   productStock: { marginTop: 3, fontSize: 11 },
   count: { width: 92, height: 40, borderWidth: 1, borderRadius: 11, textAlign: 'center' },
   actions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  secondary: {
-    flex: 1,
-    height: 46,
-    borderWidth: 1,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-  },
   primary: {
     flex: 1,
     height: 46,

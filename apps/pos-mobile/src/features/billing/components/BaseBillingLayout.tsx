@@ -41,7 +41,7 @@ import { billingPolicy } from '@indyzai/feature-billing/domain/billingTotals';
 import { useHeldOrders } from '../hooks/useHeldOrders';
 import { HeldOrdersDialog } from '@indyzai/feature-billing/native/HeldOrdersDialog';
 import { CustomerPickerDialog } from '@indyzai/feature-billing/native/CustomerPickerDialog';
-import { AddInventoryItemModal } from '../../inventory/components/AddInventoryItemModal';
+import { AddInventoryItemModal } from '@indyzai/feature-inventory/item-modal';
 import { inventoryApi } from '../../inventory/inventoryApi';
 import { PettyCashDialog } from '@indyzai/feature-billing/native/PettyCashDialog';
 import { counterSessionApi } from '../../counter-session/counterSessionApi';
@@ -878,6 +878,7 @@ export function BaseBillingLayout({
         subtitle="Add the essentials now. Complete this product later from Inventory."
       >
         <AddInventoryItemModal
+          inventoryApi={inventoryApi}
           embedded
           quickAdd
           visible={quickAddOpen}
