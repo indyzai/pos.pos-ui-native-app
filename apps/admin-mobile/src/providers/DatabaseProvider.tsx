@@ -160,7 +160,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       {state.database && state.status === 'ready' && session ? (
         <>
           <AdminOutboxProcessor database={state.database} />
-          <SettingsBridge />
+          <SettingsBridge surface="admin" />
         </>
       ) : null}
       {children}

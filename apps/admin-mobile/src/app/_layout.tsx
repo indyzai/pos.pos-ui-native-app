@@ -4,7 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@indyzai/pos-state';
-import { ThemeProvider, useAppTheme } from '@indyzai/pos-ui-native';
+import { useAppTheme } from '@indyzai/pos-ui-native';
+import { StartupBrandGate } from '@indyzai/feature-organization/StartupBrandGate';
+import * as SplashScreen from 'expo-splash-screen';
 import { AuthSessionProvider, useAuthSession } from '../auth/AuthSessionContext';
 import { DatabaseProvider } from '../providers/DatabaseProvider';
 import { Platform, useWindowDimensions, View } from 'react-native';
@@ -18,11 +20,16 @@ import { AppPaperProvider } from '@indyzai/pos-ui-native';
 import { isRouteFeatureEnabled } from '@indyzai/feature-flags';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
+if (Platform.OS !== 'web') void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+const hideNativeSplash = () => {
+  if (Platform.OS !== 'web') void SplashScreen.hideAsync().catch(() => undefined);
+};
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
+        <StartupBrandGate surface="admin" onReady={hideNativeSplash}>
           <AppPaperProvider>
             <ThemedSnackbarProvider>
               <AuthSessionProvider>
@@ -34,7 +41,7 @@ export default function RootLayout() {
               </AuthSessionProvider>
             </ThemedSnackbarProvider>
           </AppPaperProvider>
-        </ThemeProvider>
+        </StartupBrandGate>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
