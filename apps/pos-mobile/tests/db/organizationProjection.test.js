@@ -5,7 +5,10 @@ import { indexedDB, IDBKeyRange } from 'fake-indexeddb';
 import { IndexedDbLocalDatabase } from '@indyzai/pos-database/indexeddb';
 import { createScopeKey } from '@indyzai/pos-database';
 import { projectOrganization } from '@indyzai/feature-organization/projectOrganization';
-import { readWebOrganization, writeWebOrganization } from '@indyzai/feature-organization/webOrganizationTable';
+import {
+  readWebOrganization,
+  writeWebOrganization,
+} from '@indyzai/feature-organization/webOrganizationTable';
 
 test('browser authentication organization cache persists in its local table', async () => {
   const id = `web-organization-${crypto.randomUUID()}`;
@@ -18,7 +21,13 @@ test('initial organization data is stored locally without replacing edited setti
   Dexie.dependencies.indexedDB = indexedDB;
   Dexie.dependencies.IDBKeyRange = IDBKeyRange;
   const name = `organization-projection-${crypto.randomUUID()}`;
-  const scope = { tenantId: 'tenant', userId: 'user', role: 'cashier', storeIds: ['branch'], deviceId: 'device' };
+  const scope = {
+    tenantId: 'tenant',
+    userId: 'user',
+    role: 'cashier',
+    storeIds: ['branch'],
+    deviceId: 'device',
+  };
   const database = new IndexedDbLocalDatabase(scope, name);
   await database.initialize();
   try {
@@ -33,7 +42,7 @@ test('initial organization data is stored locally without replacing edited setti
     expect((await database.collection('organizations').list())[0].payload.name).toBe('Corner Shop');
     expect((await database.collection('stores').list())[0].payload.name).toBe('Main');
     expect((await database.collection('counters').list())[0].payload.branchId).toBe('branch');
-    expect((await database.collection('shifts').list())).toHaveLength(1);
+    expect(await database.collection('shifts').list()).toHaveLength(1);
 
     const id = `${createScopeKey(scope)}:app_settings:business`;
     const settings = database.collection('app_settings');
