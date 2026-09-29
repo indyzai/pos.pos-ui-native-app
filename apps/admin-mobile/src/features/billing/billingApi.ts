@@ -89,6 +89,8 @@ const pullQueue = new SerialQueue();
 const pushQueue = new SerialQueue();
 const billingBootstrapCollections = [
   'products',
+  'categories',
+  'units',
   'customers',
   'serviceUsers',
   'paymentMethods',

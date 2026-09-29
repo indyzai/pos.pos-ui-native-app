@@ -1,5 +1,5 @@
 import * as Crypto from 'expo-crypto';
-import { createLocalFirstTableHook, useLocalDatabase } from '@indyzai/pos-database';
+import { createOfflineTableHook, useLocalDatabase } from '@indyzai/pos-database';
 import type {
   BillingOrderContext,
   CartItem,
@@ -8,7 +8,7 @@ import type {
   ScrapExchange,
 } from '@indyzai/feature-billing/types/billing';
 
-const useHeldOrderTable = createLocalFirstTableHook<HeldOrder>({
+const useHeldOrderTable = createOfflineTableHook<HeldOrder>({
   table: 'held_orders',
   entityType: 'HELD_ORDER',
 });

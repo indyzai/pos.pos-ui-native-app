@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Plus, RefreshCw, Search, UserRound } from 'lucide-react-native';
 import { AppPressable, showSnackbar, useAppTheme, useBottomNavigation } from '@indyzai/pos-ui-native';
-import { createLocalFirstTableHook, payloadsFromRecords } from '@indyzai/pos-database';
+import { createOfflineTableHook, payloadsFromRecords } from '@indyzai/pos-database';
 import { customersApi, type LocalCustomer } from './customersApi';
 
-const useCustomerTable = createLocalFirstTableHook<LocalCustomer>({
+const useCustomerTable = createOfflineTableHook<LocalCustomer>({
   table: 'customers',
   entityType: 'CUSTOMER',
 });

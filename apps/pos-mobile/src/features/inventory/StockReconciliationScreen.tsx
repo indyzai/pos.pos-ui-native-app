@@ -11,7 +11,7 @@ import {
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import {
-  createLocalFirstTableHook,
+  createOfflineTableHook,
   createScopeKey,
   getActiveDatabase,
   type LocalRecord,
@@ -23,8 +23,8 @@ import type { StockReconciliationReport } from '@indyzai/feature-inventory/types
 import { inventoryApi } from './inventoryApi';
 import { BarcodeScannerModal } from '@indyzai/pos-scanner-native/modal';
 
-const useProducts = createLocalFirstTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
-const useReconciliations = createLocalFirstTableHook<StockReconciliationReport>({
+const useProducts = createOfflineTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
+const useReconciliations = createOfflineTableHook<StockReconciliationReport>({
   table: 'stock_counts',
   entityType: 'STOCK_RECONCILIATION',
   query: { includeDeleted: true },

@@ -198,6 +198,7 @@
         "expo-constants": "~57.0.17",
         "expo-linear-gradient": "~57.0.1",
         "expo-local-authentication": "~57.0.2",
+        "expo-router": "~57.0.19",
         "expo-secure-store": "~57.0.3",
         "expo-web-browser": "~57.0.2",
         "lucide-react-native": "^1.41.0",
@@ -283,9 +284,11 @@
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-sync": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "lucide-react-native": "^1.41.0",
       },
@@ -299,18 +302,29 @@
       "name": "@indyzai/feature-organization",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
         "@indyzai/feature-flags": "workspace:*",
+        "@indyzai/feature-orders": "workspace:*",
+        "@indyzai/feature-printers": "workspace:*",
+        "@indyzai/pos-api": "workspace:*",
         "@indyzai/pos-application": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
+        "@indyzai/pos-config": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-permissions": "workspace:*",
         "@indyzai/pos-storage-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
+        "@tanstack/react-query": "^5.102.8",
         "drizzle-orm": "^0.45.2",
+        "expo-constants": "~57.0.17",
+        "expo-router": "~57.0.19",
+        "lucide-react-native": "^1.41.0",
       },
       "peerDependencies": {
         "react": "19.2.3",
         "react-native": "0.86.3",
+        "react-native-safe-area-context": "~5.7.0",
       },
     },
     "vendor/pos-ui-shared/packages-native/feature-printers": {
@@ -360,6 +374,14 @@
       "version": "1.0.0",
       "dependencies": {
         "@indyzai/feature-orders": "workspace:*",
+        "@indyzai/pos-auth": "workspace:*",
+        "@indyzai/pos-ui-native": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
+        "lucide-react-native": "^1.41.0",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
       },
     },
     "vendor/pos-ui-shared/packages-native/feature-restaurant": {
@@ -367,7 +389,13 @@
       "version": "1.0.0",
       "dependencies": {
         "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-ui-native": "workspace:*",
         "drizzle-orm": "^0.45.2",
+        "lucide-react-native": "^1.41.0",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
       },
     },
     "vendor/pos-ui-shared/packages-native/feature-scrap": {

@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react';
-import { createLocalFirstTableHook, replaceLocalPayloads, useLocalDatabase } from '@indyzai/pos-database';
+import { createOfflineTableHook, replaceLocalPayloads, useLocalDatabase } from '@indyzai/pos-database';
 import { restaurantApi } from './restaurantApi';
 import type { RestaurantTable } from '@indyzai/feature-restaurant/types';
 
-const useRestaurantTable = createLocalFirstTableHook<RestaurantTable>({
+const useRestaurantTable = createOfflineTableHook<RestaurantTable>({
   table: 'restaurant_tables',
   entityType: 'RESTAURANT_TABLE',
 });

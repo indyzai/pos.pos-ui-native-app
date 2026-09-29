@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test';
 import Dexie from 'dexie';
 import { indexedDB, IDBKeyRange } from 'fake-indexeddb';
 import { IndexedDbLocalDatabase } from '@indyzai/pos-database/indexeddb';
+import { createScopeKey } from '@indyzai/pos-database';
 import { createTableMutation } from '@indyzai/pos-database/table-mutations';
 import { createCustomersApi } from '@indyzai/feature-customers';
 
@@ -20,7 +21,7 @@ async function withApi(work) {
   let response = async (query) =>
     query.includes('saveParty') ? { saveParty: { id: '42', name: 'Customer' } } : { parties: [] };
   const api = createCustomersApi({
-    getContext: () => ({ database, scope: 'test-scope', tenant: 't', token }),
+    getContext: () => ({ database, scope: createScopeKey(database.scope), tenant: 't', token }),
     createId: () => crypto.randomUUID(),
     mapCustomer: (row) => ({ ...row, id: String(row.id), type: 'CUSTOMER' }),
     request: async (_token, _tenant, query, variables) => {
@@ -78,6 +79,23 @@ test('customer creation is local-only and its server ID resolves dependent sale 
     expect((await database.collection('customers').get(customer.id)).payload.pendingSync).toBe(false);
     await api.pushPending();
     expect(calls).toHaveLength(1);
+  });
+});
+
+test('startup sync does not create mutations for cached server customers', async () => {
+  await withApi(async ({ api, database, calls, setResponse }) => {
+    setResponse(async () => ({ parties: [{ id: '42', name: 'Existing customer', type: 'CUSTOMER' }] }));
+    await api.sync();
+    const customers = database.collection('customers');
+    const list = customers.list.bind(customers);
+    // The older Android customers table has no sync_status column, so its
+    // collection cannot apply a syncStatus query at the SQL layer.
+    customers.list = (query) => list({ ...query, syncStatus: undefined });
+
+    await api.pushPending();
+
+    expect(calls.filter(({ query }) => query.includes('saveParty'))).toHaveLength(0);
+    expect(await database.collection('sync_outbox').list()).toHaveLength(0);
   });
 });
 

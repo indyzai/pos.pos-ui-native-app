@@ -11,17 +11,17 @@ import type { Product } from '@indyzai/feature-billing/types/billing';
 import type { SalesOrder } from '@indyzai/feature-orders/types';
 import type { RefundSelection } from '@indyzai/feature-orders/refundPolicy';
 import {
-  createLocalFirstTableHook,
+  createOfflineTableHook,
   payloadsFromRecords,
   applyBootstrapCollections,
   getActiveDatabase,
 } from '@indyzai/pos-database';
 import type { RefundRecord } from '@indyzai/feature-orders/types';
 
-const useOrderTable = createLocalFirstTableHook<SalesOrder>({ table: 'orders', entityType: 'ORDER' });
-const useSalesTable = createLocalFirstTableHook<PendingSale>({ table: 'sales', entityType: 'SALE' });
-const useProductsTable = createLocalFirstTableHook<Product>({ table: 'products' });
-const useRefundTable = createLocalFirstTableHook<RefundRecord>({ table: 'refunds', entityType: 'REFUND' });
+const useOrderTable = createOfflineTableHook<SalesOrder>({ table: 'orders', entityType: 'ORDER' });
+const useSalesTable = createOfflineTableHook<PendingSale>({ table: 'sales', entityType: 'SALE' });
+const useProductsTable = createOfflineTableHook<Product>({ table: 'products' });
+const useRefundTable = createOfflineTableHook<RefundRecord>({ table: 'refunds', entityType: 'REFUND' });
 
 export function useOrders() {
   const pathname = usePathname();

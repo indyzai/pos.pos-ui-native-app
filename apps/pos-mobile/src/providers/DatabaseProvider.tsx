@@ -22,7 +22,9 @@ import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
 import { useNetworkStatus } from '@indyzai/pos-ui-native';
 import { billingApi } from '../features/billing/billingApi';
+import { settingsApi } from '../features/settings/settingsApi';
 import { SettingsBridge } from '@indyzai/feature-organization/settings';
+import { projectOrganization } from '@indyzai/feature-organization/projectOrganization';
 import {
   startBillingOutboxWorker,
   stopBillingOutboxWorker,
@@ -93,6 +95,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         queryClient.clear();
       }
       await kvStore.set(appStorageKeys.pos.databaseOwner, owner);
+      if (session.organization) await projectOrganization(database, session.organization);
       if (current !== generation.current) {
         await database.close();
         return;
@@ -126,6 +129,30 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       generation.current++;
     };
   }, [initialize]);
+
+  useEffect(() => {
+    if (!state.database || state.status !== 'ready' || !session?.organization) return;
+    if (String(session.tenant.id) !== state.database.scope.tenantId) return;
+    void projectOrganization(state.database, session.organization).catch((reason) =>
+      logger.error('Could not update local organization', { error: String(reason) }),
+    );
+  }, [state.database, state.status, session?.organization, session?.tenant.id]);
+
+  useEffect(() => {
+    if (!state.database || state.status !== 'ready' || !session) return;
+    const database = state.database;
+    const controller = new AbortController();
+    void Promise.allSettled([
+      billingApi.refresh(controller.signal, database),
+      settingsApi.refresh(controller.signal),
+    ]).then((results) => {
+      if (controller.signal.aborted) return;
+      for (const result of results)
+        if (result.status === 'rejected')
+          logger.warn('Initial local data refresh failed', { error: String(result.reason) });
+    });
+    return () => controller.abort();
+  }, [state.database, state.status, session?.tenant.id, session?.user.id]);
 
   const value = useMemo<DatabaseState>(() => ({ ...state, retry: initialize }), [initialize, state]);
   return (

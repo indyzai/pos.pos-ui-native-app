@@ -9,7 +9,7 @@ import { billingApi, type BillingCache } from '../billingApi';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
-import { createLocalFirstTableHook, payloadsFromRecords } from '@indyzai/pos-database';
+import { createOfflineTableHook, payloadsFromRecords } from '@indyzai/pos-database';
 import type {
   BillingPaymentMethod,
   BillingTaxRate,
@@ -22,20 +22,20 @@ import { resolveBillingMode, type BillingMode } from '@indyzai/feature-billing/d
 import { useBillingSales } from './useBillingSales';
 import { OfflineTableName, useAppOfflineEntity } from '../../../hooks/useAppOfflineEntity';
 
-const useCustomerTable = createLocalFirstTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });
-const usePaymentMethodTable = createLocalFirstTableHook<BillingPaymentMethod>({
+const useCustomerTable = createOfflineTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });
+const usePaymentMethodTable = createOfflineTableHook<BillingPaymentMethod>({
   table: 'payment_methods',
   entityType: 'PAYMENT_METHOD',
 });
-const useServiceUserTable = createLocalFirstTableHook<ServiceUser>({
+const useServiceUserTable = createOfflineTableHook<ServiceUser>({
   table: 'service_users',
   entityType: 'SERVICE_USER',
 });
-const useProductBatchTable = createLocalFirstTableHook<ProductBatch>({
+const useProductBatchTable = createOfflineTableHook<ProductBatch>({
   table: 'product_batches',
   entityType: 'PRODUCT_BATCH',
 });
-const useTaxRateTable = createLocalFirstTableHook<BillingTaxRate>({
+const useTaxRateTable = createOfflineTableHook<BillingTaxRate>({
   table: 'tax_rates',
   entityType: 'TAX_RATE',
 });

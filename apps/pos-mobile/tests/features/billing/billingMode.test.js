@@ -23,6 +23,8 @@ test('falls back safely to retail billing', () => {
 test('resolves required bootstrap collections per business mode', () => {
   expect(getBillingBootstrapCollections('retail')).toEqual([
     'products',
+    'categories',
+    'units',
     'customers',
     'paymentMethods',
     'taxRates',
