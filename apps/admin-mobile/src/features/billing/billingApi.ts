@@ -189,9 +189,13 @@ export const billingApi = {
               c,
               targetDb,
               signal,
-              (requestedCollections ?? billingBootstrapCollections).filter((collection) => collection !== 'customers'),
+              (requestedCollections ?? billingBootstrapCollections).filter(
+                (collection) => collection !== 'customers',
+              ),
             )
-          : (requestedCollections ?? billingBootstrapCollections).filter((collection) => collection !== 'customers');
+          : (requestedCollections ?? billingBootstrapCollections).filter(
+              (collection) => collection !== 'customers',
+            );
       if (!collections.length) return;
       const bootstrap = await requestPosBootstrap<{
         generatedAt: string;
