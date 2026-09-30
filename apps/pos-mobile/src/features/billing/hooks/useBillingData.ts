@@ -1,11 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { usePathname } from 'expo-router';
 import { createScopeKey } from '@indyzai/pos-database';
 import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
 import { printerConfigurationApi } from '../../printing/printerConfigurationApi';
 import { getNetworkStatusSnapshot } from '@indyzai/pos-ui-native';
-import { billingApi, type BillingCache } from '../billingApi';
+import { billingApi, fallbackPaymentMethods, type BillingCache } from '../billingApi';
+import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
@@ -20,9 +21,9 @@ import type {
 } from '@indyzai/feature-billing/types/billing';
 import { resolveBillingMode, type BillingMode } from '@indyzai/feature-billing/domain/billingMode';
 import { useBillingSales } from './useBillingSales';
-import { OfflineTableName, useAppOfflineEntity } from '../../../hooks/useAppOfflineEntity';
 
 const useCustomerTable = createOfflineTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });
+const useProductTable = createOfflineTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
 const usePaymentMethodTable = createOfflineTableHook<BillingPaymentMethod>({
   table: 'payment_methods',
   entityType: 'PAYMENT_METHOD',
@@ -42,7 +43,6 @@ const useTaxRateTable = createOfflineTableHook<BillingTaxRate>({
 
 export function useBillingData(businessTypeOverride?: BillingMode) {
   const pathname = usePathname();
-  const queryClient = useQueryClient();
   const running = useRef(false);
   const auth = useAuthSession();
   const currentMode =
@@ -61,32 +61,13 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
   );
   const userId = auth.session?.user.id;
   const tenantId = auth.session?.tenant.id;
-  const query = useQuery<{ key: string; cache: BillingCache }>({
-    queryKey: ['billing-cache', userId, tenantId, currentMode],
-    enabled: ready,
-    networkMode: 'always',
-    queryFn: billingApi.load,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: false,
-  });
-  const localProducts = useAppOfflineEntity<Product>({
-    tableName: OfflineTableName.Products,
-    storeId: local.scope?.storeIds[0] ?? null,
-    listSelector: (record) => record.payload,
-    pageSize: 100,
-  });
+  const localProducts = useProductTable();
   const localCustomers = useCustomerTable();
   const localPaymentMethods = usePaymentMethodTable();
   const localServiceUsers = useServiceUserTable();
   const localProductBatches = useProductBatchTable();
   const localTaxRates = useTaxRateTable();
   const sales = useBillingSales();
-
-  useEffect(() => {
-    if (localProducts.loading || localProducts.loadingMore || !localProducts.localHasMore) return;
-    void localProducts.loadMore();
-  }, [localProducts.loadMore, localProducts.loading, localProducts.loadingMore, localProducts.localHasMore]);
 
   const syncMutation = useMutation({
     networkMode: 'always',
@@ -96,12 +77,17 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
       await printingApi.syncPending();
       await billingApi.refresh(signal, local.database);
     },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['billing-cache'] });
-    },
   });
   const reload = async () => {
-    await query.refetch();
+    await Promise.all([
+      localProducts.reload(),
+      localCustomers.reload(),
+      localPaymentMethods.reload(),
+      localServiceUsers.reload(),
+      localProductBatches.reload(),
+      localTaxRates.reload(),
+      sales.reload(),
+    ]);
   };
   const refresh = async (signal?: AbortSignal) => {
     if (!auth.initializing && !auth.session) {
@@ -113,7 +99,7 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
     try {
       await syncMutation.mutateAsync(signal);
     } catch {
-      // TanStack Query retains the mutation error for the billing status UI.
+      // The mutation retains its error for the billing status UI.
     } finally {
       running.current = false;
     }
@@ -142,42 +128,46 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
       controller?.abort();
     };
   }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready, pathname]);
-  const error = syncMutation.error ?? query.error;
+  const error = syncMutation.error;
   const data = useMemo(() => {
-    if (!ready || !query.data) return undefined;
+    if (!ready || !userId || !tenantId) return undefined;
     return {
-      ...query.data,
+      key: appStorageKeys.pos.billing(userId, tenantId),
       cache: {
-        ...query.data.cache,
-        products: localProducts.items,
+        products: payloadsFromRecords(localProducts.data).filter(
+          (product) => product.categoryType !== 'SCRAP',
+        ),
         customers: payloadsFromRecords(localCustomers.data),
         paymentMethods: localPaymentMethods.data.length
           ? payloadsFromRecords(localPaymentMethods.data)
-          : query.data.cache.paymentMethods,
+          : fallbackPaymentMethods,
         serviceUsers: currentMode === 'service' ? payloadsFromRecords(localServiceUsers.data) : [],
         productBatches: currentMode === 'pharmacy' ? payloadsFromRecords(localProductBatches.data) : [],
         taxRates: payloadsFromRecords(localTaxRates.data),
-      },
+        session: (auth.session?.organization?.activeSession ?? null) as BillingCache['session'],
+        queue: payloadsFromRecords(
+          sales.data.filter((record) => ['PENDING', 'RUNNING', 'FAILED'].includes(record.syncStatus)),
+        ),
+      } satisfies BillingCache,
     };
   }, [
     currentMode,
     localCustomers.data,
     localPaymentMethods.data,
     localProductBatches.data,
-    localProducts.items,
+    localProducts.data,
     localServiceUsers.data,
     localTaxRates.data,
-    query.data,
+    sales.data,
+    auth.session?.organization?.activeSession,
+    userId,
+    tenantId,
     ready,
   ]);
   return {
     data,
-    error:
-      local.error ||
-      auth.error ||
-      localProducts.error?.message ||
-      (error instanceof Error ? error.message : ''),
-    busy: query.isFetching || syncMutation.isPending || localProducts.loading || sales.loading,
+    error: local.error || auth.error || localProducts.error || (error instanceof Error ? error.message : ''),
+    busy: syncMutation.isPending || localProducts.loading || sales.loading,
     sales,
     refresh,
     reload,

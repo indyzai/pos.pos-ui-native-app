@@ -1,9 +1,7 @@
 import type { Href } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
 import {
-  ArrowLeftRight,
   ChartPie,
-  Clock,
   ClipboardCheck,
   LayoutGrid,
   Package,
@@ -11,7 +9,6 @@ import {
   ReceiptText,
   Settings,
   Users,
-  Wallet,
 } from 'lucide-react-native';
 import { type Entitlement, hasEntitlement } from '@indyzai/pos-permissions';
 import { resolveStoreAccessRole, type StoreAccessRole } from './access';
@@ -40,7 +37,7 @@ export function navigationItemsForRole(
 }
 
 export const primaryNavigationItems: AppNavigationItem[] = [
-  { label: 'Billing', icon: LayoutGrid, href: '/billing' },
+  { label: 'Billing', icon: LayoutGrid, href: '/billing', entitlement: 'billing.create' },
   { label: 'Inventory', icon: Package, href: '/inventory', entitlement: 'inventory.view' },
 ];
 
@@ -48,6 +45,7 @@ export const reportNavigationItem: AppNavigationItem = {
   label: 'Reports',
   icon: ChartPie,
   href: '/reports',
+  entitlement: 'reports.view',
 };
 
 export const moreNavigationItems: AppNavigationItem[] = [
@@ -57,11 +55,8 @@ export const moreNavigationItems: AppNavigationItem[] = [
     href: '/inventory-reconciliation',
     entitlement: 'inventory.reconcile',
   },
-  { label: 'Customers', icon: Users, href: '/customers' },
-  { label: 'Orders', icon: ReceiptText, href: '/orders' },
-  { label: 'Transfers', icon: ArrowLeftRight, href: '/transfers', entitlement: 'inventory.edit' },
-  { label: 'Expenses', icon: Wallet, href: '/expenses', entitlement: 'inventory.edit' },
-  { label: 'Shifts', icon: Clock, href: '/shifts' },
+  { label: 'Customers', icon: Users, href: '/customers', entitlement: 'billing.create' },
+  { label: 'Orders', icon: ReceiptText, href: '/orders', entitlement: 'reports.view' },
   { label: 'Purchases', icon: ShoppingBag, href: '/purchases', entitlement: 'purchases.view' },
   { label: 'Settings', icon: Settings, href: '/settings' },
 ];
@@ -71,7 +66,7 @@ export const tabletNavigationItems: AppNavigationItem[] = [
   moreNavigationItems[0],
   moreNavigationItems[1],
   reportNavigationItem,
-  moreNavigationItems[7],
+  ...moreNavigationItems.filter((item) => item.href === '/settings'),
 ];
 
 export function isNavigationItemActive(pathname: string, href: Href): boolean {

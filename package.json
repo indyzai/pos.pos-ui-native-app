@@ -24,6 +24,7 @@
     "admin:android": "bun run --filter @indyzai/admin-mobile android",
     "admin:ios": "bun run --filter @indyzai/admin-mobile ios",
     "both": "bun run --filter @indyzai/pos-mobile --filter @indyzai/admin-mobile start",
+    "ios-build": "bun run --filter @indyzai/pos-mobile --filter @indyzai/admin-mobile ios-build",
     "test": "bun test",
     "typecheck": "bun x tsc -p apps/pos-mobile/tsconfig.json --noEmit && bun x tsc -p apps/admin-mobile/tsconfig.json --noEmit",
     "format": "bun run --filter '*' format",

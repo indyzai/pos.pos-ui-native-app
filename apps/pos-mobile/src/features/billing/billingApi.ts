@@ -61,7 +61,7 @@ export type BillingCache = {
   queue: PendingSale[];
   updated?: string;
 };
-const fallbackPaymentMethods: BillingPaymentMethod[] = [
+export const fallbackPaymentMethods: BillingPaymentMethod[] = [
   {
     id: 'cash',
     name: 'Cash',
@@ -311,16 +311,21 @@ export const billingApi = {
         cache.session = (rows.counterSessions?.[0] as CounterSession | undefined) ?? null;
       cache.updated = bootstrap.generatedAt;
 
-      const writes: Promise<unknown>[] = [writeBillingSnapshot(c.key, cache, { preserveSales: true })];
-      if ('customers' in rows)
-        writes.push(billingReferenceRepository.replaceCustomers(c.key, cache.customers));
-      if ('paymentMethods' in rows)
-        writes.push(billingReferenceRepository.replacePaymentMethods(c.key, cache.paymentMethods));
-      if ('serviceUsers' in rows)
-        writes.push(billingReferenceRepository.replaceServiceUsers(c.key, cache.serviceUsers));
-      if ('products' in rows) writes.push(productBatchRepository.replace(c.key, cache.productBatches));
-      if ('taxRates' in rows) writes.push(billingReferenceRepository.replaceTaxRates(c.key, cache.taxRates));
-      await Promise.all(writes);
+      await writeBillingSnapshot(c.key, cache, { preserveSales: true });
+      if (!targetDb) {
+        const legacyWrites: Promise<unknown>[] = [];
+        if ('customers' in rows)
+          legacyWrites.push(billingReferenceRepository.replaceCustomers(c.key, cache.customers));
+        if ('paymentMethods' in rows)
+          legacyWrites.push(billingReferenceRepository.replacePaymentMethods(c.key, cache.paymentMethods));
+        if ('serviceUsers' in rows)
+          legacyWrites.push(billingReferenceRepository.replaceServiceUsers(c.key, cache.serviceUsers));
+        if ('products' in rows)
+          legacyWrites.push(productBatchRepository.replace(c.key, cache.productBatches));
+        if ('taxRates' in rows)
+          legacyWrites.push(billingReferenceRepository.replaceTaxRates(c.key, cache.taxRates));
+        await Promise.all(legacyWrites);
+      }
     }),
   hasUpdates: async (database: LocalDatabase, signal?: AbortSignal) => {
     const c = await context();

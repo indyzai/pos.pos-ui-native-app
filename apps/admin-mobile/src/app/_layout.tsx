@@ -18,7 +18,12 @@ import { AppHeaderProvider } from '@indyzai/pos-ui-native';
 import { TabletNavigationPane } from '../shared/components/navigation/TabletNavigationPane';
 import { SnackbarProvider } from '@indyzai/pos-ui-native/snackbar';
 import { AppPaperProvider } from '@indyzai/pos-ui-native';
-import { isRouteFeatureEnabled } from '@indyzai/feature-flags';
+import {
+  visibleNavigationItems,
+  primaryNavigationItems,
+  moreNavigationItems,
+  orderNavigationItem,
+} from '../shared/navigation/routes';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 
 if (Platform.OS !== 'web') void SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -63,7 +68,7 @@ function RootNavigator() {
   const [navigationCollapsed, setNavigationCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { authenticated, initializing } = useAuthSession();
+  const { authenticated, initializing, session } = useAuthSession();
   const { flags } = useFeatureToggles();
   useEffect(() => {
     const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/device-setup'];
@@ -76,10 +81,25 @@ function RootNavigator() {
       }
       return;
     }
-    if (!initializing && authenticated && !isRouteFeatureEnabled(normalizedPath, flags)) {
-      router.replace('/settings');
+    if (
+      !initializing &&
+      authenticated &&
+      session &&
+      !publicRoutes.includes(normalizedPath) &&
+      normalizedPath !== '/profile'
+    ) {
+      const allowed = visibleNavigationItems(
+        [...primaryNavigationItems, ...moreNavigationItems, orderNavigationItem],
+        flags,
+        session.tenant.role,
+        session.user.role,
+      ).some((item) => {
+        const href = typeof item.href === 'string' ? item.href : item.href.pathname;
+        return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
+      });
+      if (!allowed && normalizedPath !== '/billing') router.replace('/settings');
     }
-  }, [authenticated, initializing, pathname, router, flags]);
+  }, [authenticated, initializing, pathname, router, flags, session]);
   const headerHidden = ['/', '/login', '/signup', '/auth/callback', '/device-setup'].includes(pathname);
   const showLeftNavigation = !headerHidden && width >= 700 && width > height;
   return (
@@ -103,6 +123,7 @@ function RootNavigator() {
               <Stack.Screen name="login" />
               <Stack.Screen name="signup" />
               <Stack.Screen name="billing" />
+              <Stack.Screen name="inventory-reconciliation" />
               <Stack.Screen name="profile" />
               <Stack.Screen name="device-setup" />
               <Stack.Screen name="settings" />

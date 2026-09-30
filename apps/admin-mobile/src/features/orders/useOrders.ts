@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'expo-router';
 import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
@@ -28,42 +28,44 @@ export function useOrders() {
   const auth = useAuthSession();
   const local = useLocalDatabase();
   const [projectionError, setProjectionError] = useState('');
-  const client = useQueryClient();
+  const [loading, setLoading] = useState(false);
   const ready = !auth.initializing && !!auth.session && local.status === 'ready';
-  const key = ['orders', auth.session?.user.id, auth.session?.tenant.id];
-  const query = useQuery({
-    queryKey: key,
-    enabled: ready,
-    queryFn: ordersApi.load,
-    retry: false,
-    networkMode: 'always',
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
   const localOrders = useOrderTable();
   const localSales = useSalesTable();
   const localProducts = useProductsTable();
   const localRefunds = useRefundTable();
   useEffect(() => {
-    if (!local.database || !query.data) return;
+    if (!ready || !local.database) return;
     const database = local.database;
-    const snapshot = query.data;
+    let cancelled = false;
+    setLoading(true);
     // One-time migration from the older repository; never replace an existing projection on mount.
-    void Promise.all(
-      (['orders', 'refunds'] as const).map(async (table) => {
-        if (
-          !(await database.collection(table).list()).length &&
-          snapshot[table].length &&
-          getActiveDatabase() === database
-        )
-          await applyBootstrapCollections(database, { [table]: snapshot[table] });
-      }),
-    ).then(
-      () => setProjectionError(''),
-      (reason) =>
-        setProjectionError(reason instanceof Error ? reason.message : 'Unable to update local orders.'),
-    );
-  }, [local.database, query.data]);
+    void ordersApi
+      .load()
+      .then(async (snapshot) => {
+        await Promise.all(
+          (['orders', 'refunds'] as const).map(async (table) => {
+            if (
+              !(await database.collection(table).list()).length &&
+              snapshot[table].length &&
+              getActiveDatabase() === database
+            )
+              await applyBootstrapCollections(database, { [table]: snapshot[table] });
+          }),
+        );
+        if (!cancelled) setProjectionError('');
+      })
+      .catch((reason) => {
+        if (!cancelled)
+          setProjectionError(reason instanceof Error ? reason.message : 'Unable to update local orders.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, local.database]);
   const projectSnapshot = async () => {
     const database = local.database;
     if (!database || getActiveDatabase() !== database) return;
@@ -87,7 +89,6 @@ export function useOrders() {
       await ordersApi.refresh(signal);
       await projectSnapshot();
     },
-    onSettled: () => client.invalidateQueries({ queryKey: key }),
   });
   const refundMutation = useMutation({
     mutationFn: ({
@@ -103,7 +104,6 @@ export function useOrders() {
     }) => ordersApi.createRefund(order, selections, reason, method),
     onSuccess: async () => {
       await projectSnapshot();
-      await client.invalidateQueries({ queryKey: key });
     },
   });
   return {
@@ -114,20 +114,14 @@ export function useOrders() {
       payloadsFromRecords(localProducts.data),
     ),
     refunds: payloadsFromRecords(localRefunds.data),
-    loading: query.isFetching,
+    loading,
     refreshing: refreshMutation.isPending,
     refunding: refundMutation.isPending,
     error:
       local.error ||
       auth.error ||
       projectionError ||
-      String(
-        refreshMutation.error instanceof Error
-          ? refreshMutation.error.message
-          : query.error instanceof Error
-            ? query.error.message
-            : '',
-      ),
+      String(refreshMutation.error instanceof Error ? refreshMutation.error.message : ''),
     refresh: (signal?: AbortSignal) => refreshMutation.mutateAsync(signal),
     createRefund: refundMutation.mutateAsync,
   };

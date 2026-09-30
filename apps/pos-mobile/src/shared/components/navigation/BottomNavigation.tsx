@@ -21,7 +21,7 @@ export function BottomNavigation() {
     <SharedNavigation
       primaryItems={navigationItemsForRole(primaryNavigationItems, role, flags)}
       moreItems={navigationItemsForRole(moreNavigationItems, role, flags)}
-      trailingItem={flags.advancedReporting ? reportNavigationItem : undefined}
+      trailingItem={navigationItemsForRole([reportNavigationItem], role, flags)[0]}
       isActive={(href) => isNavigationItemActive(pathname, href)}
       onNavigate={(href) => router.replace(href)}
     />
