@@ -151,7 +151,9 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
         ...query.data.cache,
         products: localProducts.items,
         customers: payloadsFromRecords(localCustomers.data),
-        paymentMethods: payloadsFromRecords(localPaymentMethods.data),
+        paymentMethods: localPaymentMethods.data.length
+          ? payloadsFromRecords(localPaymentMethods.data)
+          : query.data.cache.paymentMethods,
         serviceUsers: currentMode === 'service' ? payloadsFromRecords(localServiceUsers.data) : [],
         productBatches: currentMode === 'pharmacy' ? payloadsFromRecords(localProductBatches.data) : [],
         taxRates: payloadsFromRecords(localTaxRates.data),
