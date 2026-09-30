@@ -27,6 +27,18 @@ import { startBillingOutboxWorker } from '@indyzai/pos-sync';
 import { useOfflineQueueCount } from '@indyzai/pos-database';
 import { useNetworkStatus } from '@indyzai/pos-ui-native';
 import { AppState } from 'react-native';
+import { registerEntityApiFactory } from '@indyzai/pos-database/offline-entity-hook';
+import { createPosApiFactory } from '@indyzai/pos-apis';
+import { requestPos } from '../core/api/posApi';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
+
+registerEntityApiFactory(
+  createPosApiFactory({
+    request: requestPos,
+    getToken: () => getActiveAuthSession()?.token ?? '',
+    getTenantId: () => String(getActiveAuthSession()?.tenant.id ?? ''),
+  }),
+);
 
 const logger = createLogger('Database:admin');
 

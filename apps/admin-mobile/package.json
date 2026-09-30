@@ -57,7 +57,8 @@
     "@indyzai/feature-flags": "workspace:*",
     "@indyzai/feature-catalog": "workspace:*",
     "@indyzai/feature-restaurant": "workspace:*",
-    "@indyzai/feature-scrap": "workspace:*"
+    "@indyzai/feature-scrap": "workspace:*",
+    "@indyzai/pos-apis": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

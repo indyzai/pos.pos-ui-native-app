@@ -12,6 +12,17 @@ import {
   type OfflineSyncAdapter,
   type UseOfflineEntityOptions,
 } from '@indyzai/pos-database/offline-entity-hook';
+import { createPosApiFactory } from '@indyzai/pos-apis';
+import { requestPos } from '../core/api/posApi';
+import { getActiveAuthSession } from '@indyzai/pos-auth/session';
+
+registerEntityApiFactory(
+  createPosApiFactory({
+    request: requestPos,
+    getToken: () => getActiveAuthSession()?.token ?? '',
+    getTenantId: () => String(getActiveAuthSession()?.tenant.id ?? ''),
+  }),
+);
 
 export {
   getEntityApi,
