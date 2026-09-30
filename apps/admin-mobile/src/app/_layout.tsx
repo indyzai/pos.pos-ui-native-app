@@ -122,6 +122,11 @@ function RootNavigator() {
               <Stack.Screen name="index" />
               <Stack.Screen name="login" />
               <Stack.Screen name="signup" />
+              <Stack.Screen name="reports" />
+              <Stack.Screen name="orders" />
+              <Stack.Screen name="inventory" />
+              <Stack.Screen name="customers" />
+              <Stack.Screen name="team" />
               <Stack.Screen name="billing" />
               <Stack.Screen name="inventory-reconciliation" />
               <Stack.Screen name="profile" />

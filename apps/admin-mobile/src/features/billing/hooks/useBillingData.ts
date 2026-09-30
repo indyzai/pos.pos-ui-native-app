@@ -10,7 +10,7 @@ import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { useAuthSession } from '@indyzai/pos-auth/session';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { printingApi } from '../../printing/printingApi';
-import { createOfflineTableHook, payloadsFromRecords } from '@indyzai/pos-database';
+import { OfflineTableName, useAppOfflineEntity } from '../../../hooks/useAppOfflineEntity';
 import type {
   BillingPaymentMethod,
   BillingTaxRate,
@@ -21,25 +21,17 @@ import type {
 } from '@indyzai/feature-billing/types/billing';
 import type { PendingSale } from '@indyzai/feature-billing/salesOutbox';
 
-const useCustomerTable = createOfflineTableHook<Customer>({ table: 'customers', entityType: 'CUSTOMER' });
-const useProductTable = createOfflineTableHook<Product>({ table: 'products', entityType: 'PRODUCT' });
-const usePaymentMethodTable = createOfflineTableHook<BillingPaymentMethod>({
-  table: 'payment_methods',
-  entityType: 'PAYMENT_METHOD',
-});
-const useServiceUserTable = createOfflineTableHook<ServiceUser>({
-  table: 'service_users',
-  entityType: 'SERVICE_USER',
-});
-const useProductBatchTable = createOfflineTableHook<ProductBatch>({
-  table: 'product_batches',
-  entityType: 'PRODUCT_BATCH',
-});
-const useTaxRateTable = createOfflineTableHook<BillingTaxRate>({
-  table: 'tax_rates',
-  entityType: 'TAX_RATE',
-});
-const useSalesTable = createOfflineTableHook<PendingSale>({ table: 'sales', entityType: 'SALE' });
+function useBillingEntity<T>(tableName: OfflineTableName) {
+  const entity = useAppOfflineEntity<T, { payload: T; syncStatus: string }>({
+    tableName,
+    listSelector: (record) => ({ payload: record.payload, syncStatus: record.syncStatus }),
+    pageSize: 100,
+  });
+  useEffect(() => {
+    if (!entity.loading && !entity.loadingMore && entity.localHasMore) void entity.loadMore();
+  }, [entity.loading, entity.loadingMore, entity.localHasMore, entity.loadMore]);
+  return entity;
+}
 
 export function useBillingData() {
   const pathname = usePathname();
@@ -59,13 +51,13 @@ export function useBillingData() {
   );
   const userId = auth.session?.user.id;
   const tenantId = auth.session?.tenant.id;
-  const localProducts = useProductTable();
-  const localCustomers = useCustomerTable();
-  const localPaymentMethods = usePaymentMethodTable();
-  const localServiceUsers = useServiceUserTable();
-  const localProductBatches = useProductBatchTable();
-  const localTaxRates = useTaxRateTable();
-  const localSales = useSalesTable();
+  const localProducts = useBillingEntity<Product>(OfflineTableName.Products);
+  const localCustomers = useBillingEntity<Customer>(OfflineTableName.Customers);
+  const localPaymentMethods = useBillingEntity<BillingPaymentMethod>(OfflineTableName.PaymentMethods);
+  const localServiceUsers = useBillingEntity<ServiceUser>(OfflineTableName.ServiceUsers);
+  const localProductBatches = useBillingEntity<ProductBatch>(OfflineTableName.ProductBatches);
+  const localTaxRates = useBillingEntity<BillingTaxRate>(OfflineTableName.TaxRates);
+  const localSales = useBillingEntity<PendingSale>(OfflineTableName.Sales);
 
   const syncMutation = useMutation({
     networkMode: 'always',
@@ -78,13 +70,13 @@ export function useBillingData() {
   });
   const reload = async () => {
     await Promise.all([
-      localProducts.reload(),
-      localCustomers.reload(),
-      localPaymentMethods.reload(),
-      localServiceUsers.reload(),
-      localProductBatches.reload(),
-      localTaxRates.reload(),
-      localSales.reload(),
+      localProducts.refresh(),
+      localCustomers.refresh(),
+      localPaymentMethods.refresh(),
+      localServiceUsers.refresh(),
+      localProductBatches.refresh(),
+      localTaxRates.refresh(),
+      localSales.refresh(),
     ]);
   };
   const refresh = async (signal?: AbortSignal) => {
@@ -132,32 +124,32 @@ export function useBillingData() {
     return {
       key: appStorageKeys.admin.billing(userId, tenantId),
       cache: {
-        products: payloadsFromRecords(localProducts.data).filter(
-          (product) => product.categoryType !== 'SCRAP',
-        ),
-        customers: payloadsFromRecords(localCustomers.data).filter(
-          (customer) => customer.type === 'CUSTOMER',
-        ),
-        paymentMethods: localPaymentMethods.data.length
-          ? payloadsFromRecords(localPaymentMethods.data)
+        products: localProducts.items
+          .map((record) => record.payload)
+          .filter((product) => product.categoryType !== 'SCRAP'),
+        customers: localCustomers.items
+          .map((record) => record.payload)
+          .filter((customer) => customer.type === 'CUSTOMER'),
+        paymentMethods: localPaymentMethods.items.length
+          ? localPaymentMethods.items.map((record) => record.payload)
           : fallbackPaymentMethods,
-        serviceUsers: payloadsFromRecords(localServiceUsers.data),
-        productBatches: payloadsFromRecords(localProductBatches.data),
-        taxRates: payloadsFromRecords(localTaxRates.data),
+        serviceUsers: localServiceUsers.items.map((record) => record.payload),
+        productBatches: localProductBatches.items.map((record) => record.payload),
+        taxRates: localTaxRates.items.map((record) => record.payload),
         session: (auth.session?.organization?.activeSession ?? null) as BillingCache['session'],
-        queue: payloadsFromRecords(
-          localSales.data.filter((record) => ['PENDING', 'RUNNING', 'FAILED'].includes(record.syncStatus)),
-        ),
+        queue: localSales.items
+          .filter((record) => ['PENDING', 'RUNNING', 'FAILED'].includes(record.syncStatus))
+          .map((record) => record.payload),
       } satisfies BillingCache,
     };
   }, [
-    localCustomers.data,
-    localPaymentMethods.data,
-    localProductBatches.data,
-    localProducts.data,
-    localServiceUsers.data,
-    localTaxRates.data,
-    localSales.data,
+    localCustomers.items,
+    localPaymentMethods.items,
+    localProductBatches.items,
+    localProducts.items,
+    localServiceUsers.items,
+    localTaxRates.items,
+    localSales.items,
     auth.session?.organization?.activeSession,
     userId,
     tenantId,
@@ -165,7 +157,11 @@ export function useBillingData() {
   ]);
   return {
     data,
-    error: local.error || auth.error || localProducts.error || (error instanceof Error ? error.message : ''),
+    error:
+      local.error ||
+      auth.error ||
+      localProducts.error?.message ||
+      (error instanceof Error ? error.message : ''),
     busy: syncMutation.isPending || localProducts.loading || localSales.loading,
     refresh,
     reload,

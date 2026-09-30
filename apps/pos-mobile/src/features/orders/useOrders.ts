@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
 import { useAuthSession } from '@indyzai/pos-auth/session';
@@ -9,23 +10,56 @@ import type { PendingSale } from '@indyzai/feature-billing/salesOutbox';
 import type { Product } from '@indyzai/feature-billing/types/billing';
 import type { SalesOrder } from '@indyzai/feature-orders/types';
 import type { RefundSelection } from '@indyzai/feature-orders/refundPolicy';
-import { createOfflineTableHook, payloadsFromRecords } from '@indyzai/pos-database';
+import { OfflineTableName, useAppOfflineEntity } from '../../hooks/useAppOfflineEntity';
 import type { RefundRecord } from '@indyzai/feature-orders/types';
-
-const useOrderTable = createOfflineTableHook<SalesOrder>({ table: 'orders', entityType: 'ORDER' });
-const useSalesTable = createOfflineTableHook<PendingSale>({ table: 'sales', entityType: 'SALE' });
-const useProductsTable = createOfflineTableHook<Product>({ table: 'products' });
-const useRefundTable = createOfflineTableHook<RefundRecord>({ table: 'refunds', entityType: 'REFUND' });
 
 export function useOrders() {
   const pathname = usePathname();
   const auth = useAuthSession();
   const local = useLocalDatabase();
   const ready = !auth.initializing && !!auth.session && local.status === 'ready';
-  const localOrders = useOrderTable();
-  const localSales = useSalesTable();
-  const localProducts = useProductsTable();
-  const localRefunds = useRefundTable();
+  const localOrders = useAppOfflineEntity<SalesOrder, { payload: SalesOrder }>({
+    tableName: OfflineTableName.Orders,
+    listSelector: (record) => ({ payload: record.payload }),
+    pageSize: 100,
+  });
+  const localSales = useAppOfflineEntity<PendingSale, { payload: PendingSale }>({
+    tableName: OfflineTableName.Sales,
+    listSelector: (record) => ({ payload: record.payload }),
+    pageSize: 100,
+  });
+  const localProducts = useAppOfflineEntity<Product, { payload: Product }>({
+    tableName: OfflineTableName.Products,
+    listSelector: (record) => ({ payload: record.payload }),
+    pageSize: 100,
+  });
+  const localRefunds = useAppOfflineEntity<RefundRecord, { payload: RefundRecord }>({
+    tableName: OfflineTableName.Refunds,
+    listSelector: (record) => ({ payload: record.payload }),
+    pageSize: 100,
+  });
+  useEffect(() => {
+    for (const entity of [localOrders, localSales, localProducts, localRefunds]) {
+      if (!entity.loading && !entity.loadingMore && entity.localHasMore) void entity.loadMore();
+    }
+  }, [
+    localOrders.loading,
+    localOrders.loadingMore,
+    localOrders.localHasMore,
+    localOrders.loadMore,
+    localSales.loading,
+    localSales.loadingMore,
+    localSales.localHasMore,
+    localSales.loadMore,
+    localProducts.loading,
+    localProducts.loadingMore,
+    localProducts.localHasMore,
+    localProducts.loadMore,
+    localRefunds.loading,
+    localRefunds.loadingMore,
+    localRefunds.localHasMore,
+    localRefunds.loadMore,
+  ]);
   useBackgroundRefresh(
     ready && local.database && (pathname === '/orders' || pathname === '/reports')
       ? `orders:${local.database.scope.tenantId}:${local.database.scope.userId}`
@@ -57,19 +91,20 @@ export function useOrders() {
   return {
     ready,
     orders: mergeOfflineOrders(
-      payloadsFromRecords(localOrders.data),
-      payloadsFromRecords(localSales.data),
-      payloadsFromRecords(localProducts.data),
+      localOrders.items.map((record) => record.payload),
+      localSales.items.map((record) => record.payload),
+      localProducts.items.map((record) => record.payload),
     ),
-    refunds: payloadsFromRecords(localRefunds.data),
-    loading: localOrders.loading || localRefunds.loading,
+    refunds: localRefunds.items.map((record) => record.payload),
+    loading:
+      localOrders.loading || localOrders.loadingMore || localRefunds.loading || localRefunds.loadingMore,
     refreshing: refreshMutation.isPending,
     refunding: refundMutation.isPending,
     error:
       local.error ||
       auth.error ||
-      localOrders.error ||
-      localRefunds.error ||
+      localOrders.error?.message ||
+      localRefunds.error?.message ||
       String(refreshMutation.error instanceof Error ? refreshMutation.error.message : ''),
     refresh: (signal?: AbortSignal) => refreshMutation.mutateAsync(signal),
     createRefund: refundMutation.mutateAsync,

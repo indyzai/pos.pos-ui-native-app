@@ -384,8 +384,10 @@
       "name": "@indyzai/feature-reports",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/feature-billing": "workspace:*",
         "@indyzai/feature-orders": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "lucide-react-native": "^1.41.0",
@@ -514,6 +516,14 @@
     "vendor/pos-ui-shared/packages/permissions": {
       "name": "@indyzai/pos-permissions",
       "version": "1.0.0",
+    },
+    "vendor/pos-ui-shared/packages/pos-apis": {
+      "name": "@indyzai/pos-apis",
+      "version": "0.1.0",
+      "dependencies": {
+        "@indyzai/offline-entity": "workspace:*",
+        "@indyzai/pos-offline-store": "workspace:*",
+      },
     },
     "vendor/pos-ui-shared/packages/printing": {
       "name": "@indyzai/pos-printing",
@@ -869,6 +879,8 @@
     "@indyzai/offline-entity": ["@indyzai/offline-entity@workspace:vendor/pos-ui-shared/packages/offline-entity"],
 
     "@indyzai/pos-api": ["@indyzai/pos-api@workspace:vendor/pos-ui-shared/packages-native/api"],
+
+    "@indyzai/pos-apis": ["@indyzai/pos-apis@workspace:vendor/pos-ui-shared/packages/pos-apis"],
 
     "@indyzai/pos-application": ["@indyzai/pos-application@workspace:vendor/pos-ui-shared/packages/application"],
 

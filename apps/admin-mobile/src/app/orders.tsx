@@ -1,6 +1,6 @@
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
-import { OrdersScreen } from '../features/orders/OrdersScreen';
+import { OrdersScreen } from '@indyzai/feature-orders/orders-screen';
 
 export default function OrdersRoute() {
   return (

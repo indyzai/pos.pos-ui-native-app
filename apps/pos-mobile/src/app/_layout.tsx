@@ -86,8 +86,8 @@ function RootNavigator() {
       !initializing &&
       authenticated &&
       session &&
-      !publicRoutes.includes(pathname) &&
-      pathname !== '/profile'
+      !publicRoutes.includes(normalizedPath) &&
+      normalizedPath !== '/profile'
     ) {
       const role = resolveStoreAccessRole(session.tenant.role, session.user.role);
       const allowed = navigationItemsForRole(
@@ -96,7 +96,7 @@ function RootNavigator() {
         flags,
       ).some((item) => {
         const href = typeof item.href === 'string' ? item.href : item.href.pathname;
-        return pathname === href || pathname.startsWith(`${href}/`);
+        return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
       });
       if (!allowed) router.replace('/billing');
     }
@@ -131,11 +131,19 @@ function RootNavigator() {
               <Stack.Screen name="login" />
               <Stack.Screen name="signup" />
               <Stack.Screen name="billing" />
+              <Stack.Screen name="reports" />
+              <Stack.Screen name="orders" />
+              <Stack.Screen name="inventory" />
+              <Stack.Screen name="customers" />
+              <Stack.Screen name="team" />
               <Stack.Screen name="profile" />
               <Stack.Screen name="device-setup" />
               <Stack.Screen name="settings" />
               <Stack.Screen name="inventory-reconciliation" />
               <Stack.Screen name="purchases" />
+              <Stack.Screen name="shifts" />
+              <Stack.Screen name="expenses" />
+              <Stack.Screen name="transfers" />
             </Stack>
           </View>
         </View>

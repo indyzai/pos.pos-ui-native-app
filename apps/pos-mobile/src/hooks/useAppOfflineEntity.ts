@@ -4,11 +4,22 @@ import {
   createNativeOfflineEntityCoordinator,
   OfflineTableName,
   useNativeOfflineEntity,
+  type OfflineEntityApi,
   type OfflineSyncAdapter,
   type UseOfflineEntityOptions,
 } from '@indyzai/pos-database/offline-entity-hook';
 
-export { OfflineTableName } from '@indyzai/pos-database/offline-entity-hook';
+export {
+  getEntityApi,
+  OfflineTableName,
+  registerEntityApi,
+  registerEntityApiFactory,
+} from '@indyzai/pos-database/offline-entity-hook';
+export type {
+  EntityApiFactory,
+  OfflineEntityApi,
+  OfflineSyncAdapter,
+} from '@indyzai/pos-database/offline-entity-hook';
 
 /** App binding for the shared entity hook; the database profile comes from this app. */
 export function useAppOfflineEntity<
@@ -42,7 +53,8 @@ export function createAppOfflineEntityCoordinator<
   database: LocalDatabase;
   tableName: OfflineTableName;
   storeId?: string | null;
-  adapter: OfflineSyncAdapter<TPayload, TCreateInput, TUpdateInput, TFilter>;
+  adapter?: OfflineSyncAdapter<TPayload, TCreateInput, TUpdateInput, TFilter>;
+  api?: OfflineEntityApi<TPayload, TCreateInput, TUpdateInput, TFilter>;
   online?: () => boolean;
 }) {
   const scope = options.database.scope;

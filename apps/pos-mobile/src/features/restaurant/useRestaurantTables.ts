@@ -1,16 +1,16 @@
 import { useEffect, useMemo } from 'react';
-import { createOfflineTableHook, replaceLocalPayloads, useLocalDatabase } from '@indyzai/pos-database';
+import { replaceLocalPayloads, useLocalDatabase } from '@indyzai/pos-database';
 import { restaurantApi } from './restaurantApi';
 import type { RestaurantTable } from '@indyzai/feature-restaurant/types';
-
-const useRestaurantTable = createOfflineTableHook<RestaurantTable>({
-  table: 'restaurant_tables',
-  entityType: 'RESTAURANT_TABLE',
-});
+import { OfflineTableName, useAppOfflineEntity } from '../../hooks/useAppOfflineEntity';
 
 export function useRestaurantTables(enabled: boolean, branchId?: string) {
   const local = useLocalDatabase();
-  const records = useRestaurantTable();
+  const records = useAppOfflineEntity<RestaurantTable>({
+    tableName: OfflineTableName.RestaurantTables,
+    listSelector: (record) => record.payload,
+    pageSize: 100,
+  });
 
   useEffect(() => {
     if (!enabled || !local.database) return;
@@ -28,13 +28,12 @@ export function useRestaurantTables(enabled: boolean, branchId?: string) {
     };
   }, [branchId, enabled, local.database]);
 
+  useEffect(() => {
+    if (!records.loading && !records.loadingMore && records.localHasMore) void records.loadMore();
+  }, [records.loading, records.loadingMore, records.localHasMore, records.loadMore]);
+
   return useMemo(
-    () =>
-      enabled
-        ? records.data
-            .map((record) => record.payload)
-            .filter((table) => !branchId || table.branchId === branchId)
-        : [],
-    [branchId, enabled, records.data],
+    () => (enabled ? records.items.filter((table) => !branchId || table.branchId === branchId) : []),
+    [branchId, enabled, records.items],
   );
 }
