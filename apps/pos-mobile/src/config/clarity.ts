@@ -1,0 +1,20 @@
+import { NativeModules, Platform } from 'react-native';
+
+const projectId = process.env.EXPO_PUBLIC_CLARITY_PROJECT_ID ?? 'yq9f6mijri';
+let started = false;
+
+export async function startClarity(): Promise<void> {
+  if (started || Platform.OS === 'web' || !NativeModules.Clarity || !NativeModules.ClarityEmitter) return;
+
+  started = true;
+  try {
+    const Clarity = await import('@microsoft/react-native-clarity');
+    Clarity.setOnSessionStartedCallback(() => {
+      void Clarity.setCustomTag('app', 'pos-mobile');
+    });
+    Clarity.initialize(projectId);
+  } catch (error) {
+    started = false;
+    console.warn('Unable to start Microsoft Clarity', error);
+  }
+}

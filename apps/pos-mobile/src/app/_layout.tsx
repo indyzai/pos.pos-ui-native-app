@@ -1,5 +1,6 @@
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
+import { startClarity } from '../config/clarity';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -33,6 +34,10 @@ const hideNativeSplash = () => {
 };
 
 export default function RootLayout() {
+  useEffect(() => {
+    void startClarity();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
