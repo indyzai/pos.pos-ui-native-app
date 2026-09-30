@@ -19,6 +19,7 @@
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/feature-catalog": "workspace:*",
+        "@indyzai/feature-customers": "workspace:*",
         "@indyzai/feature-flags": "workspace:*",
         "@indyzai/feature-inventory": "workspace:*",
         "@indyzai/feature-orders": "workspace:*",
@@ -244,8 +245,16 @@
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-ui-native": "workspace:*",
+        "expo-router": "~57.0.19",
+        "lucide-react-native": "^1.41.0",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
       },
     },
     "vendor/pos-ui-shared/packages-native/feature-flags": {
