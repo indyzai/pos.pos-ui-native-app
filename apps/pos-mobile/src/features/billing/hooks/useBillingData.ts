@@ -137,7 +137,9 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
         products: payloadsFromRecords(localProducts.data).filter(
           (product) => product.categoryType !== 'SCRAP',
         ),
-        customers: payloadsFromRecords(localCustomers.data),
+        customers: payloadsFromRecords(localCustomers.data).filter(
+          (customer) => customer.type === 'CUSTOMER',
+        ),
         paymentMethods: localPaymentMethods.data.length
           ? payloadsFromRecords(localPaymentMethods.data)
           : fallbackPaymentMethods,

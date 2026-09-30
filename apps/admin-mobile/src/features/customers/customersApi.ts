@@ -4,7 +4,6 @@ import { createScopeKey, getActiveDatabase, mapBootstrapCustomer } from '@indyza
 import { createCustomersApi } from '@indyzai/feature-customers';
 import { requestPos } from '../../core/api/posApi';
 
-export type { LocalCustomer } from '@indyzai/feature-customers';
 export const customersApi = createCustomersApi({
   getContext(databaseOverride) {
     const session = getActiveAuthSession();

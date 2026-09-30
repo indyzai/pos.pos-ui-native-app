@@ -23,7 +23,11 @@ async function withApi(work) {
   const api = createCustomersApi({
     getContext: () => ({ database, scope: createScopeKey(database.scope), tenant: 't', token }),
     createId: () => crypto.randomUUID(),
-    mapCustomer: (row) => ({ ...row, id: String(row.id), type: 'CUSTOMER' }),
+    mapCustomer: (row) => ({
+      ...row,
+      id: String(row.id),
+      type: String(row.type ?? 'CUSTOMER').toUpperCase(),
+    }),
     request: async (_token, _tenant, query, variables) => {
       calls.push({ query, variables });
       return response(query);
@@ -95,6 +99,22 @@ test('startup sync does not create mutations for cached server customers', async
     await api.pushPending();
 
     expect(calls.filter(({ query }) => query.includes('saveParty'))).toHaveLength(0);
+    expect(await database.collection('sync_outbox').list()).toHaveLength(0);
+  });
+});
+
+test('refresh keeps all party types in the local customers table without queuing creates', async () => {
+  await withApi(async ({ api, database, calls, setResponse }) => {
+    setResponse(async () => ({
+      parties: [
+        { id: '42', name: 'Customer', type: 'customer' },
+        { id: '43', name: 'Supplier', type: 'supplier' },
+      ],
+    }));
+    await api.sync();
+    const rows = await database.collection('customers').list();
+    expect(rows.map((row) => row.payload.type).sort()).toEqual(['CUSTOMER', 'SUPPLIER']);
+    expect(calls[0].variables).toEqual({ skip: 0, take: 200 });
     expect(await database.collection('sync_outbox').list()).toHaveLength(0);
   });
 });

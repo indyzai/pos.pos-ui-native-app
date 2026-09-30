@@ -1,11 +1,9 @@
-import * as Crypto from 'expo-crypto';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
-import { createScopeKey, getActiveDatabase, mapBootstrapCustomer } from '@indyzai/pos-database';
-import { createCustomersApi } from '@indyzai/feature-customers';
+import { createScopeKey, getActiveDatabase } from '@indyzai/pos-database';
+import { createTeamApi } from '@indyzai/feature-organization/team-api';
 import { requestPos } from '../../core/api/posApi';
 
-export type { LocalCustomer } from '@indyzai/feature-customers';
-export const customersApi = createCustomersApi({
+export const teamApi = createTeamApi({
   getContext(databaseOverride) {
     const session = getActiveAuthSession();
     const database = databaseOverride ?? getActiveDatabase();
@@ -18,9 +16,4 @@ export const customersApi = createCustomersApi({
     };
   },
   request: requestPos,
-  createId: Crypto.randomUUID,
-  mapCustomer: (value) => ({
-    ...mapBootstrapCustomer(value),
-    type: String(value.type ?? 'customer').toUpperCase(),
-  }),
 });

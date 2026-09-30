@@ -1,7 +1,15 @@
 import type { Href } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
 import { isRouteFeatureEnabled, type FeatureToggles } from '@indyzai/feature-flags';
-import { ChartPie, ClipboardCheck, Package, ShoppingBag, ReceiptText, Settings } from 'lucide-react-native';
+import {
+  ChartPie,
+  ClipboardCheck,
+  Package,
+  ShoppingBag,
+  ReceiptText,
+  Settings,
+  Users,
+} from 'lucide-react-native';
 import { type Entitlement, hasEntitlement } from '@indyzai/pos-permissions';
 
 export type AppNavigationItem = { label: string; icon: LucideIcon; href: Href; entitlement?: Entitlement };
@@ -39,6 +47,8 @@ export const moreNavigationItems: AppNavigationItem[] = [
     entitlement: 'inventory.reconcile',
   },
   { label: 'Purchases', icon: ShoppingBag, href: '/purchases', entitlement: 'purchases.view' },
+  { label: 'Customers', icon: Users, href: '/customers', entitlement: 'organization.manage' },
+  { label: 'Team', icon: Users, href: '/team', entitlement: 'users.manage' },
   { label: 'Settings', icon: Settings, href: '/settings', entitlement: 'organization.manage' },
 ];
 
@@ -46,7 +56,7 @@ export const tabletNavigationItems = [
   ...primaryNavigationItems,
   orderNavigationItem,
   ...moreNavigationItems.filter((item) =>
-    ['/inventory-reconciliation', '/settings'].includes(String(item.href)),
+    ['/inventory-reconciliation', '/customers', '/team', '/settings'].includes(String(item.href)),
   ),
 ];
 

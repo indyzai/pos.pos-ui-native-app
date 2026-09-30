@@ -1,5 +1,6 @@
 import { requestPos, requestPosBootstrap, requestPosHasUpdates } from '../../core/api/posApi';
 import { purchasesApi } from '../purchases/purchasesApi';
+import { customersApi } from '../customers/customersApi';
 import { SerialQueue } from '@indyzai/pos-sync';
 import { readBillingSnapshot, writeBillingSnapshot } from '@indyzai/feature-billing/data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
@@ -91,7 +92,6 @@ const billingBootstrapCollections = [
   'products',
   'categories',
   'units',
-  'customers',
   'serviceUsers',
   'paymentMethods',
   'taxRates',
@@ -182,15 +182,16 @@ export const billingApi = {
       const c = await context();
       const cache = await read(c);
       const targetDb = database ?? getActiveDatabase();
+      if (!requestedCollections) await customersApi.sync(signal, targetDb).catch(() => undefined);
       const collections =
         targetDb && !forceBootstrap
           ? await updatedBootstrapCollections(
               c,
               targetDb,
               signal,
-              requestedCollections ?? billingBootstrapCollections,
+              (requestedCollections ?? billingBootstrapCollections).filter((collection) => collection !== 'customers'),
             )
-          : (requestedCollections ?? billingBootstrapCollections);
+          : (requestedCollections ?? billingBootstrapCollections).filter((collection) => collection !== 'customers');
       if (!collections.length) return;
       const bootstrap = await requestPosBootstrap<{
         generatedAt: string;
@@ -310,33 +311,18 @@ export const billingApi = {
     syncQueue.run(async () => {
       const c = await context();
       if (c.key !== key) throw new Error('Business changed. Please retry.');
-      const data = await request<{ saveParty: Record<string, unknown> }>(
-        c,
-        `mutation CreateBillingCustomer($input: NewPartyInput!) { saveParty(input: $input) { id name phone email addressLine gstin creditLimit balance } }`,
-        { input: { ...input, type: 'CUSTOMER' } },
-      );
-      const party = data.saveParty;
-      const customer: Customer = {
-        id: String(party.id),
-        name: String(party.name),
-        type: 'CUSTOMER',
-        phone: String(party.phone || '') || undefined,
-        email: String(party.email || '') || undefined,
-        gstin: String(party.gstin || '') || undefined,
-        address: String(party.addressLine || '') || undefined,
-        creditLimit: party.creditLimit == null ? undefined : Number(party.creditLimit),
-        balance: party.balance == null ? undefined : Number(party.balance),
-      };
-      const current = await billingReferenceRepository.readCustomers(c.key);
-      await billingReferenceRepository.replaceCustomers(c.key, [customer, ...current]);
-      return customer;
+      return customersApi.create(input);
     }),
   sync: (signal?: AbortSignal) =>
     pushQueue.run(async () => {
       // A settings failure must not prevent financial outbox jobs from progressing.
       await settingsApi.pushPending(signal).catch(() => undefined);
       await printerConfigurationApi.pushPending(signal).catch(() => undefined);
-      if (getActiveDatabase()) await purchasesApi.pushPending(signal);
+      const activeDatabase = getActiveDatabase();
+      if (activeDatabase) {
+        await customersApi.pushPending(signal, activeDatabase);
+        await purchasesApi.pushPending(signal);
+      }
       const c = await context();
       const cache = await read(c);
       const scrapJobs = await scrapPurchaseRepository.read(c.key);
