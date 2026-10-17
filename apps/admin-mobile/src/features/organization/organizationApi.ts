@@ -1,3 +1,6 @@
+import { settingsApi } from '../settings/settingsApi';
+import { queueOpenCounter, queueCloseCounter } from '@indyzai/feature-organization/counterSessionApi';
+import { getActiveDatabase, type LocalRecord } from '@indyzai/pos-database';
 import { requestPos } from '../../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { createOrganizationCache } from '@indyzai/feature-organization/organizationCache';
@@ -25,7 +28,7 @@ export type OrganizationCounter = { id: string; name: string; status?: string };
 export type OrganizationBranch = { id: string; name: string; counters: OrganizationCounter[] };
 
 /** Loads the shared business settings and current counter session in one request. */
-export async function loadOrganizationDetails(
+export async function refreshOrganizationDetails(
   token: string,
   tenantId: string,
   signal?: AbortSignal,
@@ -116,19 +119,10 @@ export async function closeCounterSession(
   sessionId: string,
   closingBalance: number,
   remarks?: string,
-): Promise<void> {
-  const data = await requestPos<{ closeCounter?: { id?: string; status?: string } }>(
-    token,
-    tenantId,
-    `mutation CloseCounter($sessionId: Float!, $input: CloseCounterInput!) {
-      closeCounter(sessionId: $sessionId, input: $input) { id status }
-    }`,
-    { sessionId: Number(sessionId), input: { closingBalance, ...(remarks ? { remarks } : {}) } },
-  );
-  if (!data.closeCounter?.id || data.closeCounter.status?.toUpperCase() !== 'CLOSED') {
-    throw new Error('The counter session was not closed.');
-  }
+) {
+  const queued = await queueCloseCounter(tenantId, sessionId, closingBalance, remarks);
   await cacheCounter(token, tenantId, null);
+  return queued;
 }
 
 export async function openCounterSession(
@@ -136,47 +130,41 @@ export async function openCounterSession(
   tenantId: string,
   counterId: string,
   openingBalance: number,
-): Promise<void> {
-  const data = await requestPos<{
-    openCounter?: { id?: string; status?: string; counterId?: string; branchId?: string };
-  }>(
-    token,
-    tenantId,
-    `mutation OpenCounter($input: OpenCounterInput!) {
-      openCounter(input: $input) { id status counterId branchId }
-    }`,
-    { input: { counterId: Number(counterId), openingBalance } },
-  );
-  if (!data.openCounter?.id) throw new Error('The counter session was not opened.');
-  const organization = getActiveAuthSession()?.organization;
-  const branch = organization?.branches.find((item) =>
-    item.counters.some((counter) => String(counter.id) === counterId),
-  );
-  await cacheCounter(token, tenantId, {
-    id: String(data.openCounter.id),
-    status: data.openCounter.status ?? 'OPEN',
-    counterId: String(data.openCounter.counterId ?? counterId),
-    branchId: data.openCounter.branchId ? String(data.openCounter.branchId) : branch?.id,
-    counterName: branch?.counters.find((counter) => String(counter.id) === counterId)?.name,
-    branchName: branch?.name,
-    openingBalance,
-  });
+) {
+  const queued = await queueOpenCounter(tenantId, counterId, openingBalance);
+  await cacheCounter(token, tenantId, queued.record);
+  return queued;
 }
-
-export { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';
 
 export async function updateOrganizationFeatures(
   token: string,
   tenantId: string,
   features: Record<string, boolean>,
-): Promise<void> {
-  const data = await requestPos<{ updateAllSettings: boolean }>(
-    token,
-    tenantId,
-    `mutation UpdateOrganizationFeatures($input: UpdateAllSettingsInput!) {
-      updateAllSettings(input: $input)
-    }`,
-    { input: { organization: { config: { features } } } },
-  );
-  if (!data.updateAllSettings) throw new Error('Feature settings were not updated.');
+) {
+  const session = getActiveAuthSession();
+  if (!session || String(session.tenant.id) !== tenantId)
+    throw new Error('Your workspace changed. Please retry.');
+  return settingsApi.saveBusinessSettings(features);
 }
+
+export async function loadOrganizationDetails(
+  token: string,
+  tenantId: string,
+  signal?: AbortSignal,
+): Promise<OrganizationDetails> {
+  const session = getActiveAuthSession();
+  const cached = session ? await organizationCache.read(String(session.user.id), tenantId) : null;
+  if (!cached) return refreshOrganizationDetails(token, tenantId, signal);
+  signal?.throwIfAborted();
+  const database = getActiveDatabase();
+  const shifts =
+    database?.scope.tenantId === tenantId && database.scope.userId === String(session?.user.id)
+      ? await database.collection<LocalRecord<CounterSession>>('shifts').list()
+      : [];
+  const activeSession = shifts.length
+    ? (shifts.find((row) => row.payload.status.toUpperCase() === 'OPEN')?.payload ?? null)
+    : cached.activeSession;
+  return { ...cached, activeSession };
+}
+
+export { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';

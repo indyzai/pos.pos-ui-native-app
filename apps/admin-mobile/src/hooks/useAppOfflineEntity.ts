@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { createScopeKey, type LocalDatabase } from '@indyzai/pos-database';
 import {
@@ -5,24 +6,12 @@ import {
   getEntityApi,
   OfflineTableName,
   registerEntityApi,
-  registerEntityApiFactory,
   useNativeOfflineEntity,
   type EntityApiFactory,
   type OfflineEntityApi,
   type OfflineSyncAdapter,
   type UseOfflineEntityOptions,
 } from '@indyzai/pos-database/offline-entity-hook';
-import { createPosApiFactory } from '@indyzai/pos-apis';
-import { requestPos } from '../core/api/posApi';
-import { getActiveAuthSession } from '@indyzai/pos-auth/session';
-
-registerEntityApiFactory(
-  createPosApiFactory({
-    request: requestPos,
-    getToken: () => getActiveAuthSession()?.token ?? '',
-    getTenantId: () => String(getActiveAuthSession()?.tenant.id ?? ''),
-  }),
-);
 
 export {
   getEntityApi,
@@ -49,9 +38,17 @@ export function useAppOfflineEntity<
     'repository' | 'scope' | 'tenantId'
   >,
 ) {
-  const { database, scope, status } = useLocalDatabase();
+  const { database, scope, status, entityApiFactory } = useLocalDatabase();
+  const api = useMemo(
+    () =>
+      options.api ??
+      options.syncAdapter ??
+      entityApiFactory?.<TPayload, TCreateInput, TUpdateInput, TFilter>(options.tableName),
+    [options.api, options.syncAdapter, options.tableName, entityApiFactory],
+  );
   return useNativeOfflineEntity({
     ...options,
+    api,
     database: status === 'ready' ? database : null,
     scope: scope ? createScopeKey(scope) : 'database:pending',
     tenantId: scope?.tenantId ?? '',

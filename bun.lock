@@ -40,6 +40,7 @@
         "@indyzai/pos-state": "workspace:*",
         "@indyzai/pos-storage-native": "workspace:*",
         "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "@microsoft/react-native-clarity": "^4.9.1",
@@ -108,6 +109,7 @@
         "@indyzai/pos-state": "workspace:*",
         "@indyzai/pos-storage-native": "workspace:*",
         "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "@microsoft/react-native-clarity": "^4.9.1",
@@ -167,7 +169,7 @@
     },
     "vendor/pos-ui-shared/packages-native/database": {
       "name": "@indyzai/pos-database",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "dependencies": {
         "@indyzai/offline-entity": "workspace:*",
         "@indyzai/pos-offline-store": "workspace:*",
@@ -217,7 +219,7 @@
     },
     "vendor/pos-ui-shared/packages-native/feature-billing": {
       "name": "@indyzai/feature-billing",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "dependencies": {
         "@indyzai/feature-flags": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
@@ -236,14 +238,17 @@
     },
     "vendor/pos-ui-shared/packages-native/feature-catalog": {
       "name": "@indyzai/feature-catalog",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
+        "@indyzai/pos-application": "workspace:*",
+        "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
       },
     },
     "vendor/pos-ui-shared/packages-native/feature-customers": {
       "name": "@indyzai/feature-customers",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/pos-application": "workspace:*",
@@ -271,7 +276,7 @@
     },
     "vendor/pos-ui-shared/packages-native/feature-inventory": {
       "name": "@indyzai/feature-inventory",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/pos-application": "workspace:*",
@@ -279,6 +284,8 @@
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-permissions": "workspace:*",
         "@indyzai/pos-scanner-native": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "@tanstack/react-query": "^5.102.8",
@@ -300,6 +307,7 @@
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "drizzle-orm": "^0.45.2",
@@ -313,7 +321,7 @@
     },
     "vendor/pos-ui-shared/packages-native/feature-organization": {
       "name": "@indyzai/feature-organization",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "dependencies": {
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/feature-flags": "workspace:*",
@@ -326,6 +334,8 @@
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-permissions": "workspace:*",
         "@indyzai/pos-storage-native": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "@tanstack/react-query": "^5.102.8",
@@ -351,6 +361,7 @@
         "@indyzai/pos-printing": "workspace:*",
         "@indyzai/pos-printing-native": "workspace:*",
         "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "drizzle-orm": "^0.45.2",
       },
@@ -380,6 +391,7 @@
       "peerDependencies": {
         "react": "19.2.3",
         "react-native": "0.86.3",
+        "react-native-safe-area-context": "~5.7.0",
       },
     },
     "vendor/pos-ui-shared/packages-native/feature-reports": {
@@ -456,12 +468,21 @@
         "expo-secure-store": "~57.0.3",
       },
     },
-    "vendor/pos-ui-shared/packages-native/sync": {
-      "name": "@indyzai/pos-sync",
-      "version": "1.0.0",
+    "vendor/pos-ui-shared/packages-native/sync-native": {
+      "name": "@indyzai/pos-sync-native",
+      "version": "2.0.0",
       "dependencies": {
+        "@indyzai/offline-entity": "workspace:*",
+        "@indyzai/pos-api": "workspace:*",
+        "@indyzai/pos-apis": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "19.2.3",
+        "react-native": "0.86.3",
       },
     },
     "vendor/pos-ui-shared/packages-native/ui-native": {
@@ -503,9 +524,9 @@
     },
     "vendor/pos-ui-shared/packages/offline-entity": {
       "name": "@indyzai/offline-entity",
-      "version": "0.1.0",
+      "version": "2.0.0",
       "dependencies": {
-        "@indyzai/pos-offline-store": "0.1.0",
+        "@indyzai/pos-offline-store": "2.0.0",
       },
       "peerDependencies": {
         "react": "^19.0.0",
@@ -513,7 +534,7 @@
     },
     "vendor/pos-ui-shared/packages/offline-store": {
       "name": "@indyzai/pos-offline-store",
-      "version": "0.1.0",
+      "version": "2.0.0",
     },
     "vendor/pos-ui-shared/packages/permissions": {
       "name": "@indyzai/pos-permissions",
@@ -545,6 +566,10 @@
     "vendor/pos-ui-shared/packages/storage": {
       "name": "@indyzai/pos-storage",
       "version": "1.0.0",
+    },
+    "vendor/pos-ui-shared/packages/sync": {
+      "name": "@indyzai/pos-sync",
+      "version": "2.0.0",
     },
     "vendor/pos-ui-shared/packages/ui-core": {
       "name": "@indyzai/pos-ui-core",
@@ -916,7 +941,9 @@
 
     "@indyzai/pos-storage-native": ["@indyzai/pos-storage-native@workspace:vendor/pos-ui-shared/packages-native/storage-native"],
 
-    "@indyzai/pos-sync": ["@indyzai/pos-sync@workspace:vendor/pos-ui-shared/packages-native/sync"],
+    "@indyzai/pos-sync": ["@indyzai/pos-sync@workspace:vendor/pos-ui-shared/packages/sync"],
+
+    "@indyzai/pos-sync-native": ["@indyzai/pos-sync-native@workspace:vendor/pos-ui-shared/packages-native/sync-native"],
 
     "@indyzai/pos-ui-core": ["@indyzai/pos-ui-core@workspace:vendor/pos-ui-shared/packages/ui-core"],
 

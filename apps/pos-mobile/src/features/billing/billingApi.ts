@@ -1,4 +1,12 @@
-import { requestPos, requestPosBootstrap, requestPosHasUpdates } from '../../core/api/posApi';
+import { commitCheckout } from '@indyzai/feature-billing/checkout';
+import { syncDatabase } from '@indyzai/pos-database/sync-runtime';
+import { resolveQueuedReferences } from '@indyzai/pos-sync-native';
+import {
+  requestPos,
+  requestPosBootstrap,
+  requestPosHasUpdates,
+  syncApiMutations,
+} from '../../core/api/posApi';
 import { SerialQueue } from '@indyzai/pos-sync';
 import { readBillingSnapshot, writeBillingSnapshot } from '@indyzai/feature-billing/data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
@@ -47,7 +55,11 @@ import {
 import { customersApi } from '../customers/customersApi';
 import { purchasesApi } from '../purchases/purchasesApi';
 import type { TableOutboxPayload } from '@indyzai/pos-database';
-import { resolveTableMutation, type MutationDependency } from '@indyzai/pos-database/table-mutations';
+import {
+  createTableMutation,
+  resolveTableMutation,
+  type MutationDependency,
+} from '@indyzai/pos-database/table-mutations';
 
 type Context = { key: string; tenant: string; token: string };
 export type BillingCache = {
@@ -239,7 +251,19 @@ async function request<T>(
       throw new Error('Business changed. Please retry.');
   };
   await assertCurrent();
-  const result = await requestPos<T>(c.token, c.tenant, query, variables, signal);
+  const database = getActiveDatabase();
+  const resolved = database ? await resolveQueuedReferences(database, variables) : variables;
+  if (query.includes('MobileRecordScrap')) {
+    const input = resolved.input as Record<string, unknown>;
+    for (const field of ['partyId', 'branchId', 'counterId', 'counterSessionId']) {
+      if (input[field] == null) continue;
+      const id = Number(input[field]);
+      if (!Number.isSafeInteger(id) || id <= 0)
+        throw new Error('The scrap exchange is waiting for its dependencies to synchronize.');
+      input[field] = id;
+    }
+  }
+  const result = await requestPos<T>(c.token, c.tenant, query, resolved, signal);
   await assertCurrent();
   return result;
 }
@@ -339,7 +363,6 @@ export const billingApi = {
     orderDiscount = 0,
     customer?: Customer,
     orderContext?: BillingOrderContext,
-    enqueueSale?: (sale: PendingSale, dependencies: MutationDependency[]) => Promise<unknown>,
   ) =>
     syncQueue.run(async () => {
       const c = await context();
@@ -347,7 +370,15 @@ export const billingApi = {
       const cache = await read(c);
       const auth = getActiveAuthSession();
       const requireOpenSession = requiresOpenCounter(auth?.organization?.settings);
-      const currentSession = auth?.organization ? auth.organization.activeSession : cache.session;
+      const localDatabase = getActiveDatabase();
+      const shifts = localDatabase
+        ? await localDatabase.collection<LocalRecord<CounterSession>>('shifts').list()
+        : [];
+      const currentSession = shifts.length
+        ? (shifts.find((row) => row.payload.status.toUpperCase() === 'OPEN')?.payload ?? null)
+        : auth?.organization
+          ? auth.organization.activeSession
+          : cache.session;
       const database = getActiveDatabase();
       const dependencies: MutationDependency[] = [];
       if (customer && database) {
@@ -373,6 +404,16 @@ export const billingApi = {
             throw new Error('The customer is not ready to synchronize. Retry saving the customer.');
         }
       }
+      const pendingReferences = database
+        ? await database
+            .collection<LocalRecord<TableOutboxPayload>>('sync_outbox')
+            .list({ includeDeleted: true })
+        : [];
+      const referenceIds = new Set([currentSession?.id, ...items.map((item) => item.id)]);
+      for (const job of pendingReferences) {
+        if (job.syncStatus !== 'SYNCED' && referenceIds.has(job.payload.localId))
+          dependencies.push({ jobId: job.payload.offlineId });
+      }
       const sale = createPendingSale({
         items,
         payment,
@@ -387,34 +428,21 @@ export const billingApi = {
             : undefined,
         orderContext,
       });
-      if (payment.scrap) {
-        if (!canManageScrap(auth?.tenant.role)) throw new Error('Your role cannot accept scrap exchanges.');
-        if (!currentSession) throw new Error('Open a counter session before accepting scrap.');
-        const jobs = await scrapPurchaseRepository.read(c.key);
-        jobs.push(scrapPurchaseJob(payment.scrap, currentSession, customer));
-        await scrapPurchaseRepository.replace(c.key, jobs);
-      }
-      try {
-        if (enqueueSale) {
-          await writeBillingSnapshot(c.key, cache, { preserveSales: true });
-          await enqueueSale(sale, dependencies);
-        } else {
-          cache.queue.push(sale);
-          await write(c, cache); // Never clear the cart until this durable write succeeds.
-          const database = getActiveDatabase();
-          if (database) await setSaleOutboxStatus(database, sale, 'PENDING');
-        }
-      } catch (error) {
-        if (payment.scrap) {
-          const jobs = await scrapPurchaseRepository.read(c.key);
-          await scrapPurchaseRepository.replace(
-            c.key,
-            jobs.filter((job) => job.id !== payment.scrap?.id),
-          );
-        }
-        throw error;
-      }
-      return { id: sale.id, receiptNumber: sale.receiptNumber };
+      if (!database) throw new Error('Your local workspace is still initializing.');
+      if (payment.scrap && !canManageScrap(auth?.tenant.role))
+        throw new Error('Your role cannot accept scrap exchanges.');
+      if (payment.scrap && !currentSession) throw new Error('Open a counter session before accepting scrap.');
+      const queued = await commitCheckout(
+        database,
+        sale,
+        dependencies,
+        payment.scrap ? scrapPurchaseJob(payment.scrap, currentSession!, customer) : undefined,
+      );
+      return {
+        record: { id: sale.id, receiptNumber: sale.receiptNumber },
+        jobId: queued.jobId,
+        syncStatus: 'pending' as const,
+      };
     }),
   createCustomer: (key: string, input: { name: string; phone?: string; email?: string; gstin?: string }) =>
     syncQueue.run(async () => {
@@ -422,8 +450,10 @@ export const billingApi = {
       if (c.key !== key) throw new Error('Business changed. Please retry.');
       return customersApi.create(input);
     }),
-  sync: (signal?: AbortSignal) =>
-    pushQueue.run(async () => {
+  sync: (signal?: AbortSignal) => {
+    const database = getActiveDatabase();
+    if (database?.canonicalJobs) return syncDatabase(database, signal);
+    return pushQueue.run(async () => {
       // A settings failure must not prevent financial outbox jobs from progressing.
       await settingsApi.pushPending(signal).catch(() => undefined);
       await printerConfigurationApi.pushPending(signal).catch(() => undefined);
@@ -433,6 +463,7 @@ export const billingApi = {
         await customersApi.pushPending(signal, database);
         await purchasesApi.pushPending(signal);
       }
+      await syncApiMutations(signal);
       const cache = await read(c);
       const saleJobs = database
         ? (
@@ -525,5 +556,6 @@ export const billingApi = {
         (query, variables) => request(c, query, variables, signal),
         () => waybillRepository.replace(c.key, waybillJobs),
       );
-    }),
+    });
+  },
 };

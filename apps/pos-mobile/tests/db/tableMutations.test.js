@@ -69,7 +69,14 @@ test('resolving a customer rewrites the dependent bill and its durable outbox in
       {
         localId: 'local-sale',
         operation: 'CREATE',
-        payload: { input: { partyId: 'local-customer' } },
+        payload: {
+          input: {
+            partyId: 'local-customer',
+            notes: 'local-customer',
+            offlineId: 'local-customer',
+            clientMutationId: 'local-customer',
+          },
+        },
         dependencies: [{ jobId: customer.job.payload.offlineId }],
       },
     );
@@ -89,17 +96,30 @@ test('resolving a customer rewrites the dependent bill and its durable outbox in
     expect(customerRow.syncStatus).toBe('SYNCED');
     expect(saleRow.payload.input.partyId).toBe('42');
     expect(saleJob.payload.data.input.partyId).toBe('42');
+    for (const field of ['notes', 'offlineId', 'clientMutationId']) {
+      expect(saleRow.payload.input[field]).toBe('local-customer');
+      expect(saleJob.payload.data.input[field]).toBe('local-customer');
+    }
     expect(saleJob.syncStatus).toBe('PENDING');
   });
 });
 
 test('a failed outbox write rolls back the local entity', async () => {
   await withDatabase(async (database) => {
-    const outbox = database.collection('sync_outbox');
-    const put = outbox.put;
-    outbox.put = async () => {
-      throw new Error('Storage unavailable');
-    };
+    const transaction = database.transaction.bind(database);
+    database.transaction = (tables, work) =>
+      transaction(tables, async (tx) => {
+        const collection = tx.collection.bind(tx);
+        tx.collection = (name) => {
+          const repository = collection(name);
+          if (name === 'sync_outbox')
+            repository.put = async () => {
+              throw new Error('Storage unavailable');
+            };
+          return repository;
+        };
+        return work(tx);
+      });
     try {
       await expect(
         createTableMutation(
@@ -115,7 +135,7 @@ test('a failed outbox write rolls back the local entity', async () => {
       expect(await database.collection('customers').get('customer1')).toBeUndefined();
       expect(await database.collection('sync_outbox').list()).toHaveLength(0);
     } finally {
-      outbox.put = put;
+      database.transaction = transaction;
     }
   });
 });

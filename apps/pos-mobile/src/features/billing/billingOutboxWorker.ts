@@ -4,4 +4,4 @@ export {
   wakeBillingOutboxWorker,
   stopBillingOutboxWorker,
   type BillingOutboxRunResult,
-} from '@indyzai/pos-sync';
+} from '@indyzai/pos-sync-native';

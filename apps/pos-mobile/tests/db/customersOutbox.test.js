@@ -53,7 +53,7 @@ async function withApi(work) {
 
 test('customer creation is local-only and its server ID resolves dependent sale input', async () => {
   await withApi(async ({ api, database, calls }) => {
-    const customer = await api.create({ name: ' Customer ', address: 'Main street' });
+    const customer = (await api.create({ name: ' Customer ', address: 'Main street' })).record;
     expect(calls).toHaveLength(0);
     const [job] = await database.collection('sync_outbox').list();
     expect(job.syncStatus).toBe('PENDING');
@@ -121,7 +121,7 @@ test('refresh keeps all party types in the local customers table without queuing
 
 test('network failure retains a retryable customer mutation and refresh preserves it', async () => {
   await withApi(async ({ api, database, setResponse }) => {
-    const customer = await api.create({ name: 'Customer' });
+    const customer = (await api.create({ name: 'Customer' })).record;
     setResponse(async () => {
       throw new Error('Offline');
     });
@@ -135,7 +135,7 @@ test('network failure retains a retryable customer mutation and refresh preserve
 
 test('a late customer response cannot be applied after a session switch', async () => {
   await withApi(async ({ api, database, setResponse, switchSession }) => {
-    const customer = await api.create({ name: 'Customer' });
+    const customer = (await api.create({ name: 'Customer' })).record;
     setResponse(async () => {
       switchSession();
       return { saveParty: { id: '42', name: 'Customer' } };
@@ -176,3 +176,16 @@ test('stops retrying and marks job as FAILED after 3 failed attempts', async () 
     expect(calls.length).toBe(callCountBefore);
   });
 });
+
+for (const type of ['SUPPLIER', 'EMPLOYEE', 'TECHNICIAN', 'SCRAP_VENDOR']) {
+  test(`contact creation preserves ${type} through the outbox and server acknowledgement`, async () => {
+    await withApi(async ({ api, database, calls }) => {
+      const contact = (await api.create({ name: ' Contact ', type })).record;
+      expect(contact.type).toBe(type);
+      expect((await database.collection('sync_outbox').list())[0].payload.data.type).toBe(type);
+      await api.pushPending();
+      expect(calls[0].variables.input.type).toBe(type);
+      expect((await database.collection('customers').get(contact.id)).payload.type).toBe(type);
+    });
+  });
+}

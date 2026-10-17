@@ -293,7 +293,7 @@ export function BaseBillingLayout({
   const createQuickProduct = async (input: Parameters<typeof inventoryApi.create>[0]) => {
     setCreatingProduct(true);
     try {
-      const job = await inventoryApi.create(input);
+      const { record: job } = await inventoryApi.create(input);
       await billing.reload();
       setQuickAddOpen(false);
       const refreshed = await billingApi.load();
@@ -402,7 +402,7 @@ export function BaseBillingLayout({
     });
     try {
       if (!billing.data) throw new Error('Load billing before checkout.');
-      const sale = await billingApi.checkout(
+      const { record: sale } = await billingApi.checkout(
         billing.data.key,
         items,
         { ...checkoutPayment, scrap: scrapExchange },
@@ -410,15 +410,6 @@ export function BaseBillingLayout({
         cart.orderDiscount,
         customer,
         orderContext,
-        (pendingSale, dependencies) =>
-          billing.sales.createMutation({
-            payload: pendingSale,
-            dependencies,
-            operation: 'CREATE',
-            localId: pendingSale.id,
-            idempotencyKey: `sale:${pendingSale.id}`,
-            storeId: pendingSale.input.branchId ? String(pendingSale.input.branchId) : null,
-          }),
       );
       logger.info('Checkout completed successfully', {
         receiptNumber: sale.receiptNumber,
@@ -463,7 +454,14 @@ export function BaseBillingLayout({
             ),
           );
       }
-      await billing.reload();
+      await billing
+        .reload()
+        .catch((error) =>
+          showSnackbar(
+            'Sale saved; refresh needs attention',
+            error instanceof Error ? error.message : 'Reopen billing to refresh local data.',
+          ),
+        );
     } catch (e) {
       logger.error('Checkout failed', {
         error: e instanceof Error ? e.message : String(e),
@@ -503,7 +501,7 @@ export function BaseBillingLayout({
   const createCustomer = async (input: { name: string; phone?: string }) => {
     if (!billing.data) throw new Error('Billing is not ready.');
     try {
-      const created = await billingApi.createCustomer(billing.data.key, input);
+      const { record: created } = await billingApi.createCustomer(billing.data.key, input);
       await billing.reload();
       return created;
     } catch (error) {

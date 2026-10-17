@@ -47,8 +47,8 @@ export const moreNavigationItems: AppNavigationItem[] = [
     entitlement: 'inventory.reconcile',
   },
   { label: 'Purchases', icon: ShoppingBag, href: '/purchases', entitlement: 'purchases.view' },
-  { label: 'Customers', icon: Users, href: '/customers', entitlement: 'organization.manage' },
-  { label: 'Team', icon: Users, href: '/team', entitlement: 'users.manage' },
+  { label: 'Contacts', icon: Users, href: '/customers', entitlement: 'organization.manage' },
+  { label: 'Catalog setup', icon: Package, href: '/catalog-setup', entitlement: 'organization.manage' },
   { label: 'Settings', icon: Settings, href: '/settings', entitlement: 'organization.manage' },
 ];
 
@@ -56,7 +56,7 @@ export const tabletNavigationItems = [
   ...primaryNavigationItems,
   orderNavigationItem,
   ...moreNavigationItems.filter((item) =>
-    ['/inventory-reconciliation', '/customers', '/team', '/settings'].includes(String(item.href)),
+    ['/inventory-reconciliation', '/customers', '/catalog-setup', '/settings'].includes(String(item.href)),
   ),
 ];
 

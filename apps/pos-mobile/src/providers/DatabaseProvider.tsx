@@ -1,5 +1,18 @@
+import { acknowledgeCheckout } from '@indyzai/feature-billing/checkout';
+import { metadataApi } from '../features/catalog/metadataApi';
+import { printerConfigurationApi } from '../features/printing/printerConfigurationApi';
+import { purchasesApi } from '../features/purchases/purchasesApi';
+import { customersApi } from '../features/customers/customersApi';
+import { NativeSyncWorker } from '@indyzai/pos-sync-native/react';
+import {
+  CanonicalJobDatabase,
+  createNativeDomainHandlers,
+  stopNativeSyncAndWait,
+  stopBillingOutboxWorkerAndWait,
+} from '@indyzai/pos-sync-native';
+import { queueWaybillAfterSale } from '@indyzai/feature-orders/logistics/waybillSync';
+import { counterSessionApi } from '../features/counter-session/counterSessionApi';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AppState } from 'react-native';
 import {
   LocalDatabaseProvider,
   useLocalDatabase,
@@ -13,35 +26,28 @@ import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
 import {
   normalizePosRole,
   setActiveDatabase,
-  useOfflineQueueCount,
   type DatabaseScope,
   type LocalDatabase,
 } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
-import { useNetworkStatus } from '@indyzai/pos-ui-native';
 import { billingApi } from '../features/billing/billingApi';
 import { settingsApi } from '../features/settings/settingsApi';
 import { SettingsBridge } from '@indyzai/feature-organization/settings';
 import { projectOrganization } from '@indyzai/feature-organization/projectOrganization';
-import {
-  startBillingOutboxWorker,
-  stopBillingOutboxWorker,
-  wakeBillingOutboxWorker,
-} from '../features/billing/billingOutboxWorker';
-import { registerEntityApiFactory } from '@indyzai/pos-database/offline-entity-hook';
-import { createPosApiFactory } from '@indyzai/pos-apis';
+
+import { createAuthenticatedPosApiFactory } from '@indyzai/pos-apis';
 import { requestPos } from '../core/api/posApi';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 
-registerEntityApiFactory(
-  createPosApiFactory({
-    request: requestPos,
-    getToken: () => getActiveAuthSession()?.token ?? '',
-    getTenantId: () => String(getActiveAuthSession()?.tenant.id ?? ''),
-  }),
-);
+const domainHandlers = createNativeDomainHandlers({
+  customers: customersApi,
+  purchases: purchasesApi,
+  settings: settingsApi,
+  printers: printerConfigurationApi,
+  metadata: metadataApi,
+});
 
 const logger = createLogger('Database:store');
 
@@ -76,6 +82,8 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     }
     setState((previous) => ({ ...previous, status: 'initializing', error: '' }));
     try {
+      await stopNativeSyncAndWait();
+      await stopBillingOutboxWorkerAndWait();
       const registration = await authApi.getDeviceRegistrationDetails();
       const activeCounter = session.organization?.activeSession;
       const scope: DatabaseScope = {
@@ -92,18 +100,20 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         role: scope.role,
         deviceId: scope.deviceId,
       });
-      const database = await createStoreLocalDatabase(scope);
+      const rawDatabase = await createStoreLocalDatabase(scope, { activate: false });
+      const database = new CanonicalJobDatabase(rawDatabase);
+      await database.migrate([appStorageKeys.pos.billing(session.user.id, session.tenant.id)]);
       // A tenant switch is the same isolation boundary as a user switch. Keeping
       // only the user id here allowed one user's previous business data and
       // React Query projections to remain visible after changing workspaces.
       const owner = `${scope.tenantId}:${scope.userId}`;
       const previousOwner = await kvStore.get(appStorageKeys.pos.databaseOwner);
       if (previousOwner && previousOwner !== owner) {
-        logger.warn('Database owner changed, clearing local database', {
+        logger.warn('Database owner changed; preserving scoped local records', {
           previousOwner,
           currentOwner: owner,
         });
-        await database.clear();
+        // Scoped repositories isolate owners. Preserve unsent jobs for the original owner.
         queryClient.clear();
       }
       await kvStore.set(appStorageKeys.pos.databaseOwner, owner);
@@ -112,6 +122,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         await database.close();
         return;
       }
+      setActiveDatabase(database);
       logger.info('Store database ready', { tenantId: scope.tenantId, role: scope.role });
       setState((previous) => {
         if (previous.database && previous.database !== database) {
@@ -166,12 +177,47 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [state.database, state.status, session?.tenant.id, session?.user.id]);
 
-  const value = useMemo<DatabaseState>(() => ({ ...state, retry: initialize }), [initialize, state]);
+  useEffect(() => {
+    const currency = session?.organization?.settings.currency;
+    if (state.status !== 'ready' || !state.database || !session || typeof currency !== 'string') return;
+    const controller = new AbortController();
+    void counterSessionApi
+      .refreshDenominations(session.token, String(session.tenant.id), currency, controller.signal)
+      .catch((error) => {
+        if (!controller.signal.aborted) logger.warn('Denomination sync deferred', { error: String(error) });
+      });
+    return () => controller.abort();
+  }, [state.database, state.status, session?.tenant.id, session?.organization?.settings.currency]);
+
+  const entityApiFactory = useMemo(
+    () =>
+      createAuthenticatedPosApiFactory({
+        request: requestPos,
+        getSession: () => sessionRef.current,
+        getScope: () => state.database?.scope,
+      }),
+    [state.database],
+  );
+  const value = useMemo<DatabaseState>(
+    () => ({ ...state, retry: initialize, entityApiFactory }),
+    [initialize, state, entityApiFactory],
+  );
   return (
     <LocalDatabaseProvider value={value}>
       {state.database && state.status === 'ready' && session ? (
         <>
-          <BillingOutboxProcessor database={state.database} />
+          <NativeSyncWorker
+            database={state.database as CanonicalJobDatabase}
+            authApi={authApi}
+            getSession={getActiveAuthSession}
+            request={requestPos}
+            tableHandlers={domainHandlers}
+            afterSaleAcknowledged={async (database, sale, bill, jobId) => {
+              await acknowledgeCheckout(database, sale);
+              await queueWaybillAfterSale(database, sale, bill, jobId);
+            }}
+            onError={(error) => logger.warn('Synchronization deferred', { error: String(error) })}
+          />
           <SettingsBridge surface="pos" />
         </>
       ) : null}
@@ -180,25 +226,4 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function BillingOutboxProcessor({ database }: { database: LocalDatabase }) {
-  const pendingSyncCount = useOfflineQueueCount();
-  const isOnline = useNetworkStatus(authApi, { pendingSyncCount });
-
-  useEffect(() => {
-    startBillingOutboxWorker(
-      database,
-      () => billingApi.sync(),
-      async () => isOnline,
-    );
-    const appState = AppState.addEventListener('change', (status) => {
-      if (status === 'active' && isOnline) wakeBillingOutboxWorker();
-    });
-    return () => {
-      appState.remove();
-      stopBillingOutboxWorker(database);
-    };
-  }, [database, isOnline]);
-
-  return null;
-}
 export { useLocalDatabase, useRequiredLocalDatabase };

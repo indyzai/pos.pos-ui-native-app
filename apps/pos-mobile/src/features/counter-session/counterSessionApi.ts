@@ -1,3 +1,5 @@
+import { queuePettyCash } from '@indyzai/feature-organization/counterSessionApi';
+import { getActiveDatabase, applyBootstrapCollections } from '@indyzai/pos-database';
 import { requestPos } from '../../core/api/posApi';
 import { closeCounterSession, openCounterSession } from '../organization/organizationApi';
 import type { CurrencyDenomination } from './types';
@@ -22,25 +24,34 @@ export const counterSessionApi = {
       branchId?: string;
     },
   ) {
-    const data = await requestPos<{ recordMiscellaneousTransaction: boolean }>(
-      token,
-      tenantId,
-      `mutation RecordCounterPettyCash($input: MiscellaneousTransactionInput!) { recordMiscellaneousTransaction(input: $input) }`,
-      { input },
-    );
-    if (!data.recordMiscellaneousTransaction) throw new Error('Server did not acknowledge the cash entry.');
+    await queuePettyCash(tenantId, input);
   },
   async getDenominations(token: string, tenantId: string, currencyCode: string) {
-    const data = await requestPos<{ currencyDenominations?: CurrencyDenomination[] }>(
+    const database = getActiveDatabase();
+    if (!database || database.scope.tenantId !== tenantId)
+      throw new Error('Your local workspace is still initializing.');
+    return (await database.collection('currency_denominations').list())
+      .map(({ payload }) => payload as CurrencyDenomination)
+      .filter((item) => item.currencyCode === currencyCode)
+      .map((item) => ({ ...item, value: Number(item.value), sortOrder: Number(item.sortOrder) }))
+      .filter((item) => Number.isFinite(item.value) && item.value > 0)
+      .sort((left, right) => left.sortOrder - right.sortOrder || right.value - left.value);
+  },
+  async refreshDenominations(token: string, tenantId: string, currencyCode: string, signal?: AbortSignal) {
+    const database = getActiveDatabase();
+    if (!database || database.scope.tenantId !== tenantId)
+      throw new Error('Your local workspace is still initializing.');
+    const data = await requestPos<{ currencyDenominations: CurrencyDenomination[] }>(
       token,
       tenantId,
       denominationQuery,
       { currencyCode },
+      signal,
     );
-    return (data.currencyDenominations ?? [])
-      .map((item) => ({ ...item, value: Number(item.value), sortOrder: Number(item.sortOrder) }))
-      .filter((item) => Number.isFinite(item.value) && item.value > 0)
-      .sort((left, right) => left.sortOrder - right.sortOrder || right.value - left.value);
+    signal?.throwIfAborted();
+    if (getActiveDatabase() !== database) throw new Error('Your workspace changed. Please retry.');
+    if (!Array.isArray(data.currencyDenominations)) throw new Error('Incomplete denomination response.');
+    await applyBootstrapCollections(database, { currency_denominations: data.currencyDenominations });
   },
   open: openCounterSession,
   close: closeCounterSession,

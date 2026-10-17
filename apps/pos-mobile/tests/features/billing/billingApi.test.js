@@ -1,4 +1,5 @@
-import { beforeEach, expect, mock, test } from 'bun:test';
+import { beforeEach, afterEach, expect, mock, test } from 'bun:test';
+import { setActiveDatabase, getActiveDatabase, createScopeKey } from '@indyzai/pos-database';
 import { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';
 mock.module('../../../src/features/organization/organizationApi', () => ({
   requiresOpenCounter,
@@ -14,8 +15,19 @@ const productBatches = new Map();
 const scrapPurchaseJobs = new Map();
 const taxRates = new Map();
 const clone = (value) => structuredClone(value);
+const localReferences = async (table, fallback) => {
+  const database = getActiveDatabase();
+  const rows = database ? await database.collection(table).list() : [];
+  return rows.length ? rows.map((row) => row.payload) : clone(fallback ?? []);
+};
 mock.module('@indyzai/feature-billing/data/billingRepository', () => ({
-  readBillingSnapshot: async (key) => clone(storage.get(key) ?? { products: [], session: null, queue: [] }),
+  readBillingSnapshot: async (key) => {
+    const snapshot = clone(storage.get(key) ?? { products: [], session: null, queue: [] });
+    const database = getActiveDatabase();
+    const rows = database ? await database.collection('sales').list() : [];
+    snapshot.queue = rows.filter((row) => row.syncStatus !== 'SYNCED').map((row) => row.payload);
+    return snapshot;
+  },
   writeBillingSnapshot: async (key, value) => {
     if (failWrite) throw new Error('Disk full');
     storage.set(key, clone(value));
@@ -23,13 +35,13 @@ mock.module('@indyzai/feature-billing/data/billingRepository', () => ({
 }));
 mock.module('@indyzai/feature-billing/data/billingReferenceRepository', () => ({
   billingReferenceRepository: {
-    readCustomers: async (key) => clone(customers.get(key) ?? []),
+    readCustomers: async (key) => localReferences('customers', customers.get(key)),
     replaceCustomers: async (key, value) => customers.set(key, clone(value)),
-    readPaymentMethods: async (key) => clone(paymentMethods.get(key) ?? []),
+    readPaymentMethods: async (key) => localReferences('payment_methods', paymentMethods.get(key)),
     replacePaymentMethods: async (key, value) => paymentMethods.set(key, clone(value)),
-    readServiceUsers: async (key) => clone(serviceUsers.get(key) ?? []),
+    readServiceUsers: async (key) => localReferences('service_users', serviceUsers.get(key)),
     replaceServiceUsers: async (key, value) => serviceUsers.set(key, clone(value)),
-    readTaxRates: async (key) => clone(taxRates.get(key) ?? []),
+    readTaxRates: async (key) => localReferences('tax_rates', taxRates.get(key)),
     replaceTaxRates: async (key, value) => taxRates.set(key, clone(value)),
   },
 }));
@@ -41,7 +53,7 @@ mock.module('@indyzai/feature-orders/logistics/waybillRepository', () => ({
 }));
 mock.module('@indyzai/feature-billing/data/productBatchRepository', () => ({
   productBatchRepository: {
-    read: async (key) => clone(productBatches.get(key) ?? []),
+    read: async (key) => localReferences('product_batches', productBatches.get(key)),
     replace: async (key, value) => productBatches.set(key, clone(value)),
   },
 }));
@@ -64,7 +76,48 @@ mock.module('@indyzai/pos-auth/session', () => ({
 const { billingApi } = await import('../../../src/features/billing/billingApi');
 const key = 'indyz.billing.v1:user:1';
 const items = [{ id: '42', price: 10, quantity: 2, taxRate: 5 }];
+function testDatabase() {
+  const tables = new Map();
+  const scope = { tenantId: '1', userId: 'user', role: 'owner', storeIds: ['branch'], deviceId: 'device' };
+  const database = {
+    scope,
+    collection(name) {
+      const rows = tables.get(name) ?? new Map();
+      tables.set(name, rows);
+      return {
+        list: async () => clone([...rows.values()]),
+        get: async (id) => (rows.has(id) ? clone(rows.get(id)) : undefined),
+        put: async (record) => {
+          if (failWrite) throw new Error('Disk full');
+          return rows.set(record.id, clone(record));
+        },
+        putMany: async (records) => {
+          for (const record of records) rows.set(record.id, clone(record));
+        },
+        remove: async (id) => rows.delete(id),
+        replace: async (records) => {
+          rows.clear();
+          for (const record of records) rows.set(record.id, clone(record));
+        },
+        subscribe: () => () => {},
+      };
+    },
+    transaction: async (_collections, work) => {
+      const before = clone(tables);
+      try {
+        return await work(database);
+      } catch (error) {
+        tables.clear();
+        for (const [name, rows] of before) tables.set(name, rows);
+        throw error;
+      }
+    },
+  };
+  return database;
+}
+afterEach(() => setActiveDatabase(null));
 beforeEach(() => {
+  setActiveDatabase(testDatabase());
   storage.clear();
   customers.clear();
   paymentMethods.clear();
@@ -85,23 +138,16 @@ test('concurrent sales are retained', async () => {
   expect(cache.queue[0].input.totalAmount).toBe(21);
   expect(cache.queue[0].id).not.toBe(cache.queue[1].id);
 });
-test('billing UI can persist checkout through the generic local-first mutation hook', async () => {
-  let queued;
-  const result = await billingApi.checkout(
-    key,
-    items,
-    'Cash',
-    undefined,
-    0,
-    undefined,
-    undefined,
-    async (sale) => {
-      queued = clone(sale);
-    },
-  );
-  expect(queued).toMatchObject({ id: result.id, operation: 'CREATE', receiptNumber: result.receiptNumber });
-  expect(queued.input).toMatchObject({ offlineId: result.id, totalAmount: 21 });
-  expect((await billingApi.load()).cache.queue).toEqual([]);
+test('billing returns the durable common-worker job instead of a screen-owned persistence callback', async () => {
+  const result = await billingApi.checkout(key, items, 'Cash');
+  expect(typeof result.record.id).toBe('string');
+  expect(typeof result.record.receiptNumber).toBe('string');
+  expect(typeof result.jobId).toBe('string');
+  expect(result.syncStatus).toBe('pending');
+  const job = await getActiveDatabase().collection('sync_outbox').get(result.jobId);
+  expect(job.payload.entityType).toBe('SALE');
+  expect(job.payload.data.input).toMatchObject({ offlineId: result.record.id, totalAmount: 21 });
+  expect((await billingApi.load()).cache.queue).toHaveLength(1);
 });
 test('customized restaurant lines retain the original product and line metadata', async () => {
   await billingApi.checkout(
@@ -173,9 +219,9 @@ test('scrap exchange is durably queued and linked to the sale payment', async ()
       items: [{ productId: '7', productName: 'Old battery', quantity: 1, unitPrice: 5 }],
     },
   });
-  expect(scrapPurchaseJobs.get(key)).toEqual([
-    expect.objectContaining({ id: 'SCRAP-offline-7', status: 'PENDING' }),
-  ]);
+  expect(
+    (await getActiveDatabase().collection('scrap_purchase_jobs').list()).map((row) => row.payload),
+  ).toEqual([expect.objectContaining({ id: 'SCRAP-offline-7', status: 'PENDING' })]);
   const input = (await billingApi.load()).cache.queue[0].input;
   expect(input.payments).toEqual([
     { paymentMethod: 'SCRAP', amountPaid: 5, referenceNumber: 'SCRAP-offline-7' },
@@ -183,7 +229,13 @@ test('scrap exchange is durably queued and linked to the sale payment', async ()
   ]);
 });
 test('failed upload retains sale and reuses offlineId', async () => {
-  const { id, receiptNumber } = await billingApi.checkout(key, items, 'Cash');
+  const {
+    record: { id, receiptNumber },
+    jobId,
+    syncStatus,
+  } = await billingApi.checkout(key, items, 'Cash');
+  expect(jobId).toBeTruthy();
+  expect(syncStatus).toBe('pending');
   expect(receiptNumber).toMatch(/^POS-\d{8}-3-[A-Z0-9]{6}$/);
   globalThis.fetch = async () => {
     throw new Error('Offline');

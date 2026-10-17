@@ -19,6 +19,7 @@ function database() {
   const tables = new Map();
   return {
     scope,
+    transaction: async (_tables, work) => work(),
     collection(name) {
       const rows = tables.get(name) ?? new Map();
       tables.set(name, rows);
@@ -27,6 +28,9 @@ function database() {
         get: async (id) => rows.get(id),
         put: async (record) => {
           rows.set(record.id, record);
+        },
+        putMany: async (records) => {
+          for (const record of records) rows.set(record.id, record);
         },
         replace: async (records) => {
           rows.clear();
@@ -38,7 +42,7 @@ function database() {
 }
 afterEach(() => setActiveDatabase(null));
 
-test('team refresh persists members and direct staff creation refreshes the users table', async () => {
+test('team refresh persists members and staff creation queues a local user without contacting the server', async () => {
   const db = database();
   setActiveDatabase(db);
   const calls = [];
@@ -67,9 +71,17 @@ test('team refresh persists members and direct staff creation refreshes the user
   await api.refresh();
   expect((await db.collection('users').list()).map((row) => row.payload.role)).toEqual(['manager']);
   await api.create({ name: 'Cashier', phone: '9876543210', pin: '1234', role: 'cashier' });
-  expect(calls[1].variables).toEqual({
-    details: { name: 'Cashier', email: undefined, phone: '9876543210', pin: '1234', role: 'cashier' },
+  expect(calls).toHaveLength(1);
+  const [job] = await db.collection('sync_outbox').list();
+  expect(job.syncStatus).toBe('PENDING');
+  expect(job.payload.request.variables.details).toEqual({
+    name: 'Cashier',
+    email: undefined,
+    phone: '9876543210',
+    pin: '1234',
+    role: 'cashier',
   });
+  expect((await db.collection('users').list()).some((row) => 'pin' in row.payload)).toBe(false);
   expect((await db.collection('users').list()).map((row) => row.payload.role).sort()).toEqual([
     'cashier',
     'manager',
