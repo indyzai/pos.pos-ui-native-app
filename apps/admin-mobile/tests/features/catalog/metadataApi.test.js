@@ -142,9 +142,8 @@ test('queued metadata survives database close and reopen', async () =>
   }));
 
 test('IndexedDB upgrade preserves master units and product conversions separately', async () => {
-  const { prepareLocalIndexedDb } = await import(
-    '../../../../../vendor/pos-ui-shared/packages/offline-store/src/indexedDbSchema.ts'
-  );
+  const { prepareLocalIndexedDb } =
+    await import('../../../../../vendor/pos-ui-shared/packages/offline-store/src/indexedDbSchema.ts');
   const name = `metadata-upgrade-${crypto.randomUUID()}`;
   const old = await new Promise((resolve, reject) => {
     const request = indexedDB.open(name, 100);
