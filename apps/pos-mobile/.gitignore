@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Public API profile templates (not developer overrides)
+!environments/.env.local
+!environments/.env.production

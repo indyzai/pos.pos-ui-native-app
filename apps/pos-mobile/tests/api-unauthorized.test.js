@@ -40,3 +40,28 @@ test('GraphQL authentication failure expires session even with HTTP 200', async 
     dispose();
   }
 });
+
+test('GraphQL HTTP 400 surfaces schema errors and preserves the authenticated session', async () => {
+  const tokens = [];
+  const dispose = setUnauthorizedHandler(async (token) => {
+    tokens.push(token);
+  });
+  try {
+    globalThis.fetch = async () =>
+      Response.json(
+        { errors: [{ message: 'Cannot query field "reports" on type "Query".' }] },
+        { status: 400 },
+      );
+    await expect(
+      requestGraphQL(
+        'https://example.test',
+        'query ReportCatalog { reports { id } }',
+        {},
+        { token: 'valid' },
+      ),
+    ).rejects.toThrow('Cannot query field "reports"');
+    expect(tokens).toEqual([]);
+  } finally {
+    dispose();
+  }
+});

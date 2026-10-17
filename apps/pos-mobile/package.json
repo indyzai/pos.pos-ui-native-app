@@ -76,7 +76,11 @@
     "db:bundle": "bun run --cwd ../../vendor/pos-ui-shared/packages-native/database db:bundle",
     "test": "bun test tests",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "env:local": "node scripts/use-environment.mjs local",
+    "env:production": "node scripts/use-environment.mjs production",
+    "start:local": "node scripts/use-environment.mjs local && expo start --clear --port 3511",
+    "start:production": "node scripts/use-environment.mjs production && expo start --clear --port 3511"
   },
   "private": true
 }
