@@ -245,7 +245,12 @@ test('failed upload retains sale and reuses offlineId', async () => {
     }
     expect(String(url)).toContain('/sync/jobs?ids=501');
     expect((await billingApi.load()).cache.queue[0].id).toBe(id);
-    return { ok: true, json: async () => ({ jobs: [{ id: '501', clientId, status: 'completed', result: { data: { saveBill: { id: '99' } } } }] }) };
+    return {
+      ok: true,
+      json: async () => ({
+        jobs: [{ id: '501', clientId, status: 'completed', result: { data: { saveBill: { id: '99' } } } }],
+      }),
+    };
   };
   await billingApi.sync();
   expect((await billingApi.load()).cache.queue).toHaveLength(0);

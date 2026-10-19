@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  EXPO_NO_TELEMETRY: "1"
+  EXPO_NO_TELEMETRY: '1'
 
 jobs:
   validate:

@@ -190,7 +190,12 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             getSession={getActiveAuthSession}
             requestSync={requestPosSync}
             settingsKeys={settingsFields.map((field) => field.key)}
-            onError={(error) => logger.warn('Incoming refresh deferred', { error: String(error), stack: error instanceof Error ? error.stack : undefined })}
+            onError={(error) =>
+              logger.warn('Incoming refresh deferred', {
+                error: String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+              })
+            }
           />
           <NativeSyncWorker
             database={state.database as CanonicalJobDatabase}

@@ -7,14 +7,16 @@ assignees: ''
 ---
 
 ### 📱 Platform
+
 - [ ] Android
 - [ ] iOS
 
 ### ℹ️ Environment
-- **App Version:** 
+
+- **App Version:**
 - **Install Channel:** (Play Store / F-Droid / App Store / TestFlight / release APK / source-dev build)
-- **OS Version:** 
-- **Device Model:** 
+- **OS Version:**
+- **Device Model:**
 
 <details>
 <summary><strong>Install channel examples (Click to expand)</strong></summary>
@@ -25,9 +27,11 @@ assignees: ''
 </details>
 
 ### 📝 Description
+
 What UI/UX issue are you seeing?
 
 ### 🧭 UI Type
+
 - [ ] Layout / spacing
 - [ ] Keyboard overlap / input focus
 - [ ] Tap target / gesture handling
@@ -36,16 +40,20 @@ What UI/UX issue are you seeing?
 - [ ] Theme / visual rendering
 
 ### 🔄 Steps to Reproduce
-1. 
-2. 
-3. 
+
+1.
+2.
+3.
 
 ### 🎯 Expected Behavior
+
 What did you expect instead?
 
 ### 📸 Screenshots / Screen Recording
+
 Please attach screenshots or a short recording if possible.
 
 ### 📎 Extra Device Info (optional but helpful)
+
 - Display size / font scale:
 - Orientation:

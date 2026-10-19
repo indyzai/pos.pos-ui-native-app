@@ -7,6 +7,7 @@ assignees: ''
 ---
 
 ### 💻 Platform
+
 - [ ] Desktop (Linux)
 - [ ] Desktop (macOS)
 - [ ] Desktop (Windows)
@@ -14,9 +15,10 @@ assignees: ''
 - [ ] Mobile (iOS)
 
 ### ℹ️ Environment
-- **App Version:** 
+
+- **App Version:**
 - **Install Channel:** (e.g. Flathub / Play Store / MS Store / F-Droid / APT / AUR / release file)
-- **OS Version:** 
+- **OS Version:**
 
 <details>
 <summary><strong>Install channel examples (Click to expand)</strong></summary>
@@ -30,16 +32,20 @@ assignees: ''
 </details>
 
 ### 🧾 Error details
+
 Paste the exact error text, stack trace, or diagnostics ID shown in the app.
 
 ### 🔄 What were you doing?
+
 Describe the action right before the error appeared.
 
 ### ♻️ Frequency
+
 - [ ] Happened once
 - [ ] Happens sometimes
 - [ ] Happens every time
 
 ### 📎 Logs / Attachments
+
 Attach logs if available:
 https://docs.openpos.app/data-sync/diagnostics-logs
