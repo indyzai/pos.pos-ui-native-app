@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { resolveMobileApiProfile } from '../../src/config/apiProfile';
 
-test('local profile uses localhost POS and auth APIs on native too', () => {
+test('web local profile uses localhost POS and auth APIs', () => {
   expect(resolveMobileApiProfile({ environment: 'local' })).toEqual({
     environment: 'local',
     posApiUrl: 'http://localhost:3501/api/graphql',
@@ -22,3 +22,22 @@ test('local profile supports emulator or physical device hosts', () => {
       .posApiUrl,
   ).toBe('http://10.0.2.2:3501/api/graphql');
 });
+
+for (const platform of ['android', 'ios']) {
+  test(`${platform} uses production even with local Expo values`, () => {
+    expect(
+      resolveMobileApiProfile({
+        platform,
+        environment: 'local',
+        posApiUrl: 'http://localhost:3501/api/graphql',
+        posBaseUrl: 'http://localhost:3501/api',
+        authApiUrl: 'http://localhost:3504/api/v1',
+      }),
+    ).toEqual({
+      environment: 'production',
+      posApiUrl: 'https://api.indyzai.com/pos/api/graphql',
+      posBaseUrl: 'https://api.indyzai.com/pos/api',
+      authApiUrl: 'https://api.indyzai.com/auth/api/v1',
+    });
+  });
+}

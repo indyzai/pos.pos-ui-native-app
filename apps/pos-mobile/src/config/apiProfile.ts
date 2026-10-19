@@ -1,11 +1,13 @@
 export type ApiProfile = 'local' | 'production';
 export function resolveMobileApiProfile(values: {
+  platform?: string;
   environment?: string;
   posApiUrl?: string;
   posBaseUrl?: string;
   authApiUrl?: string;
 }) {
-  const environment: ApiProfile = values.environment === 'local' ? 'local' : 'production';
+  const native = values.platform === 'android' || values.platform === 'ios';
+  const environment: ApiProfile = !native && values.environment === 'local' ? 'local' : 'production';
   const defaults =
     environment === 'local'
       ? {
@@ -20,8 +22,8 @@ export function resolveMobileApiProfile(values: {
         };
   return {
     environment,
-    posApiUrl: values.posApiUrl || defaults.posApiUrl,
-    posBaseUrl: values.posBaseUrl || defaults.posBaseUrl,
-    authApiUrl: values.authApiUrl || defaults.authApiUrl,
+    posApiUrl: (!native && values.posApiUrl) || defaults.posApiUrl,
+    posBaseUrl: (!native && values.posBaseUrl) || defaults.posBaseUrl,
+    authApiUrl: (!native && values.authApiUrl) || defaults.authApiUrl,
   };
 }

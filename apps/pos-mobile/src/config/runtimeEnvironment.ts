@@ -1,9 +1,11 @@
+import { Platform } from 'react-native';
 import { resolveMobileApiProfile, type ApiProfile } from './apiProfile';
 export type ApiEnvironment = ApiProfile;
 
-// Expo inlines these public values from .env. The selected profile takes precedence
-// over previously saved device preferences on native and web alike.
+// Installed Android/iOS apps use production APIs even when Expo loads a local .env.
+// Web keeps the selected profile and its configured URL overrides.
 const profile = resolveMobileApiProfile({
+  platform: Platform.OS,
   environment: process.env.EXPO_PUBLIC_API_ENVIRONMENT,
   posApiUrl: process.env.EXPO_PUBLIC_POS_API_URL,
   posBaseUrl: process.env.EXPO_PUBLIC_POS_BASE_URL,
