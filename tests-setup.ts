@@ -4,6 +4,10 @@ import { mock } from "bun:test";
 globalThis.__DEV__ = false;
 
 mock.module("react-native", () => ({
+    AppState: {
+        currentState: "active",
+        addEventListener: () => ({ remove() {} }),
+    },
     Platform: {
         OS: "web",
         select: (obj: Record<string, unknown>) => obj?.web ?? obj?.default,
