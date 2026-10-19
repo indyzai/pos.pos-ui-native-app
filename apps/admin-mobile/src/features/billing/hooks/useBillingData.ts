@@ -4,7 +4,6 @@ import { usePathname } from 'expo-router';
 import { createScopeKey } from '@indyzai/pos-database';
 import { useBackgroundRefresh } from '@indyzai/pos-ui-native';
 import { printerConfigurationApi } from '../../printing/printerConfigurationApi';
-import { getNetworkStatusSnapshot } from '@indyzai/pos-ui-native';
 import { billingApi, fallbackPaymentMethods, type BillingCache } from '../billingApi';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { useAuthSession } from '@indyzai/pos-auth/session';
@@ -94,30 +93,6 @@ export function useBillingData() {
       running.current = false;
     }
   };
-  const settings = auth.session?.organization?.settings;
-  const autoRefreshEnabled = settings?.autoRefresh === true || settings?.autoRefreshEnabled === true;
-  const autoRefreshSeconds = Math.max(15, Number(settings?.autoRefreshIntervalSeconds ?? 60));
-  useEffect(() => {
-    if (!autoRefreshEnabled || !ready || !local.database || pathname !== '/billing') return;
-    let controller: AbortController | undefined;
-    const timer = setInterval(() => {
-      if (running.current || controller || !local.database || getNetworkStatusSnapshot() !== true) return;
-      controller = new AbortController();
-      const active = controller;
-      const timeout = setTimeout(() => active.abort(), 12000);
-      void billingApi
-        .refresh(active.signal, local.database)
-        .catch(() => undefined)
-        .finally(() => {
-          clearTimeout(timeout);
-          controller = undefined;
-        });
-    }, autoRefreshSeconds * 1000);
-    return () => {
-      clearInterval(timer);
-      controller?.abort();
-    };
-  }, [autoRefreshEnabled, autoRefreshSeconds, local.database, ready, pathname]);
   const error = syncMutation.error;
   const data = useMemo(() => {
     if (!ready || !userId || !tenantId) return undefined;

@@ -1,3 +1,6 @@
+import { createRefreshCoordinator } from '@indyzai/pos-sync';
+import { applyRefreshBatch, readRefreshMarkers } from '@indyzai/pos-database';
+import { registerNativeRefresh } from '../../../../../vendor/pos-ui-shared/packages-native/sync-native/src/nativeRefresh';
 import { beforeEach, afterEach, expect, mock, test } from 'bun:test';
 import { setActiveDatabase, getActiveDatabase, createScopeKey } from '@indyzai/pos-database';
 import { requiresOpenCounter } from '@indyzai/feature-organization/organizationSettings';
@@ -26,6 +29,7 @@ mock.module('@indyzai/feature-billing/data/billingRepository', () => ({
     const database = getActiveDatabase();
     const rows = database ? await database.collection('sales').list() : [];
     snapshot.queue = rows.filter((row) => row.syncStatus !== 'SYNCED').map((row) => row.payload);
+    snapshot.products = await localReferences('products', snapshot.products);
     return snapshot;
   },
   writeBillingSnapshot: async (key, value) => {
@@ -230,9 +234,18 @@ test('failed upload retains sale and reuses offlineId', async () => {
   };
   await expect(billingApi.sync()).rejects.toThrow('Offline');
   expect((await billingApi.load()).cache.queue[0].id).toBe(id);
-  globalThis.fetch = async (_url, options) => {
-    expect(JSON.parse(options.body).variables.newBillData.offlineId).toBe(id);
-    return { ok: true, json: async () => ({ data: { saveBill: { id: '99' } } }) };
+  let clientId;
+  globalThis.fetch = async (url, options) => {
+    if (options.body) {
+      const batch = JSON.parse(options.body);
+      expect(batch.jobs).toHaveLength(1);
+      expect(batch.jobs[0].input.newBillData.offlineId).toBe(id);
+      clientId = batch.jobs[0].id;
+      return { ok: true, json: async () => ({ jobs: [{ id: '501', clientId, status: 'pending' }] }) };
+    }
+    expect(String(url)).toContain('/sync/jobs?ids=501');
+    expect((await billingApi.load()).cache.queue[0].id).toBe(id);
+    return { ok: true, json: async () => ({ jobs: [{ id: '501', clientId, status: 'completed', result: { data: { saveBill: { id: '99' } } } }] }) };
   };
   await billingApi.sync();
   expect((await billingApi.load()).cache.queue).toHaveLength(0);
@@ -275,7 +288,48 @@ test('catalog refresh maps and persists products for offline billing', async () 
       },
     }),
   });
-  await billingApi.refresh();
+  const initial = await (await globalThis.fetch('initial-fixture')).json();
+  const database = getActiveDatabase();
+  const nodes = Object.keys(initial.collections).map((resourceKey) => ({
+    key: `pos.test.${resourceKey}`,
+    parentKey: 'pos.test',
+    type: 'collection',
+    resourceKey,
+    partitionKey: '-',
+    requiredRevision: '1',
+    availableRevision: '1',
+    updatedAt: initial.generatedAt,
+    invalidatedAt: initial.generatedAt,
+    dependsOn: [],
+  }));
+  const coordinator = createRefreshCoordinator({
+    resources: () => new Set(Object.keys(initial.collections)),
+    adapter: {
+      readMarkers: () => readRefreshMarkers(database),
+      fetchTree: async () => ({
+        version: 1,
+        orgRefId: '1',
+        revision: '1',
+        updatedAt: initial.generatedAt,
+        nodes,
+      }),
+      fetchPage: async (node) => ({
+        revision: '1',
+        updatedAt: initial.generatedAt,
+        mode: 'snapshot',
+        rows: initial.collections[node.resourceKey],
+        deletedIds: [],
+        nextCursor: null,
+      }),
+      apply: (batch, signal) => applyRefreshBatch(database, batch, signal),
+    },
+  });
+  const unregister = registerNativeRefresh(database, coordinator);
+  try {
+    await billingApi.refresh();
+  } finally {
+    unregister();
+  }
   const { cache } = await billingApi.load();
   expect(cache.products).toEqual([
     expect.objectContaining({

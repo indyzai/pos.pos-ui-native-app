@@ -1,9 +1,11 @@
+import { usePathname } from 'expo-router';
+import { uiPageKey } from '@indyzai/pos-sync';
 import { acknowledgeCheckout } from '@indyzai/feature-billing/checkout';
 import { metadataApi } from '../features/catalog/metadataApi';
 import { printerConfigurationApi } from '../features/printing/printerConfigurationApi';
 import { purchasesApi } from '../features/purchases/purchasesApi';
 import { customersApi } from '../features/customers/customersApi';
-import { NativeSyncWorker } from '@indyzai/pos-sync-native/react';
+import { NativeSyncWorker, NativeRefreshWorker } from '@indyzai/pos-sync-native/react';
 import {
   CanonicalJobDatabase,
   createNativeDomainHandlers,
@@ -23,12 +25,7 @@ import { createLogger } from '@indyzai/pos-utils';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
 import { createStoreLocalDatabase } from '@indyzai/pos-database/store';
-import {
-  normalizePosRole,
-  setActiveDatabase,
-  type DatabaseScope,
-  type LocalDatabase,
-} from '@indyzai/pos-database';
+import { normalizePosRole, setActiveDatabase, type DatabaseScope } from '@indyzai/pos-database';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
 import { kvStore } from '@indyzai/pos-storage-native';
 import { queryClient } from '@indyzai/pos-state';
@@ -38,7 +35,8 @@ import { SettingsBridge } from '@indyzai/feature-organization/settings';
 import { projectOrganization } from '@indyzai/feature-organization/projectOrganization';
 
 import { createAuthenticatedPosApiFactory } from '@indyzai/pos-apis';
-import { requestPos } from '../core/api/posApi';
+import { requestPos, requestPosSync } from '../core/api/posApi';
+import { settingsFields } from '@indyzai/feature-organization/settingsSchema';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 
 const domainHandlers = createNativeDomainHandlers({
@@ -52,6 +50,7 @@ const domainHandlers = createNativeDomainHandlers({
 const logger = createLogger('Database:store');
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { session, initializing: authInitializing } = useAuthSession();
   const [state, setState] = useState<Omit<DatabaseState, 'retry'>>({
     status: session ? 'initializing' : 'ready',
@@ -130,10 +129,8 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         }
         return { status: 'ready', error: '', database, scope };
       });
-      // Network is an optional synchronization source. The bootstrap writes to
-      // the local database; screens continue observing local collections only.
-      // Failure is intentionally non-fatal so a previously bootstrapped user can
-      // open the app without connectivity.
+      // The incoming worker refreshes server revisions after the local workspace
+      // is ready; screens remain available from their saved data while offline.
     } catch (reason) {
       if (current !== generation.current) return;
       const errorMessage = reason instanceof Error ? reason.message : 'Local storage unavailable';
@@ -161,34 +158,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     );
   }, [state.database, state.status, session?.organization, session?.tenant.id]);
 
-  useEffect(() => {
-    if (!state.database || state.status !== 'ready' || !session) return;
-    const database = state.database;
-    const controller = new AbortController();
-    void Promise.allSettled([
-      billingApi.refresh(controller.signal, database),
-      settingsApi.refresh(controller.signal),
-    ]).then((results) => {
-      if (controller.signal.aborted) return;
-      for (const result of results)
-        if (result.status === 'rejected')
-          logger.warn('Initial local data refresh failed', { error: String(result.reason) });
-    });
-    return () => controller.abort();
-  }, [state.database, state.status, session?.tenant.id, session?.user.id]);
-
-  useEffect(() => {
-    const currency = session?.organization?.settings.currency;
-    if (state.status !== 'ready' || !state.database || !session || typeof currency !== 'string') return;
-    const controller = new AbortController();
-    void counterSessionApi
-      .refreshDenominations(session.token, String(session.tenant.id), currency, controller.signal)
-      .catch((error) => {
-        if (!controller.signal.aborted) logger.warn('Denomination sync deferred', { error: String(error) });
-      });
-    return () => controller.abort();
-  }, [state.database, state.status, session?.tenant.id, session?.organization?.settings.currency]);
-
   const entityApiFactory = useMemo(
     () =>
       createAuthenticatedPosApiFactory({
@@ -206,6 +175,15 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     <LocalDatabaseProvider value={value}>
       {state.database && state.status === 'ready' && session ? (
         <>
+          <NativeRefreshWorker
+            pageKey={uiPageKey(pathname)}
+            database={state.database}
+            authApi={authApi}
+            getSession={getActiveAuthSession}
+            requestSync={requestPosSync}
+            settingsKeys={settingsFields.map((field) => field.key)}
+            onError={(error) => logger.warn('Incoming refresh deferred', { error: String(error) })}
+          />
           <NativeSyncWorker
             database={state.database as CanonicalJobDatabase}
             authApi={authApi}

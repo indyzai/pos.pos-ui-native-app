@@ -15,7 +15,7 @@ export function WholesaleBillingScreen({ mode }: { mode: BillingModeConfig }) {
   return (
     <BaseBillingLayout
       mode={mode}
-      onSelectProduct={(product, { cart, addStandardProduct }) => {
+      onSelectProduct={(product, { addStandardProduct }) => {
         if (isEnabled('bulkPricing')) {
           setBulkProduct(product);
           return false;

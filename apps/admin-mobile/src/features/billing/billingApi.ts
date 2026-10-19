@@ -1,15 +1,12 @@
+import type { LocalDatabase } from '@indyzai/pos-database';
+import { refreshNativeData } from '@indyzai/pos-sync-native';
 import { commitCheckout } from '@indyzai/feature-billing/checkout';
 import { syncDatabase } from '@indyzai/pos-database/sync-runtime';
 import { resolveQueuedReferences } from '@indyzai/pos-sync-native';
-import {
-  requestPos,
-  requestPosBootstrap,
-  requestPosHasUpdates,
-  syncApiMutations,
-} from '../../core/api/posApi';
+import { requestPos, syncApiMutations } from '../../core/api/posApi';
 import { purchasesApi } from '../purchases/purchasesApi';
 import { customersApi } from '../customers/customersApi';
-import { SerialQueue, queueApiMutation } from '@indyzai/pos-sync-native';
+import { SerialQueue } from '@indyzai/pos-sync-native';
 import {
   resolveTableMutation,
   type TableOutboxPayload,
@@ -41,19 +38,12 @@ import { requiresOpenCounter } from '../organization/organizationApi';
 import { waybillRepository } from '@indyzai/feature-orders/logistics/waybillRepository';
 import { syncWaybillJobs, waybillJobFromSale } from '@indyzai/feature-orders/logistics/waybillSync';
 import { productBatchRepository } from '@indyzai/feature-billing/data/productBatchRepository';
-import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
+
 import type { ProductBatch } from '@indyzai/feature-billing/types/billing';
 import { scrapPurchaseRepository } from '@indyzai/feature-scrap/scrapPurchaseRepository';
 import { scrapPurchaseJob, syncScrapPurchaseJobs } from '@indyzai/feature-scrap/scrapSync';
 import { canManageScrap } from '@indyzai/feature-scrap/permissions';
-import {
-  applyPosBootstrap,
-  bootstrapCollectionMap,
-  getActiveDatabase,
-  normalizeBootstrapCollections,
-  type LocalDatabase,
-  type LocalRecord,
-} from '@indyzai/pos-database';
+import { getActiveDatabase, type LocalRecord } from '@indyzai/pos-database';
 
 type Context = { key: string; tenant: string; token: string };
 export type BillingCache = {
@@ -100,7 +90,6 @@ export const fallbackPaymentMethods: BillingPaymentMethod[] = [
   },
 ];
 const syncQueue = new SerialQueue();
-const pullQueue = new SerialQueue();
 const pushQueue = new SerialQueue();
 const billingBootstrapCollections = [
   'products',
@@ -111,33 +100,6 @@ const billingBootstrapCollections = [
   'taxRates',
   'counterSessions',
 ];
-async function updatedBootstrapCollections(
-  c: Context,
-  database: LocalDatabase,
-  signal?: AbortSignal,
-  targetCollections = billingBootstrapCollections,
-) {
-  const states = await database.collection('sync_state').list({ includeDeleted: true });
-  const loadedMap = new Map(
-    states.map((state) => [
-      String((state.payload as { collection?: string }).collection ?? state.remoteId),
-      Number((state.payload as { lastSyncedAt?: number }).lastSyncedAt),
-    ]),
-  );
-  const missing = targetCollections.filter(
-    (col) => !loadedMap.has(col) && !loadedMap.has(bootstrapCollectionMap[col] ?? col),
-  );
-  const loaded = Array.from(loadedMap.values()).filter(Number.isFinite);
-  if (!loaded.length) return targetCollections;
-
-  const result = await requestPosHasUpdates<{ updates: Record<string, boolean> }>(c.token, c.tenant, {
-    since: new Date(Math.min(...loaded)).toISOString(),
-    route: '/',
-    collections: targetCollections,
-    signal,
-  });
-  return targetCollections.filter((collection) => result.updates[collection] || missing.includes(collection));
-}
 async function context(): Promise<Context> {
   const session = getActiveAuthSession();
   if (!session) throw new Error('Your workspace is still initializing. Please try again.');
@@ -201,92 +163,15 @@ export const billingApi = {
     const c = await context();
     return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
   },
-  refresh: (
+  refresh: async (
     signal?: AbortSignal,
     database?: LocalDatabase | null,
-    forceBootstrap = false,
-    requestedCollections?: string[],
-  ) =>
-    pullQueue.run(async () => {
-      const c = await context();
-      const cache = await read(c);
-      const targetDb = database ?? getActiveDatabase();
-      if (!requestedCollections) await customersApi.sync(signal, targetDb).catch(() => undefined);
-      const collections =
-        targetDb && !forceBootstrap
-          ? await updatedBootstrapCollections(
-              c,
-              targetDb,
-              signal,
-              (requestedCollections ?? billingBootstrapCollections).filter(
-                (collection) => collection !== 'customers',
-              ),
-            )
-          : (requestedCollections ?? billingBootstrapCollections).filter(
-              (collection) => collection !== 'customers',
-            );
-      if (!collections.length) return;
-      const bootstrap = await requestPosBootstrap<{
-        generatedAt: string;
-        collections: Record<string, any[]>;
-      }>(c.token, c.tenant, {
-        route: '/',
-        collections,
-        limit: 1000,
-        signal,
-        getRefreshedToken: async () => {
-          const latest = await context();
-          return latest.key === c.key && latest.tenant === c.tenant ? latest.token : undefined;
-        },
-      });
-      const latest = await context();
-      if (
-        signal?.aborted ||
-        latest.key !== c.key ||
-        latest.token !== c.token ||
-        latest.tenant !== c.tenant ||
-        (targetDb && getActiveDatabase() !== targetDb)
-      )
-        return;
-      const rows = bootstrap.collections ?? {};
-      const normalized = targetDb
-        ? await applyPosBootstrap(targetDb, rows, bootstrap.generatedAt)
-        : normalizeBootstrapCollections(rows);
-
-      if ('products' in rows) {
-        cache.products = normalized.products as Product[];
-        cache.productBatches = normalized.productBatches as ProductBatch[];
-      }
-      if ('customers' in rows) cache.customers = normalized.customers as Customer[];
-      if ('paymentMethods' in rows)
-        cache.paymentMethods = normalized.paymentMethods.length
-          ? (normalized.paymentMethods as BillingPaymentMethod[])
-          : fallbackPaymentMethods;
-      if ('serviceUsers' in rows) cache.serviceUsers = normalized.serviceUsers as ServiceUser[];
-      if ('taxRates' in rows) cache.taxRates = normalized.taxRates as BillingTaxRate[];
-      if ('counterSessions' in rows)
-        cache.session = (rows.counterSessions?.[0] as CounterSession | undefined) ?? null;
-      cache.updated = bootstrap.generatedAt;
-
-      await writeBillingSnapshot(c.key, cache, { preserveSales: true });
-      if (!targetDb) {
-        const legacyWrites: Promise<unknown>[] = [];
-        if ('customers' in rows)
-          legacyWrites.push(billingReferenceRepository.replaceCustomers(c.key, cache.customers));
-        if ('paymentMethods' in rows)
-          legacyWrites.push(billingReferenceRepository.replacePaymentMethods(c.key, cache.paymentMethods));
-        if ('serviceUsers' in rows)
-          legacyWrites.push(billingReferenceRepository.replaceServiceUsers(c.key, cache.serviceUsers));
-        if ('products' in rows)
-          legacyWrites.push(productBatchRepository.replace(c.key, cache.productBatches));
-        if ('taxRates' in rows)
-          legacyWrites.push(billingReferenceRepository.replaceTaxRates(c.key, cache.taxRates));
-        await Promise.all(legacyWrites);
-      }
-    }),
-  hasUpdates: async (database: LocalDatabase, signal?: AbortSignal) => {
-    const c = await context();
-    return (await updatedBootstrapCollections(c, database, signal)).length > 0;
+    _forceBootstrap = false,
+    _requestedCollections?: string[],
+  ) => {
+    const target = database ?? getActiveDatabase();
+    if (!target) throw new Error('Local workspace is not ready.');
+    await refreshNativeData(target, signal);
   },
   checkout: (
     key: string,

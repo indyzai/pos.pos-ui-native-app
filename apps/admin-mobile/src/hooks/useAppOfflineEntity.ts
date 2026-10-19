@@ -3,11 +3,8 @@ import { useLocalDatabase } from '@indyzai/pos-database/react';
 import { createScopeKey, type LocalDatabase } from '@indyzai/pos-database';
 import {
   createNativeOfflineEntityCoordinator,
-  getEntityApi,
   OfflineTableName,
-  registerEntityApi,
   useNativeOfflineEntity,
-  type EntityApiFactory,
   type OfflineEntityApi,
   type OfflineSyncAdapter,
   type UseOfflineEntityOptions,

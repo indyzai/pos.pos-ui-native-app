@@ -8,6 +8,7 @@ const client = createPosApiClient({ getRuntimeApiUrls, loggerScope: 'POS API' })
 export const requestPos = client.requestPos;
 export const requestPosBootstrap = client.requestPosBootstrap;
 export const requestPosHasUpdates = client.requestPosHasUpdates;
+export const requestPosSync = client.requestPosSync;
 export const syncApiMutations = createNativeMutationReplay({
   getDatabase: getActiveDatabase,
   getSession: getActiveAuthSession,

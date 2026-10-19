@@ -17,7 +17,7 @@ export function ElectronicsBillingScreen({ mode }: { mode: BillingModeConfig }) 
   return (
     <BaseBillingLayout
       mode={mode}
-      onSelectProduct={(product, { cart, addStandardProduct }) => {
+      onSelectProduct={(product, { addStandardProduct }) => {
         if (isEnabled('serialNumbers') && requiresDeviceDetails(product)) {
           setElectronicsProduct(product);
           return false;

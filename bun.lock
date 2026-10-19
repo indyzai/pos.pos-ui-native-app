@@ -157,6 +157,7 @@
       "dependencies": {
         "@indyzai/pos-config": "workspace:*",
         "@indyzai/pos-storage-native": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
       },
     },
@@ -173,6 +174,7 @@
       "dependencies": {
         "@indyzai/offline-entity": "workspace:*",
         "@indyzai/pos-offline-store": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
         "dexie": "^4.4.6",
         "drizzle-orm": "^0.45.2",
         "expo-sqlite": "~57.0.2",
@@ -402,6 +404,8 @@
         "@indyzai/feature-orders": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
+        "@indyzai/pos-sync": "workspace:*",
+        "@indyzai/pos-sync-native": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
         "@indyzai/pos-utils": "workspace:*",
         "lucide-react-native": "^1.41.0",
@@ -570,6 +574,9 @@
     "vendor/pos-ui-shared/packages/sync": {
       "name": "@indyzai/pos-sync",
       "version": "2.0.0",
+      "dependencies": {
+        "graphql": "^16.12.0",
+      },
     },
     "vendor/pos-ui-shared/packages/ui-core": {
       "name": "@indyzai/pos-ui-core",
@@ -1584,6 +1591,8 @@
     "gopd": ["gopd@1.2.0", "", {}, "sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg=="],
 
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
+
+    "graphql": ["graphql@16.14.2", "", {}, "sha512-Chq1s4CY7jmh8gO2qvLIJyfCDIN+EHLFW/9iShnp1z8FjBQMoodWP1kDC36VAMXXIvAjj4ARa7ntfAV2BrjsbA=="],
 
     "has-flag": ["has-flag@4.0.0", "", {}, "sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ=="],
 

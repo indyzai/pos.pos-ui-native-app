@@ -70,11 +70,12 @@ test('team refresh persists members and staff creation queues a local user witho
   });
   await api.refresh();
   expect((await db.collection('users').list()).map((row) => row.payload.role)).toEqual(['manager']);
-  await api.create({ name: 'Cashier', phone: '9876543210', pin: '1234', role: 'cashier' });
+  const created = await api.create({ name: 'Cashier', phone: '9876543210', pin: '1234', role: 'cashier' });
   expect(calls).toHaveLength(1);
   const [job] = await db.collection('sync_outbox').list();
   expect(job.syncStatus).toBe('PENDING');
   expect(job.payload.request.variables.details).toEqual({
+    clientRequestId: created.id,
     name: 'Cashier',
     email: undefined,
     phone: '9876543210',

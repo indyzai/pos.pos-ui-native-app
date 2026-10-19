@@ -12,7 +12,7 @@ export function ServiceBillingScreen({ mode }: { mode: BillingModeConfig }) {
   return (
     <BaseBillingLayout
       mode={mode}
-      onSelectProduct={(product, { cart, addStandardProduct }) => {
+      onSelectProduct={(product, { addStandardProduct }) => {
         if (
           isEnabled('serviceOrders') &&
           (product.categoryType === 'SERVICE' ||

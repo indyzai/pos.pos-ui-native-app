@@ -28,7 +28,7 @@ export function PharmacyBillingScreen({ mode }: { mode: BillingModeConfig }) {
           />
         )
       }
-      onSelectProduct={(product, { cart, addStandardProduct, billing }) => {
+      onSelectProduct={(product, { addStandardProduct, billing }) => {
         if (isEnabled('batchExpiry') && pharmacyProductStatus(product).expired) {
           showSnackbar(
             'Expired stock',

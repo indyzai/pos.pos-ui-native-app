@@ -17,7 +17,7 @@ export function RetailBillingScreen({ mode }: { mode: BillingModeConfig }) {
   return (
     <BaseBillingLayout
       mode={mode}
-      onSelectProduct={(product, { cart, addStandardProduct, billing }) => {
+      onSelectProduct={(product, { addStandardProduct, billing }) => {
         const batches = billing.data?.cache.productBatches.filter((b) => b.productId === product.id) || [];
         if (isEnabled('batchExpiry') && pharmacyProductStatus(product).expired) {
           showSnackbar(
