@@ -1,3 +1,6 @@
+import { PharmacyBatchDialog } from '@indyzai/feature-billing/native/PharmacyBatchDialog';
+import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
+import { belowCostItems, customerDiscount } from '@indyzai/feature-billing/domain/customerPricing';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingCart } from 'lucide-react-native';
 import {
@@ -112,6 +115,7 @@ export function BaseBillingLayout({
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
+  const [mrpProduct, setMrpProduct] = useState<Product>();
   const [customer, setCustomer] = useState<Customer>();
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -147,7 +151,8 @@ export function BaseBillingLayout({
     () => billingPolicy(auth.session?.organization?.settings),
     [auth.session?.organization?.settings],
   );
-  const cart = useBillingCart(policy);
+  const cart = useBillingCart(policy, customer?.discountPercent || 0);
+
   const billing = useBillingData(mode.mode);
   const { isEnabled } = useFeatureToggles();
   const heldOrders = useHeldOrders(billing.data?.key);
@@ -179,6 +184,11 @@ export function BaseBillingLayout({
     setPayment((paymentMethods.find((method) => method.isQuickAccess) || paymentMethods[0]).code);
   }, [payment, paymentMethods]);
 
+  const selectCustomer = (next?: Customer) => {
+    setCustomer(next);
+    cart.resetCustomerDiscount();
+  };
+
   const refreshRef = useRef(billing.refresh);
   refreshRef.current = billing.refresh;
   const refreshController = useRef<AbortController | undefined>(undefined);
@@ -199,6 +209,7 @@ export function BaseBillingLayout({
 
   useEffect(() => {
     cart.clearCart();
+    setMrpProduct(undefined);
     setCustomer(undefined);
     setCategory('All');
     setScrapExchange(undefined);
@@ -336,6 +347,10 @@ export function BaseBillingLayout({
     [cartContentTranslateX, cartPage, width],
   );
 
+  const lowCostNames = belowCostItems(cart.items, cart.orderDiscount).map((item) => item.name);
+  const belowCostWarning = lowCostNames.length
+    ? `Warning: selling below purchase price for ${lowCostNames.join(', ')}. Discounts are included.`
+    : undefined;
   const checkout = () => {
     if (!cart.items.length || submitting) return;
     if (!billingAllowed) {
@@ -355,6 +370,10 @@ export function BaseBillingLayout({
   };
 
   const handleProductSelect = (product: Product) => {
+    if (!product.details?.stockBatchId && product.details?.batches?.some((batch) => batch.mrp != null)) {
+      setMrpProduct(product);
+      return false;
+    }
     if (onSelectProduct) {
       return onSelectProduct(product, { cart, addStandardProduct, billing });
     }
@@ -555,6 +574,8 @@ export function BaseBillingLayout({
       if (cart.items.length)
         await heldOrders.hold(cart.items, cart.orderDiscount, customer, getOrderContext(), scrapExchange);
       cart.replaceCart(order.items, order.orderDiscount);
+      if (order.orderDiscount === customerDiscount(order.items, order.customer?.discountPercent || 0))
+        cart.resetCustomerDiscount();
       setCustomer(order.customer);
       setScrapExchange(order.scrapExchange);
       onOrderResumed?.(order);
@@ -814,7 +835,7 @@ export function BaseBillingLayout({
                   visible={cartPage === 'customer'}
                   customers={customers}
                   selected={customer}
-                  onSelect={setCustomer}
+                  onSelect={selectCustomer}
                   onCreate={createCustomer}
                   onClose={() => replaceCartPage('cart')}
                 />
@@ -845,6 +866,7 @@ export function BaseBillingLayout({
                   onClose={() => replaceCartPage('cart')}
                 />
                 <CheckoutDialog
+                  belowCostWarning={belowCostWarning}
                   embedded
                   visible={cartPage === 'checkout'}
                   total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
@@ -867,6 +889,15 @@ export function BaseBillingLayout({
         visible={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleScannedCode}
+      />
+      <PharmacyBatchDialog
+        product={mrpProduct}
+        batches={mrpProduct ? normalizeProductBatches([mrpProduct]) : []}
+        currencyCode={currencyCode}
+        onClose={() => setMrpProduct(undefined)}
+        onAdd={(product) => {
+          handleProductSelect(product);
+        }}
       />
       {dialogsSlot?.({ cart, currencyCode, products, billing })}
       <AppBottomSheetShell
@@ -892,6 +923,7 @@ export function BaseBillingLayout({
         onSave={savePettyCash}
       />
       <CheckoutDialog
+        belowCostWarning={belowCostWarning}
         visible={isWide && checkoutOpen}
         total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
         itemCount={cart.itemCount}
@@ -953,7 +985,7 @@ export function BaseBillingLayout({
         visible={isWide && customerPickerOpen}
         customers={customers}
         selected={customer}
-        onSelect={setCustomer}
+        onSelect={selectCustomer}
         onCreate={createCustomer}
         onClose={() => setCustomerPickerOpen(false)}
       />

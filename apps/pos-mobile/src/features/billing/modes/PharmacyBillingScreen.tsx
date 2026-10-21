@@ -1,3 +1,4 @@
+import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
 import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
@@ -36,9 +37,13 @@ export function PharmacyBillingScreen({ mode }: { mode: BillingModeConfig }) {
           );
           return false;
         }
-        const batches =
-          billing.data?.cache.productBatches.filter((batch) => batch.productId === product.id) || [];
-        if (isEnabled('batchExpiry') && batches.length) {
+        const batches = product.details?.batches?.some((batch) => batch.mrp != null)
+          ? normalizeProductBatches([product])
+          : billing.data?.cache.productBatches.filter((batch) => batch.productId === product.id) || [];
+        if (
+          !product.details?.stockBatchId &&
+          (batches.some((batch) => batch.mrp != null) || (isEnabled('batchExpiry') && batches.length))
+        ) {
           setPharmacyProduct(product);
           return false;
         }
@@ -71,8 +76,11 @@ export function PharmacyBillingScreen({ mode }: { mode: BillingModeConfig }) {
         <PharmacyBatchDialog
           product={pharmacyProduct}
           batches={
-            billing.data?.cache.productBatches.filter((batch) => batch.productId === pharmacyProduct?.id) ||
-            []
+            pharmacyProduct?.details?.batches?.some((batch) => batch.mrp != null)
+              ? normalizeProductBatches([pharmacyProduct])
+              : billing.data?.cache.productBatches.filter(
+                  (batch) => batch.productId === pharmacyProduct?.id,
+                ) || []
           }
           currencyCode={currencyCode}
           onClose={() => setPharmacyProduct(undefined)}

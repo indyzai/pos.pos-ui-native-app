@@ -59,7 +59,11 @@
     "@indyzai/feature-restaurant": "workspace:*",
     "@indyzai/feature-scrap": "workspace:*",
     "@indyzai/pos-apis": "workspace:*",
-    "@indyzai/pos-sync-native": "workspace:*"
+    "@indyzai/pos-sync-native": "workspace:*",
+    "expo-print": "~57.0.1",
+    "expo-sharing": "~57.0.18",
+    "expo-document-picker": "~57.0.1",
+    "expo-file-system": "~57.0.6"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

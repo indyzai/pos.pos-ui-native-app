@@ -1,3 +1,4 @@
+import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
 import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
@@ -18,7 +19,9 @@ export function RetailBillingScreen({ mode }: { mode: BillingModeConfig }) {
     <BaseBillingLayout
       mode={mode}
       onSelectProduct={(product, { addStandardProduct, billing }) => {
-        const batches = billing.data?.cache.productBatches.filter((b) => b.productId === product.id) || [];
+        const batches = product.details?.batches?.some((batch) => batch.mrp != null)
+          ? normalizeProductBatches([product])
+          : billing.data?.cache.productBatches.filter((b) => b.productId === product.id) || [];
         if (isEnabled('batchExpiry') && pharmacyProductStatus(product).expired) {
           showSnackbar(
             'Expired stock',
@@ -26,7 +29,10 @@ export function RetailBillingScreen({ mode }: { mode: BillingModeConfig }) {
           );
           return false;
         }
-        if (isEnabled('batchExpiry') && batches.length) {
+        if (
+          !product.details?.stockBatchId &&
+          (batches.some((batch) => batch.mrp != null) || (isEnabled('batchExpiry') && batches.length))
+        ) {
           setPharmacyProduct(product);
           return false;
         }
@@ -42,7 +48,9 @@ export function RetailBillingScreen({ mode }: { mode: BillingModeConfig }) {
           <PharmacyBatchDialog
             product={pharmacyProduct}
             batches={
-              billing.data?.cache.productBatches.filter((b) => b.productId === pharmacyProduct?.id) || []
+              pharmacyProduct?.details?.batches?.some((batch) => batch.mrp != null)
+                ? normalizeProductBatches([pharmacyProduct])
+                : billing.data?.cache.productBatches.filter((b) => b.productId === pharmacyProduct?.id) || []
             }
             currencyCode={currencyCode}
             onClose={() => setPharmacyProduct(undefined)}

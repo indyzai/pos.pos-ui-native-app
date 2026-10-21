@@ -1,3 +1,8 @@
+import {
+  priceLevelCustomization,
+  priceLevelLineCapacity,
+} from '@indyzai/feature-billing/domain/productBatches';
+import { customerDiscount } from '@indyzai/feature-billing/domain/customerPricing';
 import { useMemo, useState } from 'react';
 import type { CartCustomization, CartItem, Product } from '@indyzai/feature-billing/types/billing';
 import {
@@ -5,30 +10,39 @@ import {
   type BillingCalculationPolicy,
 } from '@indyzai/feature-billing/domain/billingTotals';
 
-export function useBillingCart(policy: BillingCalculationPolicy) {
+export function useBillingCart(policy: BillingCalculationPolicy, customerPercent = 0) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [orderDiscount, setOrderDiscountState] = useState(0);
+  const [manualOrderDiscount, setOrderDiscountState] = useState<number | null>(null);
+  const orderDiscount = manualOrderDiscount ?? customerDiscount(items, customerPercent);
   const addItem = (product: Product, quantity = 1, customization?: CartCustomization) =>
     setItems((current) => {
-      const lineId = customization ? `${product.id}:${customization.key}` : product.id;
+      const resolvedCustomization = priceLevelCustomization(product, customization);
+      const lineId = resolvedCustomization ? `${product.id}:${resolvedCustomization.key}` : product.id;
       const existing = current.find((item) => (item.lineId || item.id) === lineId);
-      if (product.stock <= 0 || (existing && existing.quantity >= product.stock)) return current;
+      const capacity = priceLevelLineCapacity(
+        current,
+        product.id,
+        product.stock,
+        String(resolvedCustomization?.metadata?.batchId || ''),
+        lineId,
+      );
+      if (capacity <= 0 || (existing && existing.quantity >= capacity)) return current;
       const amount = Math.max(1, Math.floor(quantity));
       return existing
         ? current.map((item) =>
             (item.lineId || item.id) === lineId
-              ? { ...item, quantity: Math.min(item.stock, item.quantity + amount) }
+              ? { ...item, quantity: Math.min(capacity, item.quantity + amount) }
               : item,
           )
         : [
             ...current,
             {
               ...product,
-              price: product.price + (customization?.priceAdjustment || 0),
-              quantity: Math.min(product.stock, amount),
+              price: product.price + (resolvedCustomization?.priceAdjustment || 0),
+              quantity: Math.min(capacity, amount),
               discount: 0,
               lineId,
-              customization,
+              customization: resolvedCustomization,
             },
           ];
     });
@@ -37,7 +51,19 @@ export function useBillingCart(policy: BillingCalculationPolicy) {
       current
         .map((item) =>
           (item.lineId || item.id) === id
-            ? { ...item, quantity: Math.min(item.stock, item.quantity + change) }
+            ? {
+                ...item,
+                quantity: Math.min(
+                  priceLevelLineCapacity(
+                    current,
+                    item.id,
+                    item.stock,
+                    String(item.customization?.metadata?.batchId || ''),
+                    item.lineId || item.id,
+                  ),
+                  item.quantity + change,
+                ),
+              }
             : item,
         )
         .filter((item) => item.quantity > 0),
@@ -67,7 +93,7 @@ export function useBillingCart(policy: BillingCalculationPolicy) {
     setOrderDiscountState(Math.min(totals.subtotal, Math.max(0, discount)));
   const clearCart = () => {
     setItems([]);
-    setOrderDiscountState(0);
+    setOrderDiscountState(null);
   };
   const replaceCart = (nextItems: CartItem[], nextOrderDiscount = 0) => {
     setItems(nextItems);
@@ -82,6 +108,7 @@ export function useBillingCart(policy: BillingCalculationPolicy) {
     setItemDiscount,
     setItemTaxRate,
     setOrderDiscount,
+    resetCustomerDiscount: () => setOrderDiscountState(null),
     clearCart,
     replaceCart,
   };

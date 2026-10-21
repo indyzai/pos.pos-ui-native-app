@@ -9,6 +9,7 @@ import { createPurchasesApi } from '@indyzai/feature-purchase/purchasesApi';
 const draft = {
   id: 'local-po',
   supplierName: 'Supplier',
+  invoiceNumber: 'SUP-INV-99',
   status: 'DRAFT',
   total: 110,
   createdAt: '2026-09-22T10:00:00Z',
@@ -28,7 +29,7 @@ async function withApi(work) {
   const calls = [];
   let response = async (query) =>
     query.includes('savePurchase')
-      ? { savePurchase: { id: '99', purchaseNumber: 'PO-99' } }
+      ? { savePurchase: { id: '99', purchaseNumber: 'PO-99', invoiceNumber: 'SUP-INV-99' } }
       : { purchases: [] };
   const api = createPurchasesApi({
     getContext: () => ({ database, scope: 'test', tenant: 't', token: 'token' }),
@@ -69,12 +70,16 @@ test('purchase creation then offline edit use separate mutation IDs and resolve 
     await api.pushPending();
     expect(calls).toHaveLength(2);
     expect(calls[0].newPurchaseData.id).toBeUndefined();
+    expect(calls[0].newPurchaseData.invoiceNumber).toBe('SUP-INV-99');
+    expect(calls[0].newPurchaseData.purchaseNumber).toBeUndefined();
     expect(calls[1].newPurchaseData.id).toBe(99);
     expect(calls[1].newPurchaseData.supplierName).toBe('Updated supplier');
     expect(calls[0].newPurchaseData.clientMutationId).toBe(first.job.payload.idempotencyKey);
     expect(calls[1].newPurchaseData.clientMutationId).toBe(second.job.payload.idempotencyKey);
     const saved = await database.collection('purchase_orders').get(draft.id);
     expect(saved.syncStatus).toBe('SYNCED');
+    expect(saved.payload.billNumber).toBe('PO-99');
+    expect(saved.payload.invoiceNumber).toBe('SUP-INV-99');
     expect(saved.payload.items[0].taxRate).toBe(10);
   });
 });
