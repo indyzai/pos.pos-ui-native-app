@@ -50,7 +50,7 @@ import { receiptDocument } from '@indyzai/feature-printers/receiptDocument';
 import { BillingSessionStats } from '@indyzai/feature-billing/native/BillingSessionStats';
 import { BillingModeBadge } from '@indyzai/feature-billing/native/BillingModeBadge';
 import { ScrapExchangeDialog } from '@indyzai/feature-billing/native/ScrapExchangeDialog';
-import { canManageScrap } from '@indyzai/feature-scrap/permissions';
+import { canAcceptScrapExchange } from '@indyzai/feature-scrap/permissions';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 import { usePermissions } from '@indyzai/pos-auth/permissions';
 import { formatCurrency } from '@indyzai/pos-ui-native/currency';
@@ -142,7 +142,7 @@ export function BaseBillingLayout({
   const { requestCounterDialog, setFeatureLoading, setFeatureRefresh, setRefreshJob } = useAppHeader();
   const auth = useAuthSession();
   const { can } = usePermissions('pos');
-  const managerAccess = can('manager.actions');
+
   const policy = useMemo(
     () => billingPolicy(auth.session?.organization?.settings),
     [auth.session?.organization?.settings],
@@ -498,7 +498,7 @@ export function BaseBillingLayout({
     showSnackbar('Code scanned', `No product matched “${value}”. Showing it in search.`);
   };
 
-  const createCustomer = async (input: { name: string; phone?: string }) => {
+  const createCustomer = async (input: { name: string; phone?: string; email?: string }) => {
     if (!billing.data) throw new Error('Billing is not ready.');
     try {
       const { record: created } = await billingApi.createCustomer(billing.data.key, input);
@@ -665,7 +665,7 @@ export function BaseBillingLayout({
               setScannerOpen(true);
             }}
             scanEnabled={isEnabled('enableBarcodeScanning') && mode.scanByDefault}
-            onAddProduct={isEnabled('inventory') && managerAccess ? openQuickAdd : undefined}
+            onAddProduct={isEnabled('inventory') && can('billing.create') ? openQuickAdd : undefined}
             statsVisible={statsVisible}
             onToggleStats={
               isEnabled('advancedReporting') ? () => setStatsVisible((value) => !value) : undefined
@@ -714,8 +714,8 @@ export function BaseBillingLayout({
               onItemTaxRate={cart.setItemTaxRate}
               orderDiscount={cart.orderDiscount}
               onOrderDiscount={cart.setOrderDiscount}
-              allowItemDiscounts={isEnabled('allowItemDiscounts') && can('billing.discount')}
-              allowOrderDiscounts={isEnabled('allowOrderDiscounts') && can('billing.discount')}
+              allowItemDiscounts={can('billing.discount')}
+              allowOrderDiscounts={can('billing.discount')}
               heldOrderCount={heldOrders.orders.length}
               onShowHeldOrders={() => openCartPage('held-orders', () => setHeldOrdersOpen(true))}
               onHold={holdCurrentOrder}
@@ -738,7 +738,7 @@ export function BaseBillingLayout({
               currencyCode={currencyCode}
               scrapValue={scrapExchange?.total}
               onScrap={
-                isEnabled('scrap') && canManageScrap(auth.session?.tenant.role)
+                isEnabled('scrap') && canAcceptScrapExchange(auth.session?.tenant.role)
                   ? () => void openScrap()
                   : undefined
               }
@@ -778,8 +778,8 @@ export function BaseBillingLayout({
           onItemTaxRate={cart.setItemTaxRate}
           orderDiscount={cart.orderDiscount}
           onOrderDiscount={cart.setOrderDiscount}
-          allowItemDiscounts={isEnabled('allowItemDiscounts') && can('billing.discount')}
-          allowOrderDiscounts={isEnabled('allowOrderDiscounts') && can('billing.discount')}
+          allowItemDiscounts={can('billing.discount')}
+          allowOrderDiscounts={can('billing.discount')}
           heldOrderCount={heldOrders.orders.length}
           onShowHeldOrders={() => replaceCartPage('held-orders')}
           onHold={holdCurrentOrder}
@@ -799,7 +799,7 @@ export function BaseBillingLayout({
           currencyCode={currencyCode}
           scrapValue={scrapExchange?.total}
           onScrap={
-            isEnabled('scrap') && canManageScrap(auth.session?.tenant.role)
+            isEnabled('scrap') && canAcceptScrapExchange(auth.session?.tenant.role)
               ? () => void openScrap()
               : undefined
           }

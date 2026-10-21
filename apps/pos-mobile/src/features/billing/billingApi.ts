@@ -35,7 +35,7 @@ import { productBatchRepository } from '@indyzai/feature-billing/data/productBat
 import type { ProductBatch } from '@indyzai/feature-billing/types/billing';
 import { scrapPurchaseRepository } from '@indyzai/feature-scrap/scrapPurchaseRepository';
 import { scrapPurchaseJob, syncScrapPurchaseJobs } from '@indyzai/feature-scrap/scrapSync';
-import { canManageScrap } from '@indyzai/feature-scrap/permissions';
+import { canAcceptScrapExchange } from '@indyzai/feature-scrap/permissions';
 import { getActiveDatabase, createScopeKey, type LocalRecord } from '@indyzai/pos-database';
 import { customersApi } from '../customers/customersApi';
 import { purchasesApi } from '../purchases/purchasesApi';
@@ -307,8 +307,9 @@ export const billingApi = {
             : undefined,
         orderContext,
       });
+      sale.createdByUserId = auth?.user.id;
       if (!database) throw new Error('Your local workspace is still initializing.');
-      if (payment.scrap && !canManageScrap(auth?.tenant.role))
+      if (payment.scrap && !canAcceptScrapExchange(auth?.tenant.role))
         throw new Error('Your role cannot accept scrap exchanges.');
       if (payment.scrap && !currentSession) throw new Error('Open a counter session before accepting scrap.');
       const queued = await commitCheckout(

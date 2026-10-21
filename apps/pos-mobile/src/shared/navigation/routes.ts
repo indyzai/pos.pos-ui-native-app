@@ -63,9 +63,7 @@ export const moreNavigationItems: AppNavigationItem[] = [
 
 export const tabletNavigationItems: AppNavigationItem[] = [
   ...primaryNavigationItems,
-  ...moreNavigationItems.filter((item) =>
-    ['/inventory-reconciliation', '/customers'].includes(String(item.href)),
-  ),
+  ...moreNavigationItems.filter((item) => item.href !== '/settings'),
   reportNavigationItem,
   ...moreNavigationItems.filter((item) => item.href === '/settings'),
 ];

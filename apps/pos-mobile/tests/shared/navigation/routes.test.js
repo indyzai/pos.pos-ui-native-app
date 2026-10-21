@@ -13,3 +13,10 @@ describe('POS role navigation', () => {
     expect(permitsManagerMenu(resolveStoreAccessRole('owner'))).toBe(true);
   });
 });
+
+test('cashier tenant membership takes precedence over an elevated account role', () => {
+  for (const accountRole of ['admin', 'owner', 'superadmin']) {
+    expect(resolveStoreAccessRole('cashier', accountRole)).toBe('cashier');
+    expect(permitsManagerMenu(resolveStoreAccessRole('cashier', accountRole))).toBe(false);
+  }
+});
