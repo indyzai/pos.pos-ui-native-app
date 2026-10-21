@@ -5,6 +5,7 @@ import { expect, test } from 'bun:test';
 import { IndexedDbLocalDatabase } from '@indyzai/pos-database/indexeddb';
 import { createTableMutation } from '@indyzai/pos-database/table-mutations';
 import { createScopeKey } from '../../../../vendor/pos-ui-shared/packages-native/database/src/types';
+import { registerNativeRefresh } from '../../../../vendor/pos-ui-shared/packages-native/sync-native/src/nativeRefresh';
 import { createPrinterConfigurationApi } from '@indyzai/feature-printers/configuration';
 
 const printer = {
@@ -72,8 +73,19 @@ async function withApi(work) {
     'admin',
     () => ({ database, session, scope: createScopeKey(database.scope) }),
   );
+  let refresh = async () => {};
+  let refreshCount = 0;
+  const unregister = registerNativeRefresh(database, {
+    stop() {},
+    async syncNow() {
+      refreshCount++;
+      await refresh();
+    },
+  });
   try {
     await work({
+      refreshCount: () => refreshCount,
+      setRefresh: (value) => (refresh = value),
       database,
       api,
       calls,
@@ -81,6 +93,7 @@ async function withApi(work) {
       switchSession: () => (session = { ...session, token: 'other' }),
     });
   } finally {
+    unregister();
     await database.close();
     await Dexie.delete(name);
   }
@@ -153,25 +166,26 @@ test('lost create acknowledgement recovers server ID by durable marker', async (
   });
 });
 test('background refresh does not overwrite an offline edit or another account', async () => {
-  await withApi(async ({ database, api, setHandler, switchSession }) => {
+  await withApi(async ({ database, api, calls, setRefresh, refreshCount, switchSession }) => {
     await queue(database);
-    setHandler(async () => ({
-      counterPrinters: [
-        {
-          ...printer,
-          id: '99',
-          name: 'Server name',
-          config: { ...printer.config, clientPrinterId: printer.id },
-        },
-      ],
-    }));
     await api.refresh('2');
     expect((await database.collection('printers').get(printer.id)).payload.name).toBe(printer.name);
-    setHandler(async () => {
+    expect(calls).toHaveLength(0);
+    expect(refreshCount()).toBe(1);
+    setRefresh(async () => {
       switchSession();
-      return { counterPrinters: [] };
     });
     await expect(api.refresh()).rejects.toThrow('Workspace changed');
     expect(await database.collection('printers').list()).toHaveLength(1);
+  });
+});
+
+test('cancelled printer refresh does not start a sync request', async () => {
+  await withApi(async ({ api, calls, refreshCount }) => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(api.refresh('2', controller.signal)).rejects.toThrow();
+    expect(refreshCount()).toBe(0);
+    expect(calls).toHaveLength(0);
   });
 });
