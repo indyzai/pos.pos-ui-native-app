@@ -25,7 +25,14 @@ describe('IndexedDB local database adapter', () => {
     const products = database.collection('products');
     const scopeKey = createScopeKey(scope);
     let changes = 0;
-    const unsubscribe = products.subscribe(() => changes++);
+    let observed;
+    const observation = new Promise((resolve) => {
+      observed = resolve;
+    });
+    const unsubscribe = products.subscribe(() => {
+      changes++;
+      observed();
+    });
     await products.put({
       id: `${scopeKey}:product:1`,
       scope: scopeKey,
@@ -38,7 +45,7 @@ describe('IndexedDB local database adapter', () => {
       updatedAt: 1,
     });
     expect((await products.list()).map((record) => record.payload.name)).toEqual(['Coffee']);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await observation;
     expect(changes).toBeGreaterThan(0);
     unsubscribe();
     await database.close();

@@ -1,2 +1,6 @@
 [test]
 preload = ["./tests-setup.ts"]
+
+[install]
+# Native modules must resolve to one installation across apps and shared packages.
+linker = "hoisted"

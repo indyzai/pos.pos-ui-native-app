@@ -88,3 +88,33 @@ test('team refresh persists members and staff creation queues a local user witho
     'manager',
   ]);
 });
+
+test('external email is queued unchanged without any organization-domain lookup', async () => {
+  const db = database();
+  setActiveDatabase(db);
+  const api = createTeamApi({
+    getContext: () => ({ database: db, scope: 'scope', tenant: 'tenant', token: 'token' }),
+    request: async () => {
+      throw new Error('Adding staff must not fetch organization details');
+    },
+  });
+  await api.create({ name: 'Priya', email: ' Priya@External.Test ', pin: '1234', role: 'cashier' });
+  const [job] = await db.collection('sync_outbox').list();
+  expect(job.payload.request.variables.details.email).toBe('priya@external.test');
+  expect(job.payload.request.variables.details.phone).toBeUndefined();
+});
+
+test('contact validation rejects an empty identity before queuing work', async () => {
+  const db = database();
+  setActiveDatabase(db);
+  const api = createTeamApi({
+    getContext: () => ({ database: db, scope: 'scope', tenant: 'tenant', token: 'token' }),
+    request: async () => {
+      throw new Error('Unexpected request');
+    },
+  });
+  await expect(api.create({ name: 'Priya', pin: '1234', role: 'cashier' })).rejects.toThrow(
+    'email address or mobile',
+  );
+  expect(await db.collection('sync_outbox').list()).toEqual([]);
+});

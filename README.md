@@ -43,12 +43,28 @@ Implementation status and remaining work: [platform implementation](docs/platfor
 | `EXPO_PUBLIC_AUTH_API_URL` | `https://api.indyzai.com/auth/api/v1`     | Authentication endpoint |
 | `EXPO_PUBLIC_POS_BASE_URL` | `https://api.indyzai.com/pos/api`         | POS REST base URL       |
 
-For a native iOS build:
+For a native iOS build, run from the mobile app directory:
 
 ```bash
-npx expo prebuild --platform ios
-open ios/*.xcworkspace
-
-Select the IndyzAIPOS target → Build Settings.
-Add a user-defined setting:RCT_METRO_PORT = 3511
+cd apps/pos-mobile
+bun x expo prebuild --platform ios --no-clean
+open ios/IndyzAIPOS.xcworkspace
 ```
+
+Select the IndyzAIPOS target in Xcode. Use `RCT_METRO_PORT = 3511` for POS
+or `3512` for the admin app when configuring a custom Metro port.
+
+Both apps use Expo SDK 58 with React Native 0.88 and React 19.3. SDK 58 generates
+`SceneDelegate.swift` and the scene manifest required by Xcode 27/iOS 27; the
+SDK 57 `enableSceneSupport` opt-in is no longer needed. After updating native
+dependencies or lifecycle configuration, rebuild and reinstall the app.
+Restarting Metro alone cannot update an installed native executable.
+
+Use Node 24 (`nvm use` reads the root `.nvmrc`) before running Expo commands.
+Bun uses the hoisted linker configured in `bunfig.toml` so the apps and shared
+packages resolve one installation of each native module. Run `bun install` from
+this repository's root, rather than installing dependencies inside the vendored
+shared workspace. The combined `bun run ios-build` command regenerates projects
+sequentially to avoid CocoaPods cache collisions. `--no-clean` preserves existing
+native project settings for routine prebuilds; major SDK upgrades require fresh
+native templates and restoring any local signing settings.

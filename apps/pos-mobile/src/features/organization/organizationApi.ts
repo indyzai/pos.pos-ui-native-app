@@ -24,6 +24,7 @@ export function requiresOpenCounter(settings: Record<string, unknown> | undefine
 export type OrganizationDetails = {
   id: string;
   name: string;
+  domain?: string;
   settings: Record<string, unknown>;
   activeSession: CounterSession | null;
   branches: OrganizationBranch[];
@@ -42,6 +43,7 @@ export async function refreshOrganizationDetails(
     organization: {
       id: string;
       name: string;
+      domain?: string | null;
       config?: Record<string, unknown>;
       activeSession: CounterSession | null;
       branches?: Array<{
@@ -55,7 +57,7 @@ export async function refreshOrganizationDetails(
     tenantId,
     `query OrganizationBootstrap($id: String!) {
     organization(id: $id) {
-      id name
+      id name domain
       activeSession {
         id counterId branchId status sessionNumber openedAt openingBalance expectedBalance
         salesSummary { cash card upi scrap miscIncome miscExpense totalSales }
@@ -86,6 +88,7 @@ export async function refreshOrganizationDetails(
   return {
     id: String(organization.id),
     name: organization.name || 'Business',
+    domain: organization.domain?.trim().toLowerCase() || undefined,
     settings: organization.config ?? {},
     branches,
     activeSession:

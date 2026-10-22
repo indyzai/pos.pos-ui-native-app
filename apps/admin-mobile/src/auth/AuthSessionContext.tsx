@@ -7,7 +7,10 @@ import {
 } from '@indyzai/pos-auth/session';
 import { canAccessApp } from '../config/appAccess';
 import { setUnauthorizedHandler } from '@indyzai/pos-api';
-import { loadOrganizationDetails } from '../features/organization/organizationApi';
+import {
+  loadOrganizationDetails,
+  refreshOrganizationDetails,
+} from '../features/organization/organizationApi';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { authApi } from './authApi';
 import { createOrganizationCache } from '@indyzai/feature-organization/organizationCache';
@@ -24,6 +27,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       authApi,
       setUnauthorizedHandler,
       loadOrganizationDetails,
+      refreshOrganizationDetails,
       loadCachedOrganizationDetails: organizationCache.read,
       saveCachedOrganizationDetails: organizationCache.write,
       canAccessApp,

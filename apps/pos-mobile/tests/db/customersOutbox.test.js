@@ -4,10 +4,12 @@ import Dexie from 'dexie';
 import { indexedDB, IDBKeyRange } from 'fake-indexeddb';
 import { IndexedDbLocalDatabase } from '@indyzai/pos-database/indexeddb';
 import { createScopeKey } from '@indyzai/pos-database';
+import { createTeamApi } from '@indyzai/feature-organization/team-api';
+import { resolveTableMutation } from '@indyzai/pos-database/table-mutations';
 import { createTableMutation } from '@indyzai/pos-database/table-mutations';
 import { createCustomersApi } from '@indyzai/feature-customers';
 
-async function withApi(work) {
+async function withApi(work, loginFailure = false) {
   Dexie.dependencies.indexedDB = indexedDB;
   Dexie.dependencies.IDBKeyRange = IDBKeyRange;
   const name = `customers-outbox-${crypto.randomUUID()}`;
@@ -20,7 +22,18 @@ async function withApi(work) {
   let token = 'token';
   let response = async (query) =>
     query.includes('saveParty') ? { saveParty: { id: '42', name: 'Customer' } } : { parties: [] };
+  const team = createTeamApi({
+    getContext: () => ({ database, scope: createScopeKey(database.scope), tenant: 't', token }),
+    request: async () => {
+      throw new Error('Unexpected request');
+    },
+  });
   const api = createCustomersApi({
+    queueEmployeeLogin: async (input, tx) => {
+      const staff = await team.create(input, tx);
+      if (loginFailure) throw new Error('Save interrupted');
+      return staff;
+    },
     getContext: () => ({ database, scope: createScopeKey(database.scope), tenant: 't', token }),
     createId: () => crypto.randomUUID(),
     mapCustomer: (row) => ({
@@ -189,3 +202,83 @@ for (const type of ['SUPPLIER', 'EMPLOYEE', 'TECHNICIAN', 'SCRAP_VENDOR']) {
     });
   });
 }
+
+test('all contact fields can be edited offline before creation synchronizes', async () => {
+  await withApi(async ({ api, database }) => {
+    const original = (await api.create({ name: 'Supplier', type: 'SUPPLIER', discountPercent: 15 })).record;
+    const edited = await api.update(original, {
+      name: 'Updated',
+      email: 'other@external.com',
+      phone: '1234567890',
+      address: 'New address',
+      discountPercent: 30,
+    });
+    expect(edited.record).toMatchObject({
+      name: 'Updated',
+      email: 'other@external.com',
+      address: 'New address',
+    });
+    expect(edited.record.discountPercent).toBeUndefined();
+    const jobs = await database.collection('sync_outbox').list();
+    expect(jobs.find((row) => row.payload.operation === 'UPDATE').payload.dependencyJobIds).toContain(
+      jobs.find((row) => row.payload.operation === 'CREATE').payload.offlineId,
+    );
+    await expect(api.update(edited.record, 20)).rejects.toThrow('only available for customers');
+  });
+});
+test('employee login and contact queue atomically with a resolvable staff dependency', async () => {
+  await withApi(async ({ api, database, calls }) => {
+    const created = await api.create(
+      { name: 'Employee', type: 'EMPLOYEE', email: 'person@external.com' },
+      { pin: '1234', role: 'cashier' },
+    );
+    const jobs = await database.collection('sync_outbox').list();
+    const staff = jobs.find((row) => row.payload.table === 'users');
+    const contact = jobs.find((row) => row.payload.table === 'customers');
+    expect(contact.payload.dependencyJobIds).toContain(staff.payload.offlineId);
+    expect(created.record.details.staffUserId).toBe(staff.payload.data.id);
+    expect(JSON.stringify(created.record)).not.toContain('1234');
+    await api.pushPending();
+    expect(calls).toHaveLength(0);
+    await resolveTableMutation(
+      database,
+      { table: 'users' },
+      { jobId: staff.payload.offlineId, serverId: '101', payload: { ...staff.payload.data, id: '101' } },
+    );
+    expect((await database.collection('sync_outbox').get(contact.id)).payload.data.details.staffUserId).toBe(
+      '101',
+    );
+    await api.pushPending();
+    expect(calls[0].variables.input.details.staffUserId).toBe('101');
+  });
+});
+test('a failed combined save rolls back both employee and login records', async () => {
+  await withApi(async ({ api, database }) => {
+    await expect(
+      api.create(
+        { name: 'Employee', type: 'EMPLOYEE', phone: '1234567890' },
+        { pin: '1234', role: 'cashier' },
+      ),
+    ).rejects.toThrow('Save interrupted');
+    for (const table of ['customers', 'users', 'sync_outbox', 'sync_dependencies'])
+      expect(await database.collection(table).list()).toHaveLength(0);
+  }, true);
+});
+
+test('editing a pending contact uses its resolved numeric server ID and clears removed details', async () => {
+  await withApi(async ({ api, calls, setResponse }) => {
+    const original = (await api.create({ name: 'Customer', email: 'old@example.com' })).record;
+    await api.update(original, { name: 'Changed', email: undefined });
+    setResponse(async (query) =>
+      query.includes('updateParty')
+        ? { updateParty: { id: '42', name: 'Changed', type: 'CUSTOMER' } }
+        : { saveParty: { id: '42', name: 'Customer', type: 'CUSTOMER' } },
+    );
+    await api.pushPending();
+    await api.pushPending();
+    expect(calls).toHaveLength(2);
+    expect(calls[1].variables.id).toBe(42);
+    expect(calls[1].variables.input.name).toBe('Changed');
+    expect(calls[1].variables.input.email).toBe('');
+  });
+});

@@ -1,3 +1,4 @@
+import { teamApi } from '../team/teamApi';
 import * as Crypto from 'expo-crypto';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { createScopeKey, getActiveDatabase, mapBootstrapCustomer } from '@indyzai/pos-database';
@@ -17,9 +18,14 @@ export const customersApi = createCustomersApi({
     };
   },
   request: requestPos,
+  queueEmployeeLogin: (input, database) => teamApi.create(input, database),
   createId: Crypto.randomUUID,
   mapCustomer: (value) => ({
     ...mapBootstrapCustomer(value),
+    details:
+      value.details && typeof value.details === 'object'
+        ? (value.details as Record<string, unknown>)
+        : undefined,
     type: String(value.type ?? 'customer').toUpperCase(),
   }),
 });

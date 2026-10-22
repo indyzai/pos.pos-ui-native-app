@@ -1,12 +1,10 @@
 import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
-import { TeamScreen } from '@indyzai/feature-organization/team-screen';
-import { teamApi } from '../features/team/teamApi';
+import { CustomersScreen } from '../features/customers/CustomersScreen';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
-
-export default function TeamRoute() {
+export default function ContactsRoute() {
   return (
     <BottomNavigationProvider>
-      <TeamScreen api={teamApi} surface="pos" />
+      <CustomersScreen initialType="EMPLOYEE" />
       <BottomNavigation />
     </BottomNavigationProvider>
   );

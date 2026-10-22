@@ -1,15 +1,23 @@
-import { TeamScreen } from '@indyzai/feature-organization/team-screen';
-import { usePermissions } from '@indyzai/pos-auth/permissions';
 import { teamApi } from '../team/teamApi';
+import { useAuthSession } from '@indyzai/pos-auth/session';
+import { usePermissions } from '@indyzai/pos-auth/permissions';
 import { CustomersScreen as SharedCustomersScreen } from '@indyzai/feature-customers/screen';
+import type { PartyType } from '@indyzai/feature-customers';
 import { customersApi } from './customersApi';
-
-export function CustomersScreen() {
+export function CustomersScreen({ initialType }: { initialType?: PartyType }) {
   const { can } = usePermissions('pos');
+  const auth = useAuthSession();
   return (
     <SharedCustomersScreen
       api={customersApi}
-      staffScreen={can('manager.actions') ? <TeamScreen api={teamApi} surface="pos" /> : undefined}
+      organizationDomain={auth.session?.organization?.domain}
+      refreshStaff={can('manager.actions') ? teamApi.refresh : undefined}
+      initialType={initialType}
+      staffLogin={
+        can('manager.actions')
+          ? { domain: auth.session?.organization?.domain, allowManager: false }
+          : undefined
+      }
     />
   );
 }
