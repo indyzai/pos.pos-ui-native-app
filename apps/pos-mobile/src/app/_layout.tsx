@@ -21,6 +21,7 @@ import { AppPaperProvider } from '@indyzai/pos-ui-native';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import {
   moreNavigationItems,
+  isNavigationRouteAllowed,
   navigationItemsForRole,
   primaryNavigationItems,
   reportNavigationItem,
@@ -90,14 +91,14 @@ function RootNavigator() {
       normalizedPath !== '/profile'
     ) {
       const role = resolveStoreAccessRole(session.tenant.role, session.user.role);
-      const allowed = navigationItemsForRole(
-        [...primaryNavigationItems, ...moreNavigationItems, reportNavigationItem],
-        role,
-        flags,
-      ).some((item) => {
-        const href = typeof item.href === 'string' ? item.href : item.href.pathname;
-        return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
-      });
+      const allowed = isNavigationRouteAllowed(
+        normalizedPath,
+        navigationItemsForRole(
+          [...primaryNavigationItems, ...moreNavigationItems, reportNavigationItem],
+          role,
+          flags,
+        ),
+      );
       if (!allowed) router.replace('/billing');
     }
   }, [authenticated, initializing, pathname, router, session, flags]);

@@ -282,3 +282,41 @@ test('editing a pending contact uses its resolved numeric server ID and clears r
     expect(calls[1].variables.input.email).toBe('');
   });
 });
+
+test('invalid contact data never enters the local database or sync queue', async () => {
+  await withApi(async ({ api, database }) => {
+    for (const type of ['CUSTOMER', 'SUPPLIER', 'EMPLOYEE', 'TECHNICIAN', 'SCRAP_VENDOR']) {
+      await expect(api.create({ name: 'Person', type, phone: '12345' })).rejects.toThrow('7 to 15 digits');
+    }
+    expect(await database.collection('customers').list()).toHaveLength(0);
+    expect(await database.collection('sync_outbox').list()).toHaveLength(0);
+  });
+});
+
+test('invalid edits preserve the saved contact and do not add a mutation', async () => {
+  await withApi(async ({ api, database }) => {
+    const original = (await api.create({ name: 'Employee', type: 'EMPLOYEE', phone: '9876543210' })).record;
+    await expect(api.update(original, { phone: '12345' })).rejects.toThrow('7 to 15 digits');
+    expect((await database.collection('customers').get(original.id)).payload.phone).toBe('9876543210');
+    expect(await database.collection('sync_outbox').list()).toHaveLength(1);
+  });
+});
+
+test('dues collection is queued locally and cannot overpay or settle a non-account contact', async () => {
+  await withApi(async ({ api, database, calls }) => {
+    const contact = (await api.create({ name: 'Customer', type: 'CUSTOMER', balance: 100 })).record;
+    await api.settleBalance(contact, 30);
+    expect((await database.collection('customers').get(contact.id)).payload.balance).toBe(70);
+    const jobs = await database.collection('sync_outbox').list();
+    expect(jobs).toHaveLength(2);
+    expect(
+      jobs.find((job) => job.payload.entityType === 'API_MUTATION').payload.request.variables.amount,
+    ).toBe(-30);
+    expect(calls).toHaveLength(0);
+    await expect(api.settleBalance(contact, 80)).rejects.toThrow('outstanding balance');
+    await expect(api.settleBalance({ ...contact, type: 'EMPLOYEE' }, 1)).rejects.toThrow(
+      'customer and supplier',
+    );
+    expect(await database.collection('sync_outbox').list()).toHaveLength(2);
+  });
+});

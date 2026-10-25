@@ -1,3 +1,4 @@
+import { translateUI } from '@indyzai/pos-ui-native/i18n';
 import { usePathname } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -81,7 +82,7 @@ export function MetadataScreen() {
     <View style={[s.screen, { backgroundColor: c.background }]}>
       <View style={s.header}>
         <View style={{ flex: 1 }}>
-          <Text style={[s.title, { color: c.text }]}>Catalog setup</Text>
+          <Text style={[s.title, { color: c.text }]}>{translateUI('Catalog setup')}</Text>
           <Text style={{ color: c.textSecondary }}>Units, categories and tax rates</Text>
         </View>
         <AppPressable

@@ -1,3 +1,4 @@
+import { ModuleLayout } from '../shared/components/navigation/ModuleLayout';
 import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 import { StockReconciliationScreen } from '../features/inventory/StockReconciliationScreen';
@@ -5,7 +6,9 @@ import { StockReconciliationScreen } from '../features/inventory/StockReconcilia
 export default function InventoryReconciliationRoute() {
   return (
     <BottomNavigationProvider>
-      <StockReconciliationScreen />
+      <ModuleLayout>
+        <StockReconciliationScreen />
+      </ModuleLayout>
       <BottomNavigation />
     </BottomNavigationProvider>
   );

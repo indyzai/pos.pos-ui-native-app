@@ -22,6 +22,7 @@ import {
   visibleNavigationItems,
   primaryNavigationItems,
   moreNavigationItems,
+  isNavigationRouteAllowed,
   orderNavigationItem,
 } from '../shared/navigation/routes';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
@@ -88,15 +89,15 @@ function RootNavigator() {
       !publicRoutes.includes(normalizedPath) &&
       normalizedPath !== '/profile'
     ) {
-      const allowed = visibleNavigationItems(
-        [...primaryNavigationItems, ...moreNavigationItems, orderNavigationItem],
-        flags,
-        session.tenant.role,
-        session.user.role,
-      ).some((item) => {
-        const href = typeof item.href === 'string' ? item.href : item.href.pathname;
-        return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
-      });
+      const allowed = isNavigationRouteAllowed(
+        normalizedPath,
+        visibleNavigationItems(
+          [...primaryNavigationItems, ...moreNavigationItems, orderNavigationItem],
+          flags,
+          session.tenant.role,
+          session.user.role,
+        ),
+      );
       if (!allowed && normalizedPath !== '/billing') router.replace('/settings');
     }
   }, [authenticated, initializing, pathname, router, flags, session]);

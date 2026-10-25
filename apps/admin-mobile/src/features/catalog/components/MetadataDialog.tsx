@@ -1,3 +1,4 @@
+import { translateUI } from '@indyzai/pos-ui-native/i18n';
 import { useState } from 'react';
 import { Modal, ScrollView, Text, TextInput, View, StyleSheet } from 'react-native';
 import { AppPressable, useAppTheme, showSnackbar } from '@indyzai/pos-ui-native';
@@ -64,7 +65,10 @@ export function MetadataDialog({ kind, onClose }: { kind: MetadataKind; onClose:
           contentContainerStyle={s.container}
         >
           <View style={[s.dialog, { backgroundColor: c.surface }]}>
-            <Text style={{ color: c.text, fontSize: 22, fontWeight: '800' }}>Add {label}</Text>
+            <Text style={{ color: c.text, fontSize: 22, fontWeight: '800' }}>
+              {translateUI('Add')}
+              {label}
+            </Text>
             {field('Name', name, setName)}
             {kind === 'units' && (
               <>
@@ -104,7 +108,7 @@ export function MetadataDialog({ kind, onClose }: { kind: MetadataKind; onClose:
             </Text>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
               <AppPressable disabled={busy} onPress={onClose} style={s.button}>
-                <Text style={{ color: c.text }}>Cancel</Text>
+                <Text style={{ color: c.text }}>{translateUI('Cancel')}</Text>
               </AppPressable>
               <AppPressable
                 disabled={busy}

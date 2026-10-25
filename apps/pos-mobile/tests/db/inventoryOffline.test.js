@@ -68,3 +68,48 @@ test('inventory writes return pending jobs with usable local metadata and sync t
     await Dexie.delete(name);
   }
 });
+
+test('product field refresh includes the master units store and keeps product conversions separate', async () => {
+  Dexie.dependencies.indexedDB = indexedDB;
+  Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+  const name = `inventory-references-${crypto.randomUUID()}`;
+  const database = new IndexedDbLocalDatabase(
+    { tenantId: 't', userId: 'u', role: 'manager', storeIds: ['b'], deviceId: 'd' },
+    name,
+  );
+  await database.initialize();
+  let requests = 0;
+  const api = createInventoryApi({
+    getSession: () => ({ token: 'token', tenant: { id: 't' }, user: { id: 'u' } }),
+    getDatabase: () => database,
+    scopeKey: () => 'scope',
+    request: async () => {
+      requests++;
+      return {
+        categories: [{ id: '1', name: 'Goods' }],
+        units: [{ id: '2', name: 'Piece', code: 'PCS' }],
+        taxes: [{ id: '3', name: 'GST', percentage: 5 }],
+      };
+    },
+    billing: { load: async () => ({ key: 'scope', cache: {} }), refresh: async () => {} },
+  });
+  try {
+    await applyBootstrapCollections(database, {
+      productUoms: [{ id: 'conversion', productId: '10', factor: 12 }],
+    });
+    const conversions = await database.collection('product_uoms').list();
+    const result = await api.loadProductReferences(true);
+    expect(result).toMatchObject({
+      categories: [{ id: 1, name: 'Goods' }],
+      units: [{ id: 2, name: 'Piece', code: 'PCS' }],
+      taxes: [{ id: 3, name: 'GST', percentage: 5 }],
+    });
+    expect((await database.collection('units').list())[0].payload.name).toBe('Piece');
+    expect(await database.collection('product_uoms').list()).toEqual(conversions);
+    expect(await api.loadProductReferences(false)).toEqual(result);
+    expect(requests).toBe(1);
+  } finally {
+    await database.close();
+    await Dexie.delete(name);
+  }
+});

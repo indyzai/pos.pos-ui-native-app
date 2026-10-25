@@ -1,3 +1,4 @@
+import { mergeServiceTechnicians } from '@indyzai/feature-billing/domain/technicians';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { usePathname } from 'expo-router';
@@ -111,8 +112,10 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
         paymentMethods: localPaymentMethods.items.length
           ? localPaymentMethods.items.map((record) => record.payload)
           : fallbackPaymentMethods,
-        serviceUsers:
-          currentMode === 'service' ? localServiceUsers.items.map((record) => record.payload) : [],
+        serviceUsers: mergeServiceTechnicians(
+          localServiceUsers.items.map((record) => record.payload),
+          localCustomers.items.map((record) => record.payload),
+        ),
         productBatches:
           currentMode === 'pharmacy' ? localProductBatches.items.map((record) => record.payload) : [],
         taxRates: localTaxRates.items.map((record) => record.payload),

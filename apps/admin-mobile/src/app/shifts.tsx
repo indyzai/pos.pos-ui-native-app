@@ -1,6 +1,11 @@
-import { Clock } from 'lucide-react-native';
-import { ModulePlaceholder } from '../shared/components/layout/ModulePlaceholder';
-
-export default function ShiftsRoute() {
-  return <ModulePlaceholder title="Shifts" icon={Clock} />;
+import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
+import { OperationsScreen } from '../features/operations/OperationsScreen';
+import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
+export default function OperationsRoute() {
+  return (
+    <BottomNavigationProvider>
+      <OperationsScreen resource="shifts" />
+      <BottomNavigation />
+    </BottomNavigationProvider>
+  );
 }

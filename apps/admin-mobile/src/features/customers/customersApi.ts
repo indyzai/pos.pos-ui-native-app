@@ -22,6 +22,11 @@ export const customersApi = createCustomersApi({
   createId: Crypto.randomUUID,
   mapCustomer: (value) => ({
     ...mapBootstrapCustomer(value),
+    balance: Number(
+      String(value.type).toUpperCase() === 'SUPPLIER'
+        ? (value.outstandingBalance ?? (value.details as Record<string, unknown>)?.outstandingBalance ?? 0)
+        : (value.balance ?? (value.details as Record<string, unknown>)?.balance ?? 0),
+    ),
     details:
       value.details && typeof value.details === 'object'
         ? (value.details as Record<string, unknown>)

@@ -12,6 +12,7 @@
         "prettier": "3.5.3",
         "react": "19.3.0",
         "typescript": "~6.0.3",
+        "react-test-renderer": "19.3.0",
       },
     },
     "apps/admin-mobile": {
@@ -236,6 +237,8 @@
       "name": "@indyzai/feature-billing",
       "version": "2.0.0",
       "dependencies": {
+        "@indyzai/pos-printing": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
         "@indyzai/feature-flags": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
         "@indyzai/pos-ui-native": "workspace:*",
@@ -270,6 +273,9 @@
       "name": "@indyzai/feature-customers",
       "version": "2.0.0",
       "dependencies": {
+        "@indyzai/pos-sync-native": "workspace:*",
+        "@indyzai/pos-api": "workspace:*",
+        "@indyzai/pos-utils": "workspace:*",
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/pos-application": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
@@ -343,6 +349,7 @@
       "name": "@indyzai/feature-organization",
       "version": "2.0.0",
       "dependencies": {
+        "@indyzai/pos-printing": "workspace:*",
         "@indyzai/feature-billing": "workspace:*",
         "@indyzai/feature-flags": "workspace:*",
         "@indyzai/feature-orders": "workspace:*",
@@ -374,6 +381,9 @@
       "name": "@indyzai/feature-printers",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/feature-orders": "workspace:*",
+        "expo-sharing": "~58.0.19",
+        "expo-print": "~58.0.7",
         "@indyzai/pos-application": "workspace:*",
         "@indyzai/pos-auth": "workspace:*",
         "@indyzai/pos-database": "workspace:*",
@@ -514,6 +524,7 @@
       "name": "@indyzai/pos-ui-native",
       "version": "1.0.0",
       "dependencies": {
+        "@indyzai/pos-printing": "workspace:*",
         "@gluestack-ui/core": "5.0.15",
         "@indyzai/pos-utils": "workspace:*",
         "lucide-react-native": "^1.41.0",
@@ -615,6 +626,7 @@
       "name": "@indyzai/pos-validation",
       "version": "1.0.0",
     },
+
   },
   "packages": {
     "2g": ["2g@1.0.1", "", { "peerDependencies": { "typescript": ">=5.8.0" }, "optionalPeers": ["typescript"], "bin": { "2g": "bin/cli.js" } }, "sha512-+uViadKOS/wwR4pFu5g8TPn3QHpKqoX19JHCnp8k/3cLpImdcXozwvZA6Q/5PeW3AcU8neL8faaMidBcv7o8CA=="],
@@ -1967,6 +1979,8 @@
 
     "raw-body": ["raw-body@3.0.2", "", { "dependencies": { "bytes": "~3.1.2", "http-errors": "~2.0.1", "iconv-lite": "~0.7.0", "unpipe": "~1.0.0" } }, "sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA=="],
 
+    "react-test-renderer": ["react-test-renderer@19.3.0", "", { "dependencies": { "react-is": "^19.3.0", "scheduler": "^0.28.0" }, "peerDependencies": { "react": "^19.3.0" } }, "sha512-AUxgv+hRbqjRgx4xVwiWL6cvDDKPAva1VWLXQIMoevqQn9us//C5TX9LEnBGH47D0zvJpjwjxb1umzgOMvE8Wg=="],
+
     "react": ["react@19.3.0", "", {}, "sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog=="],
 
     "react-aria": ["react-aria@3.52.1", "", { "dependencies": { "@internationalized/date": "^3.12.4", "@internationalized/number": "^3.6.8", "@internationalized/string": "^3.2.10", "@react-types/shared": "^3.36.1", "@swc/helpers": "^0.5.0", "aria-hidden": "^1.2.3", "clsx": "^2.0.0", "react-stately": "3.50.0", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1", "react-dom": "^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1" } }, "sha512-fdZZruC9/x/joCg0mhKGs5aHpwrXLCSZ4GOJmhhYyiE0ffyEsk9MLFt9LCOCF9tn8ErTD+UDQP4oDUSlZkmpCg=="],
@@ -2656,5 +2670,7 @@
     "logkitty/yargs/cliui/wrap-ansi/ansi-styles/color-convert/color-name": ["color-name@1.1.4", "", {}, "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA=="],
 
     "qrcode/yargs/cliui/wrap-ansi/ansi-styles/color-convert/color-name": ["color-name@1.1.4", "", {}, "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA=="],
+    "react-test-renderer/react-is": ["react-is@19.3.0", "", {}, "sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA=="],
+
   }
 }
