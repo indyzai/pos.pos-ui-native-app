@@ -76,13 +76,13 @@ jobs:
         working-directory: apps/pos-mobile
         run: |
           bunx tsc --noEmit
-          bun test tests
+          bun run test
 
       - name: Validate Admin Mobile
         working-directory: apps/admin-mobile
         run: |
           bunx tsc --noEmit
-          bun test tests
+          bun run test
 
   metadata:
     name: Resolve release metadata

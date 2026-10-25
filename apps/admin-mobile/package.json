@@ -80,7 +80,7 @@
     "ios-build": "RCT_METRO_PORT=3512 npx expo prebuild --no-clean --platform ios",
     "db:generate": "bun run --cwd ../../vendor/pos-ui-shared/packages-native/database db:generate",
     "db:bundle": "bun run --cwd ../../vendor/pos-ui-shared/packages-native/database db:bundle",
-    "test": "bun test tests",
+    "test": "bun test --isolate --preload ../../tests-setup.ts tests",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

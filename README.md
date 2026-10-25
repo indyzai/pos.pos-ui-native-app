@@ -28,8 +28,12 @@ bun run both
 bun run android
 bun run ios
 bun run typecheck
-bun test
+bun run test:pos
+bun run test:admin
+bun run test
 ```
+
+Run tests through these package scripts: they isolate each test file so native-module and database mocks cannot leak into other suites. App scripts also load the shared test setup explicitly, including when CI runs from an app directory.
 
 The native apps read UI state from the local database. Server mutations are written to the local outbox and synchronized when connectivity is available.
 
