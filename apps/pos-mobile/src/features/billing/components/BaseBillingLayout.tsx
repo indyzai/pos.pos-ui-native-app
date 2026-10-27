@@ -307,8 +307,7 @@ export function BaseBillingLayout({
       const { record: job } = await inventoryApi.create(input);
       await billing.reload();
       setQuickAddOpen(false);
-      const refreshed = await billingApi.load();
-      const created = refreshed.cache.products.find((item) => item.id === job.entityId);
+      const created = job.entityId ? await inventoryApi.findById(job.entityId) : undefined;
       if (created) cart.addItem(created);
       showSnackbar('Product created', `${input.name} was added to this order as an incomplete product.`);
     } catch (error) {

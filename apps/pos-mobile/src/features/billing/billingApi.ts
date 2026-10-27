@@ -8,7 +8,6 @@ import { SerialQueue } from '@indyzai/pos-sync';
 import { readBillingSnapshot, writeBillingSnapshot } from '@indyzai/feature-billing/data/billingRepository';
 import { getActiveAuthSession } from '@indyzai/pos-auth/session';
 import { appStorageKeys } from '@indyzai/pos-auth/storage-keys';
-import { fetchCatalog } from '@indyzai/feature-catalog/catalogApi';
 import { settingsApi } from '../settings/settingsApi';
 import { printerConfigurationApi } from '../printing/printerConfigurationApi';
 import {
@@ -222,7 +221,10 @@ export const billingApi = {
   },
   loadScrapProducts: async (signal?: AbortSignal) => {
     const c = await context();
-    return fetchCatalog((query, variables) => request(c, query, variables, signal), 'SCRAP');
+    signal?.throwIfAborted();
+    const cache = await readBillingSnapshot(c.key);
+    signal?.throwIfAborted();
+    return cache.products.filter((product) => product.categoryType === 'SCRAP');
   },
   refresh: async (
     signal?: AbortSignal,
@@ -417,6 +419,7 @@ export const billingApi = {
             waybillJobs.push(job);
             await waybillRepository.replace(c.key, waybillJobs);
           },
+          database ? (input) => resolveQueuedReferences(database, input) : undefined,
         );
       } catch (error) {
         if (database) {

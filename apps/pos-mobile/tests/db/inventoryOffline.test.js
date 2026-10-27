@@ -63,6 +63,8 @@ test('inventory writes return pending jobs with usable local metadata and sync t
     const saved = await database.collection('products').get(record.id);
     expect(saved.syncStatus).toBe('SYNCED');
     expect(saved.payload).toMatchObject({ id: '42', name: 'Updated tea', stock: 4, taxRate: 5 });
+    expect(await api.findById(created.entityId)).toMatchObject({ id: '42', name: 'Updated tea' });
+    expect(await api.findById('42')).toMatchObject({ id: '42', name: 'Updated tea' });
   } finally {
     await database.close();
     await Dexie.delete(name);

@@ -6,6 +6,7 @@ Business reads use SQLite on native devices and IndexedDB in browsers. Business 
 
 - Existing customers, purchases, settings, printers, and sales retain their typed outboxes.
 - Inventory products, reconciliation reports, counter opens/closes, cash entries, staff creation, and remote receipt jobs use `queueApiMutation` and `sync_outbox`.
+- POS receipts create a device-local `print_jobs` record containing the complete receipt document before connecting to the printer. Hardware delivery updates the same local job ID. POS receipt creation and replay never call `createPrinterJob`; a configured native USB, Bluetooth, or LAN printer handles delivery without the POS API. Failed setup/connections retain the document; interrupted writes remain uncertain and require checking the paper before reprinting.
 - Entity hooks, including refunds, retain `sync_mutations`. The app worker drains both queues; a screen does not need to remain mounted.
 - Related stock projections and the outbox command are written in one transaction. Server acknowledgements preserve newer local edits.
 - Replay uses the current session. Authentication tokens are never saved in commands. Replay-only request fields are removed after acknowledgement.

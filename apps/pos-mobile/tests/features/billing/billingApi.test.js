@@ -1,5 +1,5 @@
 import { createRefreshCoordinator } from '@indyzai/pos-sync';
-import { applyRefreshBatch, readRefreshMarkers } from '@indyzai/pos-database';
+import { applyBootstrapCollections, applyRefreshBatch, readRefreshMarkers } from '@indyzai/pos-database';
 import { registerNativeRefresh } from '../../../../../vendor/pos-ui-shared/packages-native/sync-native/src/nativeRefresh';
 import { beforeEach, afterEach, expect, mock, test } from 'bun:test';
 import { setActiveDatabase, getActiveDatabase, createScopeKey } from '@indyzai/pos-database';
@@ -370,4 +370,27 @@ test('catalog refresh maps and persists products for offline billing', async () 
   ]);
   expect(cache.productBatches).toEqual([]);
   expect(cache.taxRates).toEqual([{ id: '5', name: 'GST 5%', percentage: 5, isActive: true }]);
+});
+
+test('scrap catalog is retained by bootstrap and loads from local storage while offline', async () => {
+  await applyBootstrapCollections(getActiveDatabase(), {
+    products: [
+      { id: '1', name: 'Tea', price: 10, stock: 5, categoryType: 'INVENTORY' },
+      { id: '2', name: 'Old copper', price: 30, stock: 0, categoryType: 'SCRAP' },
+    ],
+  });
+  const originalFetch = globalThis.fetch;
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests++;
+    throw new Error('Offline');
+  };
+  try {
+    expect(await billingApi.loadScrapProducts()).toEqual([
+      expect.objectContaining({ id: '2', name: 'Old copper', price: 30, categoryType: 'SCRAP' }),
+    ]);
+    expect(requests).toBe(0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
