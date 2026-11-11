@@ -207,7 +207,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
+      - name: Install ccache (optional)
+        id: install-ccache
+        run: bash .github/scripts/setup-ccache.sh
+
       - name: Setup ccache
+        if: steps.install-ccache.outputs.available == 'true'
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ runner.os }}-ccache-pos-${{ github.ref }}
@@ -275,8 +280,8 @@ jobs:
         env:
           ARCHS: ${{ inputs.archs || 'arm64-v8a,armeabi-v7a' }}
           CCACHE_DIR: ${{ runner.temp }}/.ccache
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CMAKE_C_COMPILER_LAUNCHER: ${{ steps.install-ccache.outputs.available == 'true' && 'ccache' || '' }}
+          CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.install-ccache.outputs.available == 'true' && 'ccache' || '' }}
           GRADLE_OPTS: >-
             -Dorg.gradle.jvmargs="-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -XX:+ParallelRefProcEnabled"
             -Dorg.gradle.parallel=true
@@ -397,7 +402,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
+      - name: Install ccache (optional)
+        id: install-ccache
+        run: bash .github/scripts/setup-ccache.sh
+
       - name: Setup ccache
+        if: steps.install-ccache.outputs.available == 'true'
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ runner.os }}-ccache-admin-${{ github.ref }}
@@ -465,8 +475,8 @@ jobs:
         env:
           ARCHS: ${{ inputs.archs || 'arm64-v8a,armeabi-v7a' }}
           CCACHE_DIR: ${{ runner.temp }}/.ccache
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CMAKE_C_COMPILER_LAUNCHER: ${{ steps.install-ccache.outputs.available == 'true' && 'ccache' || '' }}
+          CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.install-ccache.outputs.available == 'true' && 'ccache' || '' }}
           GRADLE_OPTS: >-
             -Dorg.gradle.jvmargs="-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -XX:+ParallelRefProcEnabled"
             -Dorg.gradle.parallel=true
