@@ -8,14 +8,15 @@
   ],
   "dependencies": {},
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@react-native-community/cli": "^20.2.0",
     "@types/bun": "^1.4.2",
     "@types/react": "~19.3.0",
     "expo": "~58.0.16",
-    "react": "19.3.0",
-    "typescript": "~6.0.3",
     "prettier": "3.5.3",
-    "react-test-renderer": "19.3.0"
+    "react": "19.3.0",
+    "react-test-renderer": "19.3.0",
+    "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "bun run --filter @indyzai/pos-mobile start",
@@ -34,7 +35,20 @@
     "pos:local": "bun run --filter @indyzai/pos-mobile start:local",
     "pos:production": "bun run --filter @indyzai/pos-mobile start:production",
     "test:pos": "bun run --cwd apps/pos-mobile test",
-    "test:admin": "bun run --cwd apps/admin-mobile test"
+    "test:admin": "bun run --cwd apps/admin-mobile test",
+    "test:e2e": "playwright test",
+    "test:e2e:list": "playwright test --list",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "e2e:session": "node e2e/capture-session.mjs",
+    "e2e:pos:web": "bun run --cwd apps/pos-mobile start --web",
+    "e2e:admin:web": "bun run --cwd apps/admin-mobile start --web",
+    "e2e:release:provision": "node e2e/provision-release.mjs",
+    "e2e:release:seed": "node e2e/seed-release.mjs",
+    "e2e:release:admin-session": "node e2e/capture-release-admin.mjs",
+    "e2e:release:react-session": "node e2e/capture-release-react.mjs",
+    "e2e:release:react-seed": "node e2e/seed-release-react.mjs",
+    "test:e2e:release:react": "E2E_REACT_URL=https://pos.indyzai.com playwright test --project=react"
   },
   "private": true,
   "engines": {

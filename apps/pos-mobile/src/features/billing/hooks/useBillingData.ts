@@ -146,6 +146,15 @@ export function useBillingData(businessTypeOverride?: BillingMode) {
       auth.error ||
       localProducts.error?.message ||
       (error instanceof Error ? error.message : ''),
+    // Only first local reads block billing. Sync and sale-history pagination keep the cached UI visible.
+    initialLoading:
+      !ready ||
+      localProducts.loading ||
+      localCustomers.loading ||
+      localPaymentMethods.loading ||
+      localServiceUsers.loading ||
+      localProductBatches.loading ||
+      localTaxRates.loading,
     busy: syncMutation.isPending || localProducts.loading || sales.loading,
     sales,
     refresh,

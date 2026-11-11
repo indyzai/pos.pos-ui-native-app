@@ -72,3 +72,10 @@ shared workspace. The combined `bun run ios-build` command regenerates projects
 sequentially to avoid CocoaPods cache collisions. `--no-clean` preserves existing
 native project settings for routine prebuilds; major SDK upgrades require fresh
 native templates and restoring any local signing settings.
+
+## Browser end-to-end tests
+
+Playwright projects cover the sibling React app and both React Native Web apps,
+with desktop/tablet/phone layouts and online/offline scenarios. See
+[e2e setup and coverage](e2e/README.md) for test sessions, seed data, commands,
+and the distinction between route checks and complete transaction coverage.

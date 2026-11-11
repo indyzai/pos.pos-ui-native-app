@@ -167,17 +167,17 @@ export function BaseBillingLayout({
 
   const hasBillingData = Boolean(billing.data);
   useEffect(() => {
-    if (!hasBillingData || billing.busy) {
+    if (!hasBillingData || billing.initialLoading) {
       setFeatureLoading({
         id: 'billing-data',
         title: 'Loading billing data…',
-        message: 'Reading the local catalog and checking for updates',
+        message: 'Reading the local billing data',
       });
     } else {
       setFeatureLoading(undefined);
     }
-    return () => setFeatureLoading(undefined);
-  }, [billing.busy, hasBillingData, setFeatureLoading]);
+  }, [billing.initialLoading, hasBillingData, setFeatureLoading]);
+  useEffect(() => () => setFeatureLoading(undefined), [setFeatureLoading]);
 
   useEffect(() => {
     if (!paymentMethods.length || paymentMethods.some((method) => method.code === payment)) return;

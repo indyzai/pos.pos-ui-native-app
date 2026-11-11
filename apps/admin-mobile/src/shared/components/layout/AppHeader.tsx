@@ -1,3 +1,4 @@
+import { FailedJobCorrections } from '@indyzai/pos-sync-native/corrections';
 import { AppHeader as SharedAppHeader } from '@indyzai/feature-organization/app-header';
 import { authApi } from '../../../auth/authApi';
 import { OpenCounterSessionDialog } from '../../../features/counter-session/components/OpenCounterSessionDialog';
@@ -15,6 +16,7 @@ export function AppHeader(props: Props) {
   return (
     <SharedAppHeader
       {...props}
+      syncNotification={<FailedJobCorrections />}
       variant="admin"
       authApi={authApi}
       OpenCounterSessionDialog={OpenCounterSessionDialog}

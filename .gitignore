@@ -123,3 +123,8 @@ docs/superpowers/
 apps/pos-mobile/modules/*/android/.cxx/
 .pnpm-store
 latest_version.txt
+
+# Playwright sessions contain credentials and tenant data
+e2e/.auth/
+playwright-report/
+blob-report/
