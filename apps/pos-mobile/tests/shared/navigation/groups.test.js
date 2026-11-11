@@ -34,44 +34,62 @@ const { isNavigationGroupActive } = await import(
 );
 const flags = resolveFeatureToggles({ businessType: 'RESTAURANT' });
 
-test('related routes appear only within their submodule and retain unique destinations', () => {
+const leaves = (items) => items.flatMap((item) => (item.children ? leaves(item.children) : [item]));
+test('web-style groups expose every destination once, including nested Scrap pages', () => {
   for (const routes of [pos, admin]) {
-    const paths = routes.moreNavigationItems
-      .flatMap((item) => item.children || [item])
-      .map((item) => String(item.href));
+    const paths = leaves(routes.moreNavigationItems).map((item) => String(item.href));
     expect(new Set(paths).size).toBe(paths.length);
+    expect(routes.moreNavigationItems.map((item) => item.label)).toEqual([
+      'Masters',
+      'Operations',
+      'Logistics',
+      'Management',
+      'Settings',
+    ]);
     expect(
       routes.moreNavigationItems.find((item) => item.label === 'Logistics').children.map((item) => item.href),
-    ).toEqual(['/waybills', '/shipping-bills']);
-    expect(routes.moreNavigationItems.some((item) => item.label === 'Bank accounts')).toBe(false);
-    expect(routes.moreNavigationItems.find((item) => item.label === 'Payments').children).toHaveLength(2);
+    ).toEqual(['/transfers', '/inventory-reconciliation', '/waybills', '/shipping-bills']);
+    const scrap = routes.moreNavigationItems
+      .find((item) => item.label === 'Operations')
+      .children.find((item) => item.label === 'Scrap');
+    expect(scrap.children.map((item) => item.href)).toEqual([
+      '/scrap',
+      '/scrap-purchases',
+      '/scrap-sales',
+      '/scrap-categories',
+      '/scrap-vendors',
+    ]);
   }
 });
-test('permissions and feature flags filter child pages and remove empty submodules', () => {
+test('permissions and flags filter nested pages and remove empty groups', () => {
   const cashier = pos.navigationItemsForRole(pos.moreNavigationItems, 'cashier', flags);
-  expect(cashier.some((item) => ['Payments', 'Logistics', 'Scrap'].includes(item.label))).toBe(false);
+  expect(leaves(cashier).some((item) => ['/scrap', '/bank-accounts', '/waybills'].includes(item.href))).toBe(
+    false,
+  );
   const manager = pos.navigationItemsForRole(pos.moreNavigationItems, 'manager', {
     ...flags,
     stockTransfers: false,
     scrap: false,
     waybills: false,
   });
-  expect(manager.some((item) => ['Scrap', 'Logistics'].includes(item.label))).toBe(false);
-  const stock = manager.find((item) => item.label === 'Stock control');
-  expect(stock.children.map((item) => item.href)).toEqual(['/inventory-reconciliation']);
-  expect(stock.href).toBe('/inventory-reconciliation');
-  const organization = admin
+  expect(leaves(manager).some((item) => ['/scrap', '/transfers', '/waybills'].includes(item.href))).toBe(
+    false,
+  );
+  const logistics = manager.find((item) => item.label === 'Logistics');
+  expect(logistics.children.map((item) => item.href)).toEqual(['/inventory-reconciliation']);
+  expect(logistics.href).toBe('/inventory-reconciliation');
+  const management = admin
     .visibleNavigationItems(admin.moreNavigationItems, { ...flags, multiBranch: false }, 'admin', 'admin')
-    .find((item) => item.label === 'Organization');
-  expect(organization.children.some((item) => item.href === '/branches')).toBe(false);
-  expect(organization.children.some((item) => item.href === '/tables')).toBe(true);
+    .find((item) => item.label === 'Management');
+  expect(management.children.some((item) => item.href === '/branches')).toBe(false);
+  expect(management.children.some((item) => item.href === '/tables')).toBe(true);
 });
-test('a non-first child keeps its parent module active', () => {
-  const payments = pos.moreNavigationItems.find((item) => item.label === 'Payments');
+test('a deeply nested destination keeps its top-level group active', () => {
+  const operations = pos.moreNavigationItems.find((item) => item.label === 'Operations');
   expect(
-    isNavigationGroupActive(payments, (href) => pos.isNavigationItemActive('/bank-accounts', href)),
+    isNavigationGroupActive(operations, (href) => pos.isNavigationItemActive('/scrap-sales', href)),
   ).toBe(true);
-  expect(isNavigationGroupActive(payments, (href) => pos.isNavigationItemActive('/orders', href))).toBe(
+  expect(isNavigationGroupActive(operations, (href) => pos.isNavigationItemActive('/customers', href))).toBe(
     false,
   );
 });
@@ -92,10 +110,8 @@ test('route guards allow every enabled module tab instead of redirecting non-fir
     [pos, posItems],
     [admin, adminItems],
   ]) {
-    for (const module of items.filter((item) => item.children)) {
-      for (const tab of module.children) {
-        expect(routes.isNavigationRouteAllowed(String(tab.href), items)).toBe(true);
-      }
+    for (const item of leaves(items)) {
+      expect(routes.isNavigationRouteAllowed(String(item.href), items)).toBe(true);
     }
     expect(routes.isNavigationRouteAllowed('/not-a-route', items)).toBe(false);
     expect(routes.isNavigationRouteAllowed('/bank-accounts-unrelated', items)).toBe(false);
@@ -190,10 +206,9 @@ test('Admin exposes every implemented module when its role and business features
   ];
   for (const path of paths) expect(admin.isNavigationRouteAllowed(path, items)).toBe(true);
   expect(items.filter((item) => item.children).map((item) => item.label)).toEqual([
-    'Stock control',
+    'Masters',
+    'Operations',
     'Logistics',
-    'Scrap',
-    'Payments',
-    'Organization',
+    'Management',
   ]);
 });

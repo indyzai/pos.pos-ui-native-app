@@ -16,7 +16,6 @@ import {
   Tags,
   Truck,
   UserRoundCog,
-  Warehouse,
   ChartPie,
   ClipboardCheck,
   Package,
@@ -69,6 +68,7 @@ export const orderNavigationItem: AppNavigationItem = {
 };
 
 const modulePages: AppNavigationItem[] = [
+  orderNavigationItem,
   { label: 'Printers', icon: Printer, href: '/printers', entitlement: 'organization.manage' },
   {
     label: 'Vendors',
@@ -147,30 +147,25 @@ const module = (label: string, icon: LucideIcon, paths: string[]): AppNavigation
   const children = paths.flatMap((path) => modulePages.filter((item) => String(item.href) === path));
   return { label, icon, href: children[0].href, children };
 };
+const scrapModule = module('Scrap', Recycle, [
+  '/scrap',
+  '/scrap-purchases',
+  '/scrap-sales',
+  '/scrap-categories',
+  '/scrap-vendors',
+]);
+const operationsModule = module('Operations', ReceiptText, ['/orders', '/purchases', '/shifts']);
+operationsModule.children = [...(operationsModule.children ?? []), scrapModule];
+
 export const moreNavigationItems: AppNavigationItem[] = [
-  module('Stock control', Warehouse, ['/transfers', '/inventory-reconciliation']),
-  module('Logistics', Truck, ['/waybills', '/shipping-bills']),
-  module('Scrap', Recycle, [
-    '/scrap',
-    '/scrap-purchases',
-    '/scrap-sales',
-    '/scrap-categories',
-    '/scrap-vendors',
-  ]),
-  module('Payments', CreditCard, ['/payment-methods', '/bank-accounts']),
-  module('Organization', Building2, [
-    '/branches',
-    '/counters',
-    '/tables',
-    '/staff-assignments',
-    '/catalog-setup',
-  ]),
-  ...modulePages.filter((item) =>
-    ['/shifts', '/customers', '/orders', '/purchases', '/printers', '/settings'].includes(String(item.href)),
-  ),
+  module('Masters', Users, ['/customers', '/catalog-setup', '/payment-methods', '/bank-accounts']),
+  operationsModule,
+  module('Logistics', Truck, ['/transfers', '/inventory-reconciliation', '/waybills', '/shipping-bills']),
+  module('Management', Building2, ['/branches', '/counters', '/tables', '/staff-assignments', '/printers']),
+  ...modulePages.filter((item) => item.href === '/settings'),
 ];
 
-export const tabletNavigationItems = [...primaryNavigationItems, orderNavigationItem, ...moreNavigationItems];
+export const tabletNavigationItems = [...primaryNavigationItems, ...moreNavigationItems];
 
 export function isNavigationItemActive(pathname: string, href: Href): boolean {
   const target = typeof href === 'string' ? href : href.pathname;

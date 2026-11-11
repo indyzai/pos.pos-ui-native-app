@@ -11,7 +11,6 @@ import {
   Recycle,
   Tags,
   Truck,
-  Warehouse,
   ChartPie,
   ClipboardCheck,
   LayoutGrid,
@@ -109,20 +108,22 @@ const module = (label: string, icon: LucideIcon, paths: string[]): AppNavigation
   const children = paths.flatMap((path) => modulePages.filter((item) => String(item.href) === path));
   return { label, icon, href: children[0].href, children };
 };
+const scrapModule = module('Scrap', Recycle, [
+  '/scrap',
+  '/scrap-purchases',
+  '/scrap-sales',
+  '/scrap-categories',
+  '/scrap-vendors',
+]);
+const operationsModule = module('Operations', ReceiptText, ['/orders', '/purchases', '/shifts']);
+operationsModule.children = [...(operationsModule.children ?? []), scrapModule];
+
 export const moreNavigationItems: AppNavigationItem[] = [
-  module('Stock control', Warehouse, ['/transfers', '/inventory-reconciliation']),
-  module('Logistics', Truck, ['/waybills', '/shipping-bills']),
-  module('Scrap', Recycle, [
-    '/scrap',
-    '/scrap-purchases',
-    '/scrap-sales',
-    '/scrap-categories',
-    '/scrap-vendors',
-  ]),
-  module('Payments', CreditCard, ['/payment-methods', '/bank-accounts']),
-  ...modulePages.filter((item) =>
-    ['/shifts', '/customers', '/orders', '/purchases', '/printers', '/settings'].includes(String(item.href)),
-  ),
+  module('Masters', Users, ['/customers', '/payment-methods', '/bank-accounts']),
+  operationsModule,
+  module('Logistics', Truck, ['/transfers', '/inventory-reconciliation', '/waybills', '/shipping-bills']),
+  module('Management', Printer, ['/printers']),
+  ...modulePages.filter((item) => item.href === '/settings'),
 ];
 
 export const tabletNavigationItems: AppNavigationItem[] = [
