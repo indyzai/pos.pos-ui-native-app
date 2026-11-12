@@ -114,7 +114,7 @@ test('More exposes nested destinations and keeps the current route action usable
   await act(async () => view.unmount());
 });
 
-test('unavailable actions stay disabled and Android back dismisses the menu', async () => {
+test('routes without an action hide the unused center button and Android back dismisses the menu', async () => {
   centerItem = null;
   let view;
   await act(async () => {
@@ -122,7 +122,9 @@ test('unavailable actions stay disabled and Android back dismisses the menu', as
       <BottomNavigation primaryItems={[]} moreItems={items} isActive={() => false} onNavigate={() => {}} />,
     );
   });
-  expect(button(view, 'Center action unavailable').props.disabled).toBe(true);
+  expect(
+    view.root.findAll((node) => node.props.accessibilityLabel === 'Center action unavailable'),
+  ).toHaveLength(0);
   await act(async () => button(view, 'More').props.onPress());
   expect(typeof backHandler).toBe('function');
   await act(async () => {

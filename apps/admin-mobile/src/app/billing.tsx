@@ -3,7 +3,8 @@ import { ActivityIndicator, Linking, Platform, StyleSheet, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomNavigation } from '../shared/components/navigation/BottomNavigation';
 import { AppPressable } from '@indyzai/pos-ui-native';
-import { BottomNavigationProvider } from '@indyzai/pos-ui-native';
+import { useEffect } from 'react';
+import { useBottomNavigation, BottomNavigationProvider } from '@indyzai/pos-ui-native';
 import { useAppTheme } from '@indyzai/pos-ui-native';
 import { authApi } from '../auth/authApi';
 import { useAuthSession } from '../auth/AuthSessionContext';
@@ -33,6 +34,15 @@ async function openPosBilling(tenantId: string): Promise<void> {
   await Linking.openURL(authDestination.toString());
 }
 
+function BillingCenterAction({ onOpen, busy }: { onOpen: () => void; busy: boolean }) {
+  const { setCenterItem } = useBottomNavigation();
+  useEffect(() => {
+    setCenterItem({ label: 'Open POS', icon: ShoppingCart, disabled: busy, onPress: onOpen });
+    return () => setCenterItem(null);
+  }, [setCenterItem, onOpen, busy]);
+  return null;
+}
+
 export default function BillingRoute() {
   const { themeColors: c } = useAppTheme();
   const { session } = useAuthSession();
@@ -53,6 +63,7 @@ export default function BillingRoute() {
   };
   return (
     <BottomNavigationProvider>
+      <BillingCenterAction busy={switching || !session} onOpen={() => void switchToPos()} />
       <SafeAreaView style={[styles.screen, { backgroundColor: c.background }]} edges={['left', 'right']}>
         <View style={styles.content}>
           <View style={[styles.icon, { backgroundColor: c.primarySoft }]}>
