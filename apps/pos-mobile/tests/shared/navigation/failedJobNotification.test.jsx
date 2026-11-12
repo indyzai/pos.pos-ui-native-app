@@ -18,6 +18,7 @@ let local = { database, status: 'ready' };
 const reads = [];
 mock.module('react-native', () => ({ Text: 'Text' }));
 mock.module('@indyzai/pos-ui-native', () => ({
+  AppPressable: 'AppPressable',
   AppFormDialog: 'AppFormDialog',
   AppFormField: 'AppFormField',
   SyncNotificationButton: 'SyncNotificationButton',

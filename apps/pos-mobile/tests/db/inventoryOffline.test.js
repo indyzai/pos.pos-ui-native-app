@@ -115,3 +115,56 @@ test('product field refresh includes the master units store and keeps product co
     await Dexie.delete(name);
   }
 });
+
+test('every sale-price edit is retained offline and stock-only edits do not add price history', async () => {
+  Dexie.dependencies.indexedDB = indexedDB;
+  Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+  const name = `inventory-price-history-${crypto.randomUUID()}`;
+  const database = new IndexedDbLocalDatabase(
+    { tenantId: 't', userId: 'u', role: 'manager', storeIds: ['b'], deviceId: 'd' },
+    name,
+  );
+  await database.initialize();
+  const api = createInventoryApi({
+    getSession: () => ({ token: 'token', tenant: { id: 't' }, user: { id: 'u' } }),
+    getDatabase: () => database,
+    scopeKey: () => 'scope',
+    request: async () => {
+      throw new Error('offline');
+    },
+    billing: { load: async () => ({ key: 'scope', cache: {} }), refresh: async () => {} },
+  });
+  try {
+    const input = { name: 'Tea', price: 90, mrp: 100, costPrice: 60, stock: 2.5, iconKey: 'package' };
+    await api.create(input);
+    const [record] = await database.collection('products').list();
+    expect(record.payload.details.batches).toBeUndefined();
+    expect(record.payload.details.mrp).toBe(100);
+    const [queued] = await database.collection('sync_outbox').list();
+    const command = queued.payload.request.variables.newProductData;
+    expect(command).toMatchObject({ price: 90, mrp: 100, quantity: 2.5, stockLevels: [] });
+    expect(command.details.mrp).toBeUndefined();
+    expect(command.details.batches).toBeUndefined();
+    expect(command.details.mrpPriceHistory).toBeUndefined();
+    for (const price of [95, 85, 95]) await api.update({ ...input, productId: record.payload.id, price });
+    const saved = (await database.collection('products').get(record.id)).payload;
+    expect(saved.details.mrpPriceHistory.map((entry) => entry.price)).toEqual([90, 95, 85, 95]);
+    expect(saved.details.mrpPriceHistory.at(-1).oldPrice).toBe(85);
+    expect(await api.latestPrice(record.payload.id)).toBe(95);
+    await api.update({ ...input, productId: record.payload.id, price: 95, stock: 3 });
+    const counted = (await database.collection('products').get(record.id)).payload;
+    expect(counted.details.mrpPriceHistory).toHaveLength(4);
+    await api.update({
+      ...input,
+      productId: record.payload.id,
+      price: 95,
+      stock: 3,
+      mrp: undefined,
+      details: { ...counted.details, mrp: null },
+    });
+    expect((await database.collection('products').get(record.id)).payload.details.mrp).toBeNull();
+  } finally {
+    await database.close();
+    await Dexie.delete(name);
+  }
+});

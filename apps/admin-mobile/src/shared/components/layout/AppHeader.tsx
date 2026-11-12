@@ -16,7 +16,7 @@ export function AppHeader(props: Props) {
   return (
     <SharedAppHeader
       {...props}
-      syncNotification={<FailedJobCorrections />}
+      syncNotification={(state) => <FailedJobCorrections {...state} />}
       variant="admin"
       authApi={authApi}
       OpenCounterSessionDialog={OpenCounterSessionDialog}

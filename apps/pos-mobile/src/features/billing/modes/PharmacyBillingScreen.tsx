@@ -1,11 +1,8 @@
-import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
 import { useState } from 'react';
 import { BaseBillingLayout } from '../components/BaseBillingLayout';
 import type { BillingModeConfig } from '@indyzai/feature-billing/domain/billingMode';
-import type { Product } from '@indyzai/feature-billing/types/billing';
 import { useFeatureToggles } from '@indyzai/feature-flags/react';
 import { PharmacyPrescriptionContext } from '@indyzai/feature-billing/native/PharmacyPrescriptionContext';
-import { PharmacyBatchDialog } from '@indyzai/feature-billing/native/PharmacyBatchDialog';
 import { pharmacyProductStatus } from '@indyzai/feature-billing/domain/pharmacyProduct';
 import { showSnackbar } from '@indyzai/pos-ui-native/snackbar';
 
@@ -13,7 +10,6 @@ export function PharmacyBillingScreen({ mode }: { mode: BillingModeConfig }) {
   const { isEnabled } = useFeatureToggles();
   const [doctorName, setDoctorName] = useState('');
   const [prescriptionReference, setPrescriptionReference] = useState('');
-  const [pharmacyProduct, setPharmacyProduct] = useState<Product>();
 
   return (
     <BaseBillingLayout
@@ -29,22 +25,12 @@ export function PharmacyBillingScreen({ mode }: { mode: BillingModeConfig }) {
           />
         )
       }
-      onSelectProduct={(product, { addStandardProduct, billing }) => {
+      onSelectProduct={(product, { addStandardProduct }) => {
         if (isEnabled('batchExpiry') && pharmacyProductStatus(product).expired) {
           showSnackbar(
             'Expired stock',
             `${product.name} cannot be added because its expiry date has passed.`,
           );
-          return false;
-        }
-        const batches = product.details?.batches?.some((batch) => batch.mrp != null)
-          ? normalizeProductBatches([product])
-          : billing.data?.cache.productBatches.filter((batch) => batch.productId === product.id) || [];
-        if (
-          !product.details?.stockBatchId &&
-          (batches.some((batch) => batch.mrp != null) || (isEnabled('batchExpiry') && batches.length))
-        ) {
-          setPharmacyProduct(product);
           return false;
         }
         addStandardProduct(product);
@@ -72,21 +58,6 @@ export function PharmacyBillingScreen({ mode }: { mode: BillingModeConfig }) {
         setDoctorName('');
         setPrescriptionReference('');
       }}
-      dialogsSlot={({ cart, currencyCode, billing }) => (
-        <PharmacyBatchDialog
-          product={pharmacyProduct}
-          batches={
-            pharmacyProduct?.details?.batches?.some((batch) => batch.mrp != null)
-              ? normalizeProductBatches([pharmacyProduct])
-              : billing.data?.cache.productBatches.filter(
-                  (batch) => batch.productId === pharmacyProduct?.id,
-                ) || []
-          }
-          currencyCode={currencyCode}
-          onClose={() => setPharmacyProduct(undefined)}
-          onAdd={(product, customization) => cart.addItem(product, 1, customization)}
-        />
-      )}
     />
   );
 }

@@ -1,5 +1,9 @@
 import { PharmacyBatchDialog } from '@indyzai/feature-billing/native/PharmacyBatchDialog';
-import { normalizeProductBatches } from '@indyzai/feature-billing/domain/productBatches';
+import {
+  availableProductBatches,
+  billingBatchSelection,
+  billingProductBatches,
+} from '@indyzai/feature-billing/domain/productBatches';
 import { belowCostItems, customerDiscount } from '@indyzai/feature-billing/domain/customerPricing';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingCart } from 'lucide-react-native';
@@ -35,6 +39,7 @@ import type {
   HeldOrder,
   PaymentMethod,
   Product,
+  ProductBatch,
   ScrapExchange,
 } from '@indyzai/feature-billing/types/billing';
 import { useAppHeader } from '@indyzai/pos-ui-native';
@@ -116,6 +121,7 @@ export function BaseBillingLayout({
   const [category, setCategory] = useState('All');
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
   const [mrpProduct, setMrpProduct] = useState<Product>();
+  const [mrpBatches, setMrpBatches] = useState<ProductBatch[]>([]);
   const [customer, setCustomer] = useState<Customer>();
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -134,6 +140,9 @@ export function BaseBillingLayout({
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData>();
+  const [receiptPrinters, setReceiptPrinters] = useState<Awaited<ReturnType<typeof printingApi.printers>>>();
+  const [receiptPrinterError, setReceiptPrinterError] = useState('');
+  const [cashDenominations, setCashDenominations] = useState<Array<{ value: number }>>([]);
   const [heldOrdersOpen, setHeldOrdersOpen] = useState(false);
   const { width, height } = useWindowDimensions();
   const isTablet = width >= 700;
@@ -165,6 +174,46 @@ export function BaseBillingLayout({
   const taxRates = billing.data?.cache.taxRates || [];
   const currencyCode = String(auth.session?.organization?.settings.currency || 'INR');
 
+  const checkoutVisible = checkoutOpen || cartPage === 'checkout';
+  const checkoutTenant = auth.session?.tenant.id;
+  const checkoutToken = auth.session?.token;
+  useEffect(() => {
+    if (!checkoutVisible || !checkoutToken || !checkoutTenant) return;
+    let active = true;
+    setCashDenominations([]);
+    void counterSessionApi
+      .getDenominations(checkoutToken, String(checkoutTenant), currencyCode)
+      .then((rows) => {
+        if (active) setCashDenominations(rows);
+      })
+      .catch(() => {
+        if (active) setCashDenominations([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [checkoutVisible, checkoutToken, checkoutTenant, currencyCode]);
+  const receiptCounter = auth.session?.organization?.activeSession?.counterId;
+  useEffect(() => {
+    if (!receipt || !receiptCounter) return;
+    let active = true;
+    setReceiptPrinters(undefined);
+    setReceiptPrinterError('');
+    void printingApi
+      .printers(receiptCounter)
+      .then((rows) => {
+        if (active) setReceiptPrinters(rows);
+      })
+      .catch((error) => {
+        if (active) {
+          setReceiptPrinters([]);
+          setReceiptPrinterError(error instanceof Error ? error.message : 'Could not load receipt printers');
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [receipt?.id, receiptCounter]);
   const hasBillingData = Boolean(billing.data);
   useEffect(() => {
     if (!hasBillingData || billing.initialLoading) {
@@ -369,14 +418,35 @@ export function BaseBillingLayout({
   };
 
   const handleProductSelect = (product: Product) => {
-    if (!product.details?.stockBatchId && product.details?.batches?.some((batch) => batch.mrp != null)) {
-      setMrpProduct(product);
-      return false;
+    let selectedProduct = product;
+    if (!product.details?.stockBatchId) {
+      const priceLevels = product.details?.batches?.some((batch) => batch.mrp != null);
+      const batches = billingProductBatches(
+        product,
+        billing.data?.cache.productBatches ?? [],
+        isEnabled('batchExpiry'),
+      );
+      if (batches.length || priceLevels) {
+        const selection = billingBatchSelection(product, batches, cart.items, isEnabled('batchExpiry'));
+        if (selection.kind === 'unavailable' || (priceLevels && !batches.length)) {
+          showSnackbar(
+            'No available stock',
+            `${product.name} has no available stock at its configured price levels.`,
+          );
+          return false;
+        }
+        if (selection.kind === 'choose') {
+          setMrpBatches(selection.batches);
+          setMrpProduct(product);
+          return false;
+        }
+        selectedProduct = selection.product;
+      }
     }
     if (onSelectProduct) {
-      return onSelectProduct(product, { cart, addStandardProduct, billing });
+      return onSelectProduct(selectedProduct, { cart, addStandardProduct, billing });
     }
-    addStandardProduct(product);
+    addStandardProduct(selectedProduct);
     return true;
   };
 
@@ -393,11 +463,26 @@ export function BaseBillingLayout({
       setScrapExchange(undefined);
       onOrderCleared?.();
       if (!isWide) closeCart();
+      return true;
     } catch (error) {
       logger.error('Could not hold order', {
         error: error instanceof Error ? error.message : String(error),
       });
       showSnackbar('Could not hold order', error instanceof Error ? error.message : 'Try again.');
+      return false;
+    }
+  };
+
+  const holdCheckout = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      if (await holdCurrentOrder()) {
+        setCartPage('cart');
+        setCheckoutOpen(false);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -738,7 +823,9 @@ export function BaseBillingLayout({
               allowOrderDiscounts={can('billing.discount')}
               heldOrderCount={heldOrders.orders.length}
               onShowHeldOrders={() => openCartPage('held-orders', () => setHeldOrdersOpen(true))}
-              onHold={holdCurrentOrder}
+              onHold={async () => {
+                await holdCurrentOrder();
+              }}
               onPettyCash={
                 isEnabled('finance')
                   ? () =>
@@ -802,7 +889,9 @@ export function BaseBillingLayout({
           allowOrderDiscounts={can('billing.discount')}
           heldOrderCount={heldOrders.orders.length}
           onShowHeldOrders={() => replaceCartPage('held-orders')}
-          onHold={holdCurrentOrder}
+          onHold={async () => {
+            await holdCurrentOrder();
+          }}
           onPettyCash={
             isEnabled('finance')
               ? () => (billingAllowed ? replaceCartPage('petty-cash') : requestCounterDialog())
@@ -865,6 +954,10 @@ export function BaseBillingLayout({
                   onClose={() => replaceCartPage('cart')}
                 />
                 <CheckoutDialog
+                  customerName={customer?.name}
+                  onSelectCustomer={isEnabled('customers') ? () => replaceCartPage('customer') : undefined}
+                  onHold={holdCheckout}
+                  denominations={cashDenominations}
                   belowCostWarning={belowCostWarning}
                   embedded
                   visible={cartPage === 'checkout'}
@@ -891,7 +984,9 @@ export function BaseBillingLayout({
       />
       <PharmacyBatchDialog
         product={mrpProduct}
-        batches={mrpProduct ? normalizeProductBatches([mrpProduct]) : []}
+        batches={availableProductBatches(mrpBatches, cart.items, isEnabled('batchExpiry'))}
+        cartItems={cart.items}
+        checkExpiry={isEnabled('batchExpiry')}
         currencyCode={currencyCode}
         onClose={() => setMrpProduct(undefined)}
         onAdd={(product) => {
@@ -922,6 +1017,17 @@ export function BaseBillingLayout({
         onSave={savePettyCash}
       />
       <CheckoutDialog
+        customerName={customer?.name}
+        onSelectCustomer={
+          isEnabled('customers')
+            ? () => {
+                setCheckoutOpen(false);
+                setCustomerPickerOpen(true);
+              }
+            : undefined
+        }
+        onHold={holdCheckout}
+        denominations={cashDenominations}
         belowCostWarning={belowCostWarning}
         visible={isWide && checkoutOpen}
         total={Math.max(0, cart.total - (scrapExchange?.total || 0))}
@@ -944,10 +1050,12 @@ export function BaseBillingLayout({
       />
       <ReceiptDialog
         receipt={receipt}
+        printers={receiptPrinters}
+        printerError={receiptPrinterError}
         printing={printingReceipt}
         onPrint={
           receipt && auth.session?.organization?.activeSession
-            ? async () => {
+            ? async (printerId) => {
                 const session = auth.session!.organization!.activeSession!;
                 setPrintingReceipt(true);
                 try {
@@ -956,6 +1064,7 @@ export function BaseBillingLayout({
                     session.counterId,
                     session.branchId,
                     receiptDocument(receipt),
+                    printerId,
                   );
                   showSnackbar(
                     job.status === 'SENT'

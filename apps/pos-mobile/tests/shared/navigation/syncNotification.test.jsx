@@ -10,6 +10,8 @@ const colors = {
   error: '#b00',
   textSecondary: '#555',
   outlineMuted: '#ddd',
+  success: '#080',
+  primary: '#06c',
 };
 mock.module('react-native', () => ({
   ActivityIndicator: 'ActivityIndicator',
@@ -17,7 +19,12 @@ mock.module('react-native', () => ({
   Text: 'Text',
   StyleSheet: { create: (styles) => styles },
 }));
-mock.module('lucide-react-native', () => ({ AlertCircle: 'AlertCircle', GitBranch: 'GitBranch' }));
+mock.module('lucide-react-native', () => ({
+  AlertCircle: 'AlertCircle',
+  GitBranch: 'GitBranch',
+  Wifi: 'Wifi',
+  WifiOff: 'WifiOff',
+}));
 mock.module(`${shared}/ui-native/src/theme/ThemeProvider`, () => ({
   useAppTheme: () => ({ themeColors: colors }),
 }));
@@ -27,7 +34,7 @@ test('sync notification keeps the same footprint through hydration, failures and
   let view,
     opened = 0;
   const render = (loading, failedCount) => (
-    <SyncNotificationButton loading={loading} failedCount={failedCount} onPress={() => opened++} />
+    <SyncNotificationButton isOnline loading={loading} failedCount={failedCount} onPress={() => opened++} />
   );
   await act(async () => {
     view = create(render(true, 0));
@@ -41,7 +48,9 @@ test('sync notification keeps the same footprint through hydration, failures and
   expect(view.root.findByType('AppPressable').props.accessibilityLabel).toContain(
     '3 sync jobs need attention',
   );
-  expect(view.root.findAllByType('AlertCircle')).toHaveLength(1);
+  expect(view.root.findAllByType('Wifi')).toHaveLength(1);
+  expect(view.root.findAllByType('GitBranch')).toHaveLength(1);
+  expect(view.root.findAllByType('Text').some((node) => node.props.children === 3)).toBe(true);
   await act(async () => view.root.findByType('AppPressable').props.onPress());
   expect(opened).toBe(1);
   await act(async () => {
@@ -49,5 +58,30 @@ test('sync notification keeps the same footprint through hydration, failures and
   });
   expect(view.root.findByType('AppPressable').props.style[0]).toEqual(dimensions);
   expect(view.root.findAllByType('AlertCircle')).toHaveLength(0);
+  await act(async () => view.unmount());
+});
+
+test('one indicator includes offline state, pending count and the job-tree action', async () => {
+  let view,
+    opened = 0;
+  await act(async () => {
+    view = create(
+      <SyncNotificationButton
+        isOnline={false}
+        pendingQueueCount={7}
+        failedCount={0}
+        loading={false}
+        onPress={() => opened++}
+      />,
+    );
+  });
+  expect(view.root.findAllByType('AppPressable')).toHaveLength(1);
+  expect(view.root.findAllByType('WifiOff')).toHaveLength(1);
+  expect(view.root.findAllByType('GitBranch')).toHaveLength(1);
+  expect(view.root.findByType('AppPressable').props.accessibilityLabel).toContain(
+    'Offline; 7 changes pending',
+  );
+  await act(async () => view.root.findByType('AppPressable').props.onPress());
+  expect(opened).toBe(1);
   await act(async () => view.unmount());
 });
